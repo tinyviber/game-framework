@@ -24,9 +24,11 @@ tags:
 - 房间拓扑显式声明，可达性用 BFS 投影；
 - 渲染是把 world state 投影成 view model，再交给 Pixi 绘制。
 
-当前规模约 1900 行源码（含测试）,`npm test`48 个测试全部通过，`npm run build` 正常产出。
+当前规模约 5300 行（含测试，源码约 2500 行）,`npm test` 15 个测试文件 / 69 个测试全部通过，`npm run build` 正常产出。
 
 审查基准：以下评价以 `docs/Current Design Synthesis and Reconstruction Plan.md` 中项目自己声明的架构约束为标准，而不是套用一个通用引擎的期待。
+
+> **时效说明**：第 3/4 节的审查结论基于修复前的代码。文中问题已于 2026-08-28 按第 6 节修复记录全部落地（含 typed events、spatial index、structural sharing 等重构），阅读第 3/4 节时请对照第 6 节的修复表。
 
 ---
 

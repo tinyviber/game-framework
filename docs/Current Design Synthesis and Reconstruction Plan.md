@@ -39,6 +39,11 @@ Chapter 5 · Room Transition + Persistent Metadata
 Chapter 6 · Pixi Presentation
 ```
 
+在这条主线之上，重建计划已延伸到 Chapter 12（Closure Contract、
+Reachability/Topology、NPC closure-local interaction、Checkpoint、
+Runtime integration、3/4 presentation foundation），完整章节表与
+各章健壮性要求见第 8 节和第 10 节。
+
 旧的 Tick、History、RunDefinition、StepSession 和旧的 Level 01/Chapter 7–9 路线已经是 archived research，不再是正式世界的运行时。
 
 产品优先级保持为：
@@ -459,6 +464,55 @@ src/main.ts + src/rendering/*
 - renderer 可以替换旧 frame；
 - host 管理 init/mount/destroy；
 - gameplay state 不从 ticker、Graphics 或 Container 反推。
+
+### Chapter 7
+
+- entry 校验对齐 closure identity 和 precondition；
+- exit predicate 成功之前不产生 persistent effect；
+- 契约回调抛异常时报告为 rejected result，无部分提交；
+- 契约回调与当前 active local state 隔离；
+- 宏观进度要求已解决的环境本身，而不是仅凭一个 persistent flag。
+
+### Chapter 8
+
+- topology 定义快照化并冻结，可达性只投影已声明房间；
+- 显式 shortcut route 被保留，不推断反向路由；
+- 路由循环不推断 unknown rooms；
+- route predicate 不修改 persistent metadata；
+- 拒绝 blocked route 时不改变当前世界，invalid route entry 仍由
+  Chapter 5 的 transition validator 拒绝。
+
+### Chapter 9
+
+- NPC 在玩家进入交互范围之前保持不变；
+- 交互只改变 active closure 内的目标 NPC；
+- 不存在全局 NPC 模拟，也不修改其它 local world 的 NPC；
+- 来自其它 active closure 的操作被拒绝；
+- 错误的 NPC target 被拒绝且不改变 NPC 状态；
+- 移动不得越出房间边界。
+
+### Chapter 10
+
+- checkpoint 只快照 local state，与 persistent progress 隔离；
+- 恢复 local attempts 时保留当前 persistent metadata；
+- 来自其它 active room 或 closure 的 checkpoint 被拒绝；
+- local object set 不一致的 checkpoint 被拒绝；
+- malformed checkpoint 被拒绝且无部分恢复。
+
+### Chapter 11
+
+- closure effect 提交先于真实 room transition 生效；
+- chapter-specific operation 通过 active local world 路由；
+- operation adapter 相互隔离，adapter 失败有明确报告；
+- 恢复 local checkpoint 不回滚 permanent progress；
+- permanent progress 变化后旧 local checkpoint 失效；
+- 切换房间后清除 local checkpoint。
+
+### Chapter 12
+
+- 为 3/4 视角呈现创建稳定的 world layers；
+- 每个 root 创建独立 scene，没有全局 scene registry；
+- camera transform 不改变 world model。
 
 ## 11. 游戏性、可玩性与工程性的统一判断
 
