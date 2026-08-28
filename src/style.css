@@ -1,0 +1,27 @@
+:root {
+  font: 18px/1.45 system-ui, 'Segoe UI', Roboto, sans-serif;
+  color: #e5e7eb;
+  background: #111827;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+}
+
+#app {
+  width: 900px;
+  max-width: 100%;
+  min-height: 100svh;
+  margin: 0 auto;
+  box-sizing: border-box;
+  padding: 24px;
+}
+
+button {
+  margin-right: 8px;
+  padding: 6px 12px;
+}
