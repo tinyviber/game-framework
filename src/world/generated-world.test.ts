@@ -30,6 +30,15 @@ function positionKey(position: { readonly x: number; readonly y: number }): stri
   return `${position.x},${position.y}`;
 }
 
+function pathsEqual(
+  left: readonly { readonly x: number; readonly y: number }[],
+  right: readonly { readonly x: number; readonly y: number }[],
+): boolean {
+  return left.length === right.length && left.every((position, index) =>
+    positionKey(position) === positionKey(right[index]!),
+  );
+}
+
 function directedEdgeKey(edge: { from: { x: number; y: number }; to: { x: number; y: number } }): string {
   return `${positionKey(edge.from)}>${positionKey(edge.to)}`;
 }
@@ -360,9 +369,23 @@ describe('seeded generated world', () => {
         if (baselineError) {
           throw new Error(`baseline path invalid: ${baselineError}`);
         }
-        if (world.perturbation.baselineShortestPathLength !== world.baselinePath.length - 1) {
+        const recomputedBaseline = findGeneratedPath(
+          world.baselineCells,
+          world.baselineEdges,
+          world.start,
+          world.goal,
+        );
+        if (recomputedBaseline.length === 0) {
+          throw new Error('baseline shortest path is unreachable');
+        }
+        if (!pathsEqual(world.baselinePath, recomputedBaseline)) {
           throw new Error(
-            `baseline metadata mismatch: ${world.perturbation.baselineShortestPathLength} vs ${world.baselinePath.length - 1}`,
+            `baseline path is not the recomputed shortest path: stored ${world.baselinePath.length - 1}, recomputed ${recomputedBaseline.length - 1}`,
+          );
+        }
+        if (world.perturbation.baselineShortestPathLength !== recomputedBaseline.length - 1) {
+          throw new Error(
+            `baseline metadata mismatch: ${world.perturbation.baselineShortestPathLength} vs ${recomputedBaseline.length - 1}`,
           );
         }
 
@@ -370,9 +393,23 @@ describe('seeded generated world', () => {
         if (finalError) {
           throw new Error(`final path invalid: ${finalError}`);
         }
-        if (world.perturbation.finalShortestPathLength !== world.finalPath.length - 1) {
+        const recomputedFinal = findGeneratedPath(
+          world.cells,
+          world.edges,
+          world.start,
+          world.goal,
+        );
+        if (recomputedFinal.length === 0) {
+          throw new Error('final shortest path is unreachable');
+        }
+        if (!pathsEqual(world.finalPath, recomputedFinal)) {
           throw new Error(
-            `final metadata mismatch: ${world.perturbation.finalShortestPathLength} vs ${world.finalPath.length - 1}`,
+            `final path is not the recomputed shortest path: stored ${world.finalPath.length - 1}, recomputed ${recomputedFinal.length - 1}`,
+          );
+        }
+        if (world.perturbation.finalShortestPathLength !== recomputedFinal.length - 1) {
+          throw new Error(
+            `final metadata mismatch: ${world.perturbation.finalShortestPathLength} vs ${recomputedFinal.length - 1}`,
           );
         }
         if (world.perturbation.finalShortestPathLength <= world.perturbation.baselineShortestPathLength) {

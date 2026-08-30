@@ -190,6 +190,10 @@ function samePosition(a: Position, b: Position): boolean {
   return a.x === b.x && a.y === b.y;
 }
 
+function directedEdgeKey(from: Position, to: Position): string {
+  return `${positionKey(from)}>${positionKey(to)}`;
+}
+
 export function chooseTopologyFamily(seed: number): GeneratedTopologyFamily {
   const unsignedSeed = seed >>> 0;
   return GENERATED_TOPOLOGY_FAMILIES[unsignedSeed % GENERATED_TOPOLOGY_FAMILIES.length]!;
@@ -727,9 +731,22 @@ function buildEdges(
   return edges;
 }
 
+function indexGeneratedEdges(
+  edges: readonly GeneratedEdge[],
+): Map<string, GeneratedEdge> {
+  const index = new Map<string, GeneratedEdge>();
+  for (const edge of edges) {
+    const key = directedEdgeKey(edge.from, edge.to);
+    if (!index.has(key)) {
+      index.set(key, edge);
+    }
+  }
+  return index;
+}
+
 function traversableNeighbors(
   cells: readonly (readonly GeneratedCell[])[],
-  edges: readonly GeneratedEdge[],
+  edgeIndex: ReadonlyMap<string, GeneratedEdge>,
   position: Position,
 ): Position[] {
   const neighbors: Position[] = [];
@@ -741,7 +758,7 @@ function traversableNeighbors(
   for (const delta of DIRECTIONS) {
     const toPosition = { x: position.x + delta.x, y: position.y + delta.y };
     const to = cellAt(cells, toPosition);
-    const edge = resolveEdge(edges, position, toPosition);
+    const edge = edgeIndex.get(directedEdgeKey(position, toPosition));
     if (to && edge && canTraverse(from, to, edge, {})) {
       neighbors.push(toPosition);
     }
@@ -763,16 +780,17 @@ export function findGeneratedPath(
   }
 
   const queue: Position[] = [{ ...start }];
+  const edgeIndex = indexGeneratedEdges(edges);
   const visited = new Set<string>([positionKey(start)]);
   const previous = new Map<string, string>();
 
-  while (queue.length > 0) {
-    const current = queue.shift()!;
+  for (let queueIndex = 0; queueIndex < queue.length; queueIndex += 1) {
+    const current = queue[queueIndex]!;
     if (samePosition(current, goal)) {
       break;
     }
 
-    for (const next of traversableNeighbors(cells, edges, current)) {
+    for (const next of traversableNeighbors(cells, edgeIndex, current)) {
       const key = positionKey(next);
       if (visited.has(key)) {
         continue;
@@ -830,15 +848,16 @@ function analyzeTopology(
 ): GeneratedTopologyMetrics {
   const reachable = new Set<string>();
   const queue = [{ ...start }];
+  const edgeIndex = indexGeneratedEdges(edges);
 
-  while (queue.length > 0) {
-    const position = queue.shift()!;
+  for (let queueIndex = 0; queueIndex < queue.length; queueIndex += 1) {
+    const position = queue[queueIndex]!;
     const key = positionKey(position);
     if (reachable.has(key)) {
       continue;
     }
     reachable.add(key);
-    for (const next of traversableNeighbors(cells, edges, position)) {
+    for (const next of traversableNeighbors(cells, edgeIndex, position)) {
       if (!reachable.has(positionKey(next))) {
         queue.push(next);
       }
