@@ -290,6 +290,45 @@ function drawShadow(
   graphics.ellipse(point.x, point.y + 12, 20, 7).fill({ color: 0x05080d, alpha });
 }
 
+function drawForestObstacleFallback(
+  graphics: Graphics,
+  point: IsoPoint,
+  palette: IsoRoomView['palette'],
+): void {
+  const baseY = point.y + 8;
+  graphics.rect(point.x - 3, baseY - 23, 6, 23).fill(0x5a4430);
+  const canopy = Math.max(0, palette.ground - 0x102010);
+  graphics
+    .moveTo(point.x, baseY - 52)
+    .lineTo(point.x - 18, baseY - 25)
+    .lineTo(point.x + 18, baseY - 25)
+    .closePath()
+    .fill(canopy);
+  graphics
+    .moveTo(point.x, baseY - 39)
+    .lineTo(point.x - 14, baseY - 17)
+    .lineTo(point.x + 14, baseY - 17)
+    .closePath()
+    .fill(Math.max(0, canopy - 0x080808));
+}
+
+function drawRockObstacleFallback(
+  graphics: Graphics,
+  point: IsoPoint,
+  palette: IsoRoomView['palette'],
+): void {
+  const color = Math.max(0, palette.edge + 0x303030);
+  graphics
+    .ellipse(point.x - 10, point.y - 1, 12, 8)
+    .fill(color)
+    .ellipse(point.x + 5, point.y - 5, 10, 7)
+    .fill(Math.max(0, color - 0x121212));
+  graphics
+    .moveTo(point.x - 13, point.y - 3)
+    .lineTo(point.x - 6, point.y - 6)
+    .stroke({ width: 1, color: 0xffffff, alpha: 0.22 });
+}
+
 function makeSprite(
   textures: MarkTextureSet,
   assetKey: string,
@@ -311,6 +350,36 @@ function makeSprite(
   sprite.label = assetKey;
   container.addChild(sprite);
   return true;
+}
+
+function drawObstacle(
+  graphics: Graphics,
+  props: Container,
+  textures: MarkTextureSet,
+  cell: IsoCellView,
+  palette: IsoRoomView['palette'],
+): void {
+  if (!cell.obstacle) {
+    return;
+  }
+  const point = projectIsoCell(cell.x, cell.y, cell.elevation);
+  const assetKey = cell.obstacle === 'forest' ? 'tree' : 'rocks';
+  const didDraw = makeSprite(
+    textures,
+    assetKey,
+    props,
+    point,
+    cell.obstacle === 'forest' ? 0.82 : 0.72,
+    isoSortKey(cell.x, cell.y) + 2,
+  );
+  if (didDraw) {
+    return;
+  }
+  if (cell.obstacle === 'forest') {
+    drawForestObstacleFallback(graphics, point, palette);
+  } else {
+    drawRockObstacleFallback(graphics, point, palette);
+  }
 }
 
 function drawFallbackProp(
@@ -493,6 +562,7 @@ export function createIsometricScene(
           const point = projectIsoCell(cell.x, cell.y, cell.elevation);
           drawShadow(terrainGraphics, point, cell.walkable ? 0.12 : 0.25);
           drawCell(terrainGraphics, cell, room.palette);
+          drawObstacle(propGraphics, props, textures, cell, room.palette);
           if (cell.walkable && (cell.x * 5 + cell.y * 3) % 11 === 0) {
             makeSprite(
               textures,

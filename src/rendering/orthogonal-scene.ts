@@ -416,11 +416,17 @@ export function createOrthogonalScene(
             drawRockFeature(terrainGraphics, cell, room.palette);
           }
           if (cell.obstacle === 'forest') {
+            // Tree metadata is bottom-center anchored. Place that foot at
+            // the cell's bottom-center rather than at its top-left corner.
+            const foot = {
+              x: point.x + ORTHO_TILE_SIZE / 2,
+              y: point.y + ORTHO_TILE_SIZE,
+            };
             const drewTrees = drawRegionSprite(
               orthogonalTextures,
               'tree',
               terrainSprites,
-              point,
+              foot,
               ORTHO_TILE_SIZE / 16,
               orthogonalSortKey(cell.x, cell.y),
             );
