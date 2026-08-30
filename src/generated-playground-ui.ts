@@ -10,6 +10,12 @@ export interface GeneratedInspectionFacts {
   readonly traversableDirections?: readonly string[];
 }
 
+export type GeneratedViewMode = 'iso' | 'ortho';
+
+export function parseGeneratedView(search: string): GeneratedViewMode {
+  return new URLSearchParams(search).get('view') === 'ortho' ? 'ortho' : 'iso';
+}
+
 export function isGeneratedDebugMode(search: string): boolean {
   return new URLSearchParams(search).get('debug') === '1';
 }

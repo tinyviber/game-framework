@@ -17,17 +17,30 @@ import {
 import {
   createIsometricScene,
   projectIsoCell,
+  type IsometricSceneRenderer,
   type IsoRoomView,
   type IsoSceneView,
   loadMarkTextures,
   type MarkTextureSet,
 } from '@/rendering/isometric-scene';
+import {
+  createOrthogonalScene,
+  ORTHO_TILE_SIZE,
+  projectOrthogonalCell,
+  type OrthogonalSceneRenderer,
+} from '@/rendering/orthogonal-scene';
+import {
+  loadOrthogonalTextures,
+  type OrthogonalTextureSet,
+} from '@/rendering/orthogonal-textures';
 import { createPixiHost } from '@/rendering/pixi-host';
 import { projectGeneratedMinimap } from '@/generated-minimap';
 import {
   formatBlockedMovement,
   formatGeneratedInspection,
   isGeneratedDebugMode,
+  parseGeneratedView,
+  type GeneratedViewMode,
 } from '@/generated-playground-ui';
 
 const root = document.querySelector<HTMLDivElement>('#app');
@@ -38,6 +51,7 @@ if (!root) {
 
 const DEFAULT_SEED = 2026;
 const DEBUG_MODE = isGeneratedDebugMode(window.location.search);
+const VIEW_MODE: GeneratedViewMode = parseGeneratedView(window.location.search);
 
 function readSeed(): number {
   const value = new URLSearchParams(window.location.search).get('seed');
@@ -60,7 +74,7 @@ header.innerHTML = `
       <h1>地形实验场 <span>· Generated Playground</span></h1>
     </div>
   </div>
-  <span class="world-mode-label">${DEBUG_MODE ? 'DEBUG VIEW' : 'FIELD STUDY'}</span>
+  <span class="world-mode-label">${DEBUG_MODE ? 'DEBUG · ' : ''}${VIEW_MODE === 'ortho' ? 'ORTHO 3/4' : 'ISO VIEW'}</span>
 `;
 
 const stage = document.createElement('section');
@@ -122,9 +136,11 @@ let seed = readSeed();
 let world: GeneratedWorld = generateGeneratedWorld(seed);
 let playground: GeneratedPlayground = createGeneratedPlayground(world);
 let state = playground.initialState;
-let renderer: ReturnType<typeof createIsometricScene>;
-let zoom = 0.34;
-let camera = projectIsoCell(world.start.x, world.start.y, 0);
+let renderer: IsometricSceneRenderer | OrthogonalSceneRenderer;
+let zoom = VIEW_MODE === 'ortho' ? 0.72 : 0.34;
+let camera = VIEW_MODE === 'ortho'
+  ? projectOrthogonalCell(world.start.x, world.start.y, 0)
+  : projectIsoCell(world.start.x, world.start.y, 0);
 const statusText = document.createElement('p');
 statusText.id = 'game-status';
 shell.append(statusText);
@@ -272,6 +288,13 @@ function render(): void {
 function currentCameraTarget(): { x: number; y: number } {
   const position = playerPosition(state);
   const cell = world.cells[position.y]?.[position.x];
+  if (VIEW_MODE === 'ortho') {
+    const point = projectOrthogonalCell(position.x, position.y, cell?.elevation ?? 0);
+    return {
+      x: point.x + ORTHO_TILE_SIZE / 2,
+      y: point.y + ORTHO_TILE_SIZE / 2,
+    };
+  }
   return projectIsoCell(position.x, position.y, cell?.elevation ?? 0);
 }
 
@@ -343,7 +366,7 @@ function createNewSeed(): void {
 }
 
 function setZoom(nextZoom: number): void {
-  zoom = Math.min(0.52, Math.max(0.24, nextZoom));
+  zoom = Math.min(VIEW_MODE === 'ortho' ? 1 : 0.52, Math.max(0.24, nextZoom));
   renderer.setCamera(camera.x, camera.y, zoom);
 }
 
@@ -355,7 +378,12 @@ void (async () => {
       backgroundColor: world.palette.sky,
     });
     const textures: MarkTextureSet = await loadMarkTextures();
-    renderer = createIsometricScene(host.scene, textures);
+    const orthogonalTextures: OrthogonalTextureSet = VIEW_MODE === 'ortho'
+      ? await loadOrthogonalTextures()
+      : {};
+    renderer = VIEW_MODE === 'ortho'
+      ? createOrthogonalScene(host.scene, textures, orthogonalTextures)
+      : createIsometricScene(host.scene, textures);
     renderMinimap();
     render();
     renderer.setCamera(camera.x, camera.y, zoom);

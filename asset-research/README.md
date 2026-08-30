@@ -17,6 +17,9 @@ asset-research/sources.json
 asset-research/benchmark-scene-16x16.json
 asset-research/scripts/
 asset-research/cc0/
+src/assets/orthogonal/atlas-metadata.json
+src/assets/orthogonal/metadata.ts
+src/assets/orthogonal/semantic-mapping.ts
 ```
 
 Ignored local workspace:
@@ -28,11 +31,20 @@ asset-research/local/extracted/
 asset-research/local/previews/
 asset-research/local/analysis/
 asset-research/local/benchmarks/
+asset-research/local/previews/orthogonal/
 ```
 
 Put manually downloaded files in the two `local/downloads/` directories. The
 scripts never download from the network and never write restricted or generated
 imagery to a tracked path.
+
+The generated playground's orthogonal renderer uses the tracked CC0 Puny World
+atlas as its selected 2D source. Its reviewable region annotations live in
+[`src/assets/orthogonal/atlas-metadata.json`](../src/assets/orthogonal/atlas-metadata.json);
+native source rectangles are intentionally kept separate from logical
+footprints, visual bounds, and anchors. Run
+`npm run assets:annotate-orthogonal` to create the local-only annotated contact
+sheet at `asset-research/local/previews/orthogonal/`.
 
 ## Sources and replacements
 
