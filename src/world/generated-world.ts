@@ -26,13 +26,33 @@ export const GENERATED_TOPOLOGY_FAMILIES: readonly GeneratedTopologyFamily[] = [
   'two-region',
 ];
 
-export type GeneratedTerrainType =
+export type GeneratedSurface =
   | 'grass'
   | 'dirt'
   | 'stone'
   | 'snow'
   | 'crystal'
-  | 'cliff';
+  | 'water';
+
+/**
+ * Legacy terrain label retained for existing consumers. New code should read
+ * `surface` for the ground material; `cliff` is only the old marker on the
+ * raised perturbation footprint, not a void surface.
+ */
+export type GeneratedTerrainType = GeneratedSurface | 'cliff';
+
+/** A blocking feature that sits on top of a surface without erasing it. */
+export type GeneratedObstacle = 'forest' | 'rock' | null;
+
+/**
+ * World membership of a cell:
+ * - 'primary': the validated playable topology skeleton;
+ * - 'barrier': generated natural features that explain why the far field is
+ *   not reachable from the skeleton;
+ * - 'background': the complete world beyond the barriers. Background cells
+ *   may be physically walkable yet unreachable from start; that is intended.
+ */
+export type GeneratedZone = 'primary' | 'barrier' | 'background';
 
 export type GeneratedBiome =
   | 'meadow'
@@ -65,7 +85,11 @@ export interface GeneratedPalette {
 }
 
 export interface GeneratedCell extends TraversalCell {
+  /** Derived from `surface`; legacy `cliff` is retained for the disruption marker. */
   readonly terrainType: GeneratedTerrainType;
+  readonly surface: GeneratedSurface;
+  readonly obstacle: GeneratedObstacle;
+  readonly zone: GeneratedZone;
   readonly regionId: string;
 }
 
@@ -109,8 +133,17 @@ export interface GeneratedWorld {
   readonly topologyFamily: GeneratedTopologyFamily;
   readonly width: number;
   readonly height: number;
+  /**
+   * Pre-disruption topology skeleton (undressed). Family predicates and
+   * baseline metrics are scoped to this graph, never to background terrain.
+   */
   readonly baselineCells: readonly (readonly GeneratedCell[])[];
   readonly baselineEdges: readonly GeneratedEdge[];
+  /**
+   * The playable dressed world: primary skeleton + coherent barrier features
+   * + full background terrain. Background cells may be walkable but
+   * unreachable; only explicit connectors join the primary component.
+   */
   readonly cells: readonly (readonly GeneratedCell[])[];
   readonly edges: readonly GeneratedEdge[];
   readonly start: Position;
@@ -143,6 +176,9 @@ interface MutableCell {
   y: number;
   elevation: number;
   terrainType: GeneratedTerrainType;
+  surface: GeneratedSurface;
+  obstacle: GeneratedObstacle;
+  zone: GeneratedZone;
   regionId: string;
   walkable: boolean;
 }
@@ -237,7 +273,7 @@ function carve(
   y: number,
   elevation: number,
   random: RandomSource,
-  terrainType: GeneratedTerrainType = elevation > 0
+  terrainType: GeneratedSurface = elevation > 0
     ? 'stone'
     : random.next() < 0.24
       ? random.pick(['grass', 'dirt'] as const)
@@ -251,6 +287,9 @@ function carve(
   cell.walkable = true;
   cell.elevation = elevation;
   cell.terrainType = terrainType;
+  cell.surface = terrainType;
+  cell.obstacle = null;
+  cell.zone = 'primary';
 }
 
 function addConnector(
@@ -300,7 +339,7 @@ function carveRectangle(
   bottom: number,
   elevation: number,
   random: RandomSource,
-  terrainType: GeneratedTerrainType = 'grass',
+  terrainType: GeneratedSurface = 'grass',
 ): void {
   for (let y = top; y <= bottom; y += 1) {
     carveHorizontal(cells, y, left, right, elevation, random, terrainType);
@@ -314,7 +353,7 @@ function carveHorizontal(
   toX: number,
   elevation: number,
   random: RandomSource,
-  terrainType?: GeneratedTerrainType,
+  terrainType?: GeneratedSurface,
 ): void {
   const step = fromX <= toX ? 1 : -1;
   for (let x = fromX; ; x += step) {
@@ -332,7 +371,7 @@ function carveVertical(
   toY: number,
   elevation: number,
   random: RandomSource,
-  terrainType?: GeneratedTerrainType,
+  terrainType?: GeneratedSurface,
 ): void {
   const step = fromY <= toY ? 1 : -1;
   for (let y = fromY; ; y += step) {
@@ -377,6 +416,11 @@ function createFamilyCells(
         y,
         elevation: 0,
         terrainType: 'cliff' as GeneratedTerrainType,
+        surface: 'grass' as GeneratedSurface,
+        obstacle: null,
+        // Skeleton cells start as undressed world ground; the dressing pass
+        // assigns 'barrier'/'background' semantics around the carved mask.
+        zone: 'background' as GeneratedZone,
         regionId: isTwoRegion
           ? x < split ? 'region-west' : 'region-east'
           : y < split ? 'region-north' : 'region-south',
@@ -656,6 +700,9 @@ function cloneCells(cells: readonly (readonly GeneratedCell[])[]): MutableCell[]
       y: cell.y,
       elevation: cell.elevation,
       terrainType: cell.terrainType,
+      surface: cell.surface,
+      obstacle: cell.obstacle,
+      zone: cell.zone,
       regionId: cell.regionId,
       walkable: cell.walkable,
     })),
@@ -669,6 +716,9 @@ function freezeCells(cells: readonly (readonly MutableCell[])[]): readonly (read
       y: cell.y,
       elevation: cell.elevation,
       terrainType: cell.terrainType,
+      surface: cell.surface,
+      obstacle: cell.obstacle,
+      zone: cell.zone,
       regionId: cell.regionId,
       walkable: cell.walkable,
     })),
@@ -840,12 +890,11 @@ function pathIsTraversable(
   });
 }
 
-function analyzeTopology(
+export function collectReachableCells(
   cells: readonly (readonly GeneratedCell[])[],
   edges: readonly GeneratedEdge[],
   start: Position,
-  goal: Position,
-): GeneratedTopologyMetrics {
+): Set<string> {
   const reachable = new Set<string>();
   const queue = [{ ...start }];
   const edgeIndex = indexGeneratedEdges(edges);
@@ -864,6 +913,16 @@ function analyzeTopology(
     }
   }
 
+  return reachable;
+}
+
+function analyzeTopology(
+  cells: readonly (readonly GeneratedCell[])[],
+  edges: readonly GeneratedEdge[],
+  start: Position,
+  goal: Position,
+): GeneratedTopologyMetrics {
+  const reachable = collectReachableCells(cells, edges, start);
   const adjacency = new Map<string, Set<string>>();
   for (const key of reachable) {
     adjacency.set(key, new Set<string>());
@@ -963,7 +1022,7 @@ function createUndirectedAdjacency(
   const adjacency = new Map<string, Set<string>>();
   for (const row of cells) {
     for (const cell of row) {
-      if (cell.walkable) {
+      if (cell.zone === 'primary' && cell.walkable) {
         adjacency.set(positionKey(cell), new Set<string>());
       }
     }
@@ -972,7 +1031,13 @@ function createUndirectedAdjacency(
   for (const edge of edges) {
     const from = cellAt(cells, edge.from);
     const to = cellAt(cells, edge.to);
-    if (!from || !to || !canTraverse(from, to, edge, {})) {
+    if (
+      !from ||
+      !to ||
+      from.zone !== 'primary' ||
+      to.zone !== 'primary' ||
+      !canTraverse(from, to, edge, {})
+    ) {
       continue;
     }
     const fromKey = positionKey(edge.from);
@@ -1011,14 +1076,14 @@ function countHorizontalCorridors(
     let complete = true;
     for (let x = left; x <= right; x += 1) {
       const cell = cellAt(cells, { x, y });
-      if (!cell?.walkable || cell.elevation !== 0) {
+      if (cell?.zone !== 'primary' || !cell.walkable || cell.elevation !== 0) {
         complete = false;
         break;
       }
       if (x < right) {
         const next = cellAt(cells, { x: x + 1, y });
         const edge = resolveEdge(edges, { x, y }, { x: x + 1, y });
-        if (!next || !edge || !canTraverse(cell, next, edge, {})) {
+        if (next?.zone !== 'primary' || !edge || !canTraverse(cell, next, edge, {})) {
           complete = false;
           break;
         }
@@ -1039,7 +1104,14 @@ function countInterRegionCorridors(
   for (const edge of edges) {
     const from = cellAt(cells, edge.from);
     const to = cellAt(cells, edge.to);
-    if (!from || !to || from.regionId === to.regionId || !canTraverse(from, to, edge, {})) {
+    if (
+      !from ||
+      !to ||
+      from.zone !== 'primary' ||
+      to.zone !== 'primary' ||
+      from.regionId === to.regionId ||
+      !canTraverse(from, to, edge, {})
+    ) {
       continue;
     }
     crossings.add([positionKey(edge.from), positionKey(edge.to)].sort().join('|'));
@@ -1144,6 +1216,465 @@ function createDisruptionFootprint(
   return undefined;
 }
 
+/**
+ * Feature-level world dressing. The validated topology skeleton is treated
+ * as the primary playable mask; everything around it becomes a complete
+ * world: coherent barrier features hug the skeleton, and biome patches fill
+ * the far field. Noise never decides gameplay topology - traversal stays a
+ * property of the skeleton, the barrier ring and explicit connectors.
+ */
+type BarrierFeature = 'river' | 'forest' | 'highland' | 'rock';
+
+const BARRIER_FEATURE_POOLS: Readonly<Record<GeneratedBiome, readonly BarrierFeature[]>> = {
+  meadow: ['forest', 'forest', 'river', 'highland', 'rock'],
+  ridge: ['highland', 'highland', 'rock', 'forest', 'river'],
+  wetland: ['river', 'river', 'forest', 'rock', 'highland'],
+  cavern: ['rock', 'rock', 'highland', 'forest'],
+  crystal: ['highland', 'rock', 'rock', 'highland', 'forest'],
+};
+
+const BIOME_GROUND_SURFACES: Readonly<Record<GeneratedBiome, readonly GeneratedSurface[]>> = {
+  meadow: ['grass', 'grass', 'grass', 'dirt'],
+  ridge: ['grass', 'stone', 'stone', 'grass'],
+  wetland: ['grass', 'grass', 'dirt'],
+  cavern: ['stone', 'stone', 'dirt'],
+  crystal: ['stone', 'crystal', 'crystal', 'stone'],
+};
+
+const BIOME_PATCH_WEIGHTS: Readonly<Record<GeneratedBiome, readonly [GeneratedSurface, GeneratedObstacle, number][]>> = {
+  meadow: [
+    ['grass', null, 0.5],
+    ['dirt', null, 0.12],
+    ['grass', 'forest', 0.26],
+    ['grass', 'rock', 0.05],
+    ['water', null, 0.02],
+    ['stone', null, 0.05],
+  ],
+  ridge: [
+    ['grass', null, 0.32],
+    ['stone', null, 0.3],
+    ['stone', 'rock', 0.22],
+    ['grass', 'forest', 0.12],
+    ['water', null, 0.02],
+    ['dirt', null, 0.02],
+  ],
+  wetland: [
+    ['grass', null, 0.34],
+    ['water', null, 0.3],
+    ['dirt', null, 0.12],
+    ['grass', 'forest', 0.2],
+    ['stone', 'rock', 0.02],
+    ['snow', null, 0.02],
+  ],
+  cavern: [
+    ['stone', null, 0.44],
+    ['stone', 'rock', 0.3],
+    ['dirt', null, 0.16],
+    ['grass', 'forest', 0.05],
+    ['water', null, 0.05],
+  ],
+  crystal: [
+    ['stone', null, 0.3],
+    ['crystal', null, 0.34],
+    ['stone', 'rock', 0.2],
+    ['crystal', 'forest', 0.08],
+    ['water', null, 0.08],
+  ],
+};
+
+const MAX_BARRIER_DEPTH = 9;
+const MIN_LONG_SEGMENT = 4;
+
+function dressWorld(
+  skeleton: readonly (readonly GeneratedCell[])[],
+  regions: readonly GeneratedRegion[],
+  random: RandomSource,
+): MutableCell[][] {
+  const cells = cloneCells(skeleton);
+  const width = GENERATED_WORLD_WIDTH;
+  const total = width * GENERATED_WORLD_HEIGHT;
+  const cellAt = (index: number): MutableCell =>
+    cells[Math.floor(index / width)]![index % width]!;
+  const neighborIndices = (index: number): number[] => {
+    const x = index % width;
+    const y = Math.floor(index / width);
+    const found: number[] = [];
+    for (const delta of DIRECTIONS) {
+      const nx = x + delta.x;
+      const ny = y + delta.y;
+      if (inside(nx, ny)) {
+        found.push(ny * width + nx);
+      }
+    }
+    return found;
+  };
+
+  const primaryMask = new Uint8Array(total);
+  const primaryElevation = new Int32Array(total);
+  for (let index = 0; index < total; index += 1) {
+    if (cellAt(index).walkable) {
+      primaryMask[index] = 1;
+      primaryElevation[index] = cellAt(index).elevation;
+    }
+  }
+
+  const biomes = new Map<string, GeneratedBiome>(
+    regions.map((region) => [region.id, region.biome]),
+  );
+  const biomeOf = (index: number): GeneratedBiome =>
+    biomes.get(cellAt(index).regionId) ?? 'meadow';
+
+  // Ring 0: every non-primary cell orthogonally adjacent to the skeleton.
+  const dist = new Int32Array(total).fill(-1);
+  const ring0: number[] = [];
+  for (let index = 0; index < total; index += 1) {
+    if (primaryMask[index]) {
+      continue;
+    }
+    if (neighborIndices(index).some((n) => primaryMask[n] === 1)) {
+      dist[index] = 0;
+      ring0.push(index);
+    }
+  }
+  const distQueue = [...ring0];
+  for (let queueIndex = 0; queueIndex < distQueue.length; queueIndex += 1) {
+    const index = distQueue[queueIndex]!;
+    const depth = dist[index]!;
+    if (depth >= MAX_BARRIER_DEPTH) {
+      continue;
+    }
+    for (const next of neighborIndices(index)) {
+      if (!primaryMask[next] && dist[next] === -1) {
+        dist[next] = depth + 1;
+        distQueue.push(next);
+      }
+    }
+  }
+
+  // Partition the boundary ring into reasonably long connected features.
+  const segmentOfRing = new Int32Array(total).fill(-1);
+  const segments: number[][] = [];
+  for (const seed of [...ring0].sort((a, b) => a - b)) {
+    if (segmentOfRing[seed] !== -1) {
+      continue;
+    }
+    const segmentId = segments.length;
+    const maxLength = 9 + random.int(10);
+    const list: number[] = [];
+    const queue = [seed];
+    for (let head = 0; head < queue.length && list.length < maxLength; head += 1) {
+      const index = queue[head]!;
+      if (segmentOfRing[index] !== -1) {
+        continue;
+      }
+      segmentOfRing[index] = segmentId;
+      list.push(index);
+      for (const next of neighborIndices(index)) {
+        if (dist[next] === 0 && segmentOfRing[next] === -1) {
+          queue.push(next);
+        }
+      }
+    }
+    segments.push(list);
+  }
+
+  // Grow each feature outward with a nearest-segment ownership flood.
+  const owner = new Int32Array(total).fill(-1);
+  const ownerQueue: number[] = [];
+  segments.forEach((list, segmentId) => {
+    for (const index of list) {
+      owner[index] = segmentId;
+      ownerQueue.push(index);
+    }
+  });
+  for (let queueIndex = 0; queueIndex < ownerQueue.length; queueIndex += 1) {
+    const index = ownerQueue[queueIndex]!;
+    if (dist[index]! >= MAX_BARRIER_DEPTH) {
+      continue;
+    }
+    for (const next of neighborIndices(index)) {
+      if (!primaryMask[next] && owner[next] === -1 && dist[next] !== -1) {
+        owner[next] = owner[index]!;
+        ownerQueue.push(next);
+      }
+    }
+  }
+  const ownedBySegment: number[][] = segments.map(() => []);
+  for (let index = 0; index < total; index += 1) {
+    if (owner[index]! >= 0) {
+      ownedBySegment[owner[index]!]!.push(index);
+    }
+  }
+
+  const surfaceCell = (index: number, surface: GeneratedSurface): void => {
+    const cell = cellAt(index);
+    cell.surface = surface;
+    cell.terrainType = surface;
+  };
+
+  // Base layer first: seeded multi-source BFS blobs (Voronoi-like) give
+  // every non-primary cell a coherent biome surface, so barriers later only
+  // add their own semantics (water band, trees, height) on top of real
+  // ground instead of painting per-cell noise.
+  interface Patch {
+    readonly surface: GeneratedSurface;
+    readonly obstacle: GeneratedObstacle;
+  }
+  const patches: Patch[] = [];
+  const patchOf = new Int32Array(total).fill(-1);
+  const patchQueue: number[] = [];
+  const centerCount = 16 + random.int(9);
+  for (let center = 0; center < centerCount; center += 1) {
+    const index = random.int(total);
+    const entries = BIOME_PATCH_WEIGHTS[biomeOf(index)]!;
+    const roll = random.next();
+    let cursor = 0;
+    let chosen: readonly [GeneratedSurface, GeneratedObstacle, number] = entries[0]!;
+    for (const entry of entries) {
+      cursor += entry[2];
+      if (roll < cursor) {
+        chosen = entry;
+        break;
+      }
+    }
+    patches.push({ surface: chosen[0], obstacle: chosen[1] });
+    if (!primaryMask[index] && patchOf[index] === -1) {
+      patchOf[index] = center;
+      patchQueue.push(index);
+    }
+  }
+  for (let queueIndex = 0; queueIndex < patchQueue.length; queueIndex += 1) {
+    const index = patchQueue[queueIndex]!;
+    for (const next of neighborIndices(index)) {
+      if (!primaryMask[next] && patchOf[next] === -1) {
+        patchOf[next] = patchOf[index]!;
+        patchQueue.push(next);
+      }
+    }
+  }
+  for (let index = 0; index < total; index += 1) {
+    if (primaryMask[index]) {
+      continue;
+    }
+    const cell = cellAt(index);
+    const patch = patchOf[index] >= 0
+      ? patches[patchOf[index]!]!
+      : { surface: 'grass' as GeneratedSurface, obstacle: null as GeneratedObstacle };
+    surfaceCell(index, patch.surface);
+    cell.obstacle = patch.obstacle;
+    cell.zone = 'background';
+    cell.walkable = patch.surface !== 'water' && patch.obstacle === null;
+  }
+
+  // Dissolve one-cell base puddles before barriers join the water graph.
+  for (let index = 0; index < total; index += 1) {
+    const cell = cellAt(index);
+    if (primaryMask[index] || cell.surface !== 'water') {
+      continue;
+    }
+    if (!neighborIndices(index).some((n) => cellAt(n).surface === 'water')) {
+      surfaceCell(index, 'grass');
+      cell.obstacle = null;
+      cell.walkable = true;
+    }
+  }
+
+  // Apply one coherent feature per boundary segment.
+  segments.forEach((_boundary, segmentId) => {
+    const owned = ownedBySegment[segmentId]!;
+    const boundary = segments[segmentId]!;
+    if (owned.length === 0) {
+      return;
+    }
+    const biome = biomeOf(boundary[0]!);
+    const maxDepth = owned.reduce((deepest, index) => Math.max(deepest, dist[index]!), 0);
+    let feature: BarrierFeature =
+      boundary.length < MIN_LONG_SEGMENT
+        ? 'rock'
+        : random.pick(BARRIER_FEATURE_POOLS[biome]!);
+    let reach: number;
+    for (;;) {
+      if (feature === 'river') {
+        reach = Math.min(2 + random.int(2), maxDepth + 1);
+        if (reach < 2) {
+          feature = 'forest';
+          continue;
+        }
+      } else if (feature === 'forest') {
+        reach = Math.min(2 + random.int(3), maxDepth + 1);
+      } else if (feature === 'rock') {
+        reach = Math.min(1 + random.int(3), maxDepth + 1);
+      } else {
+        reach = Math.min(3 + random.int(4), maxDepth + 1);
+        if (reach < 2) {
+          feature = 'rock';
+          reach = Math.min(1 + random.int(3), maxDepth + 1);
+        }
+      }
+      break;
+    }
+
+    for (const index of owned) {
+      if (dist[index]! >= reach) {
+        continue;
+      }
+      const cell = cellAt(index);
+      cell.zone = 'barrier';
+      if (feature === 'river') {
+        surfaceCell(index, 'water');
+        cell.obstacle = null;
+        cell.elevation = 0;
+        cell.walkable = false;
+        continue;
+      }
+      if (feature === 'forest') {
+        // A forest is an obstacle on real grass, not a replacement for the
+        // cell or an opaque terrain type of its own.
+        surfaceCell(index, 'grass');
+        cell.obstacle = 'forest';
+        cell.walkable = false;
+        continue;
+      }
+      if (feature === 'rock') {
+        if (cell.surface === 'water') {
+          surfaceCell(index, random.pick(BIOME_GROUND_SURFACES[biome]!));
+        }
+        cell.obstacle = 'rock';
+        cell.walkable = false;
+        continue;
+      }
+      // Highland: the raised ground stays normal walkable world. The cliff
+      // is the elevation transition itself; without a connector the height
+      // difference makes it non-traversable. Walkable cells that would end
+      // up level with an adjacent elevated primary cell (islands,
+      // perturbation footprint) become boulder fields instead so no
+      // accidental edge can leak the primary component into the far field.
+      const touchesElevatedPrimary = neighborIndices(index).some(
+        (next) => primaryMask[next] === 1 && primaryElevation[next] === 1,
+      );
+      if (touchesElevatedPrimary && cell.walkable) {
+        surfaceCell(index, 'stone');
+        cell.obstacle = 'rock';
+        cell.elevation = 0;
+        cell.walkable = false;
+        continue;
+      }
+      if (cell.elevation === 0) {
+        cell.elevation = 1;
+      }
+      if (cell.obstacle === null && cell.surface !== 'water') {
+        cell.walkable = true;
+      }
+    }
+  });
+
+  return cells;
+}
+
+/**
+ * Post-dressing acceptance rules. Barriers must fully hug the skeleton (no
+ * background cell may touch the primary mask), water must not appear as
+ * isolated pixels inside the barrier ring, the primary component must not
+ * leak into the far field, and the stored final route must remain the exact
+ * shortest path through the dressed graph.
+ */
+function dressedWorldIsCoherent(
+  skeletonCells: readonly (readonly GeneratedCell[])[],
+  skeletonEdges: readonly GeneratedEdge[],
+  dressedCells: readonly (readonly GeneratedCell[])[],
+  dressedEdges: readonly GeneratedEdge[],
+  start: Position,
+  goal: Position,
+  finalPath: readonly Position[],
+): boolean {
+  const primaryKeys = new Set<string>();
+  for (const row of skeletonCells) {
+    for (const cell of row) {
+      if (cell.walkable) {
+        primaryKeys.add(positionKey(cell));
+      }
+    }
+  }
+
+  let backgroundWalkable = false;
+  for (const row of dressedCells) {
+    for (const cell of row) {
+      if (primaryKeys.has(positionKey(cell))) {
+        if (cell.zone !== 'primary' || !cell.walkable) {
+          return false;
+        }
+        continue;
+      }
+      // Every non-primary cell is dressed with an actual surface. The
+      // legacy terrainType marker is confined to the primary disruption and
+      // is never used to represent background void.
+      const touchesPrimary = DIRECTIONS.some(({ x, y }) => {
+        const neighbor = dressedCells[cell.y + y]?.[cell.x + x];
+        return neighbor !== undefined && primaryKeys.has(positionKey(neighbor));
+      });
+      if (touchesPrimary && cell.zone !== 'barrier') {
+        return false;
+      }
+      if (cell.zone === 'background' && cell.walkable) {
+        backgroundWalkable = true;
+      }
+      if (cell.walkable && cell.obstacle !== null) {
+        return false;
+      }
+      if (cell.zone === 'barrier' && cell.surface === 'water' && cell.walkable) {
+        return false;
+      }
+      if (
+        cell.surface === 'water' &&
+        !DIRECTIONS.some(({ x, y }) => dressedCells[cell.y + y]?.[cell.x + x]?.surface === 'water')
+      ) {
+        return false;
+      }
+      if (
+        cell.zone === 'barrier' &&
+        cell.obstacle === 'forest' &&
+        !DIRECTIONS.some(({ x, y }) => dressedCells[cell.y + y]?.[cell.x + x]?.obstacle === 'forest')
+      ) {
+        return false;
+      }
+    }
+  }
+  if (!backgroundWalkable) {
+    return false;
+  }
+
+  const skeletonReachable = collectReachableCells(skeletonCells, skeletonEdges, start);
+  const dressedReachable = collectReachableCells(dressedCells, dressedEdges, start);
+  if (skeletonReachable.size !== dressedReachable.size) {
+    return false;
+  }
+  for (const key of dressedReachable) {
+    // No accidental traversal edge from the primary component into the
+    // barrier ring or the far-field background.
+    if (!skeletonReachable.has(key)) {
+      return false;
+    }
+    if (!primaryKeys.has(key)) {
+      return false;
+    }
+  }
+
+  const goalKey = positionKey(goal);
+  if (!dressedReachable.has(goalKey)) {
+    return false;
+  }
+  if (!pathIsTraversable(dressedCells, dressedEdges, finalPath)) {
+    return false;
+  }
+  const recomputed = findGeneratedPath(dressedCells, dressedEdges, start, goal);
+  if (recomputed.length !== finalPath.length) {
+    return false;
+  }
+  return recomputed.every((position, index) =>
+    samePosition(position, finalPath[index]!),
+  );
+}
+
 function buildCandidate(
   seed: number,
   attempt: number,
@@ -1239,19 +1770,35 @@ function buildCandidate(
   );
   const baselineLength = baselinePath.length - 1;
   const finalLength = finalPath.length - 1;
-  const finalTopology = analyzeTopology(
-    frozenFinalCells,
-    finalEdges,
-    baseline.start,
-    baseline.goal,
-  );
-
 
   if (
     pathIsTraversable(frozenFinalCells, finalEdges, baselinePath) ||
     finalPath.length === 0 ||
     finalLength <= baselineLength ||
     finalPath.some((position) => footprintKeys.has(positionKey(position)))
+  ) {
+    return undefined;
+  }
+
+  // World dressing runs strictly after topology validation: family
+  // predicates and perturbation metrics describe the primary skeleton, so
+  // disconnected background terrain can never influence classification.
+  const dressed = dressWorld(frozenFinalCells, baseline.regions, random);
+  const dressedCells = freezeCells(dressed);
+  const dressedEdges = [
+    ...buildEdges(dressedCells, baseline.connectors),
+    ...finalEdges.filter((edge) => edge.kind === 'height-barrier'),
+  ];
+  if (
+    !dressedWorldIsCoherent(
+      frozenFinalCells,
+      finalEdges,
+      dressedCells,
+      dressedEdges,
+      baseline.start,
+      baseline.goal,
+      finalPath,
+    )
   ) {
     return undefined;
   }
@@ -1264,8 +1811,8 @@ function buildCandidate(
     height: GENERATED_WORLD_HEIGHT,
     baselineCells,
     baselineEdges,
-    cells: frozenFinalCells,
-    edges: finalEdges,
+    cells: dressedCells,
+    edges: dressedEdges,
     start: { ...baseline.start },
     goal: { ...baseline.goal },
     baselinePath,
@@ -1282,7 +1829,7 @@ function buildCandidate(
       finalShortestPathLength: finalLength,
     },
     topology,
-    finalTopology,
+    finalTopology: analyzeTopology(dressedCells, dressedEdges, baseline.start, baseline.goal),
     environment: baseline.environment,
     regions: baseline.regions,
     props: baseline.props,

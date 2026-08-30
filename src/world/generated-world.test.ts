@@ -4,6 +4,7 @@ import {
   GENERATED_WORLD_HEIGHT,
   GENERATED_WORLD_WIDTH,
   chooseTopologyFamily,
+  collectReachableCells,
   generateGeneratedWorld,
   findGeneratedPath,
   isGeneratedTopologyFamily,
@@ -294,13 +295,168 @@ describe('seeded generated world', () => {
 
     for (const cell of world.cells.flat()) {
       expect(cellsByRegion.get(cell.regionId)?.has(positionKey(cell))).toBe(true);
-      expect('surface' in cell).toBe(false);
-      expect(cell.terrainType).toBeTypeOf('string');
+      // Dressed-world model: surface, obstacle, elevation, walkability and
+      // primary/barrier/background membership are distinct concepts.
+      expect(cell.surface).toBeTypeOf('string');
+      expect(cell.terrainType === 'cliff' || cell.terrainType === cell.surface).toBe(true);
+      expect(['forest', 'rock', null]).toContain(cell.obstacle);
+      expect(['primary', 'barrier', 'background']).toContain(cell.zone);
       const region = world.regions.find((candidate) => candidate.id === cell.regionId)!;
       const environment = region.environment ?? world.environment;
       expect(environment.weather).toBeTypeOf('string');
       expect(environment.lighting).toBeTypeOf('string');
     }
+  });
+
+  it('dresses every cell with meaningful world terrain, never generic void', () => {
+    for (const seed of [0, 1, 7, 42, 2026, 2027, 2028, 2029, 2030]) {
+      const world = generateGeneratedWorld(seed);
+      for (const cell of world.cells.flat()) {
+        // The primary skeleton keeps its carved surfaces; every other cell
+        // receives real terrain from barriers or background patches.
+        if (cell.zone !== 'primary') {
+          expect(cell.surface).not.toBe('cliff');
+        }
+        if (!cell.walkable) {
+          // No generic blocked-cell tile: impassable cells are always water
+          // or an explicit obstacle feature.
+          expect(
+            cell.surface === 'water' || cell.obstacle !== null,
+            `seed ${seed} cell ${positionKey(cell)} is a void tile`,
+          ).toBe(true);
+        }
+      }
+    }
+  });
+
+  it('keeps far-field ground physically walkable yet unreachable from start', () => {
+    let farSideSeeds = 0;
+    for (const seed of [2026, 2027, 2028, 2029, 2030]) {
+      const world = generateGeneratedWorld(seed);
+      const reachable = collectReachableCells(world.cells, world.edges, world.start);
+      const farCells = world.cells.flat().filter((cell) =>
+        cell.zone === 'background' &&
+        cell.walkable &&
+        !reachable.has(positionKey(cell)),
+      );
+      if (farCells.length > 0) {
+        farSideSeeds += 1;
+      }
+    }
+    expect(farSideSeeds).toBeGreaterThan(0);
+  });
+
+  it('never leaks the primary component into barrier or background terrain', () => {
+    for (const seed of [2026, 2027, 2028, 2029, 2030]) {
+      const world = generateGeneratedWorld(seed);
+      const reachable = collectReachableCells(world.cells, world.edges, world.start);
+      expect(reachable.has(positionKey(world.goal))).toBe(true);
+      for (const key of reachable) {
+        const [x, y] = key.split(',').map(Number);
+        const cell = world.cells[y]![x]!;
+        expect(
+          cell.zone,
+          `seed ${seed} leaked into ${cell.zone} cell ${key}`,
+        ).toBe('primary');
+      }
+    }
+  });
+
+  it('keeps rivers blocked while the far bank stays real walkable ground', () => {
+    let riverBarrierSeeds = 0;
+    for (const seed of [2026, 2027, 2028, 2029, 2030]) {
+      const world = generateGeneratedWorld(seed);
+      const waterCells = world.cells.flat().filter((cell) => cell.surface === 'water');
+      const hasRiver = waterCells.some((cell) => cell.zone === 'barrier');
+      if (hasRiver) {
+        riverBarrierSeeds += 1;
+      }
+      for (const cell of waterCells) {
+        expect(cell.walkable, `seed ${seed} water cell is traversable`).toBe(
+          false,
+        );
+      }
+      if (hasRiver) {
+        const farBank = waterCells.some((water) =>
+          [{ x: 1, y: 0 }, { x: -1, y: 0 }, { x: 0, y: 1 }, { x: 0, y: -1 }].some(({ x, y }) => {
+            const neighbor = world.cells[water.y + y]?.[water.x + x];
+            return Boolean(neighbor?.walkable && neighbor.surface !== 'water');
+          }),
+        );
+        expect(
+          farBank,
+          `seed ${seed} river has no far bank`,
+        ).toBe(true);
+      }
+    }
+    expect(riverBarrierSeeds).toBeGreaterThan(0);
+  });
+
+  it('models highlands as walkable ground behind a blocked cliff boundary', () => {
+    let cliffBoundaries = 0;
+    for (const seed of [2026, 2027, 2028, 2029, 2030]) {
+      const world = generateGeneratedWorld(seed);
+      for (const row of world.cells) {
+        for (const upper of row) {
+          if (!upper.walkable || upper.zone === 'primary' || upper.elevation !== 1) {
+            continue;
+          }
+          for (const delta of [{ x: 1, y: 0 }, { x: -1, y: 0 }, { x: 0, y: 1 }, { x: 0, y: -1 }]) {
+            const lowerPosition = { x: upper.x + delta.x, y: upper.y + delta.y };
+            const lower = world.cells[lowerPosition.y]?.[lowerPosition.x];
+            if (!lower?.walkable || lower.zone !== 'primary' || lower.elevation !== 0) {
+              continue;
+            }
+            const upEdge = resolveGeneratedEdge(world, upper, lowerPosition);
+            const downEdge = resolveGeneratedEdge(world, lowerPosition, upper);
+            expect(!upEdge || !canTraverse(upper, lower, upEdge, {})).toBe(true);
+            expect(!downEdge || !canTraverse(lower, upper, downEdge, {})).toBe(true);
+            cliffBoundaries += 1;
+          }
+        }
+      }
+    }
+    expect(cliffBoundaries).toBeGreaterThan(0);
+  });
+
+  it('uses connected barrier features across the five review families', () => {
+    const features = new Set<string>();
+    for (const seed of [2026, 2027, 2028, 2029, 2030]) {
+      const world = generateGeneratedWorld(seed);
+      for (const row of world.cells) {
+        for (const cell of row) {
+          if (cell.zone === 'barrier' && cell.surface === 'water') {
+            features.add('river');
+            expect(
+              [{ x: 1, y: 0 }, { x: -1, y: 0 }, { x: 0, y: 1 }, { x: 0, y: -1 }].some(({ x, y }) =>
+                world.cells[cell.y + y]?.[cell.x + x]?.surface === 'water',
+              ),
+            ).toBe(true);
+          }
+          if (cell.zone === 'barrier' && cell.obstacle === 'forest') {
+            features.add('forest');
+            expect(
+              [{ x: 1, y: 0 }, { x: -1, y: 0 }, { x: 0, y: 1 }, { x: 0, y: -1 }].some(({ x, y }) =>
+                world.cells[cell.y + y]?.[cell.x + x]?.obstacle === 'forest',
+              ),
+            ).toBe(true);
+          }
+          if (cell.zone === 'barrier' && cell.obstacle === 'rock') {
+            features.add('rock');
+          }
+          if (cell.zone === 'barrier' && cell.walkable && cell.elevation > 0) {
+            features.add('highland');
+          }
+        }
+      }
+    }
+    expect([...features].sort()).toEqual(['forest', 'highland', 'river', 'rock']);
+  });
+
+  it('dresses the same world deterministically for identical seeds', () => {
+    const first = generateGeneratedWorld(2028);
+    const second = generateGeneratedWorld(2028);
+    expect(JSON.stringify(second)).toBe(JSON.stringify(first));
   });
 
   it('keeps the chosen family stable across finite candidate retries', () => {

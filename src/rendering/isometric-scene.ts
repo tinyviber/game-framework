@@ -56,6 +56,10 @@ export interface IsoCellView {
   readonly y: number;
   readonly elevation: number;
   readonly terrainType: string;
+  /** Authoritative ground material; terrainType remains a legacy alias. */
+  readonly surface?: string;
+  /** Blocking feature on top of the surface ('forest' | 'rock'); iso/ortho. */
+  readonly obstacle?: 'forest' | 'rock' | null;
   readonly biome: string;
   readonly environment: IsoEnvironmentView;
   readonly walkable: boolean;
@@ -116,6 +120,8 @@ export interface IsoDebugOverlay {
   readonly baselinePath?: readonly IsoPoint[];
   readonly finalPath?: readonly IsoPoint[];
   readonly disruptionFootprint?: readonly IsoPoint[];
+  /** Diagnostic-only: cross out non-walkable cells (debug=1). */
+  readonly showBlocked?: boolean;
   readonly diagnostics?: Readonly<Record<string, string | number | boolean>>;
 }
 
@@ -194,6 +200,8 @@ function colorForTerrain(
         return 0xbad4d3;
       case 'crystal':
         return 0x6f63a1;
+      case 'water':
+        return 0x2d5f7f;
       case 'cliff':
         return palette.edge;
       case 'grass':
@@ -216,13 +224,17 @@ function tintForCell(
   cell: IsoCellView,
   palette: IsoRoomView['palette'],
 ): number {
-  if (!cell.walkable) {
+  const surface = cell.surface ?? cell.terrainType;
+  if (surface === 'water') {
+    return colorForTerrain('water', cell.biome, cell.environment, palette);
+  }
+  if (!cell.walkable && !cell.obstacle) {
     return palette.edge;
   }
 
   return (cell.x + cell.y) % 3 === 0
     ? palette.groundAlt
-    : colorForTerrain(cell.terrainType, cell.biome, cell.environment, palette);
+    : colorForTerrain(surface, cell.biome, cell.environment, palette);
 }
 
 function diamond(
