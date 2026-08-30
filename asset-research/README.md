@@ -54,6 +54,9 @@ Preview generation is deliberately separate from atlas analysis:
 # Public-only hygiene check; safe in CI.
 bash asset-research/scripts/research-assets.sh verify
 
+# Clean-checkout, ImageMagick-free CC0 render used by CI.
+npm run assets:benchmark-cc0
+
 # Local-only operations; requires the manually downloaded Fawf/Loomy files.
 bash asset-research/scripts/research-assets.sh prepare --write-local
 bash asset-research/scripts/research-assets.sh preview --write-local
@@ -66,10 +69,34 @@ contact sheets. `analyze` reads the original atlas and retains native origin,
 spacing, grid alignment, transparent padding, and bounds; it never consumes a
 preview and never applies `-trim`, `-resize`, or `+repage` to analysis data.
 
+## Benchmark geometry
+
+The scene is schema 2 and uses only `g=ground`, `p=path`, and `w=water` in its
+terrain layer. Bridges, stairs, trees, walls, buildings, rocks, and decoration
+are placed objects; the bridge is represented exactly once as `bridge-river`
+over the water base.
+
+Each non-null source role mapping keeps gameplay and art geometry separate:
+
+```text
+sourceRect       native source pixels [x, y, width, height]
+logicalFootprint logical cells occupied by the object
+visualBounds     native pixels inside sourceRect
+anchor           native-pixel placement point relative to sourceRect
+overflow         intentional native-pixel visual overflow beyond the footprint
+```
+
+The renderer crops `sourceRect` at native size and places it at the logical
+origin minus `anchor`; it never resizes art to fit the logical footprint. This
+allows Loomy's 160×160 bridge sprite to have a 5×3 logical footprint plus 64px
+bottom overflow. Loomy remains 32px/cell and is not reduced to 16px.
+
 The benchmark uses one source-independent 16×16 logical scene. Output sizes
 are native: Fawf 256×256 at 16 px/cell, Loomy 512×512 at 32 px/cell, and Puny
 256×256 at 16 px/cell. Loomy is not reduced to 16 px. Outputs and the manifest
-are local-only.
+are local-only. The local full benchmark uses ImageMagick; the CI smoke lane
+uses only the tracked CC0 Puny PNG and Node built-ins, writes to a temporary
+directory, and checks a pinned canonical PNG hash.
 
 ## Validation
 

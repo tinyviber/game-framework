@@ -19,6 +19,7 @@ case "$command" in
     node "$script_dir/check-repo-hygiene.mjs" --self-test
     node "$script_dir/check-repo-hygiene.mjs"
     node "$script_dir/make-comparison-scenes.mjs" verify
+    node "$script_dir/render-cc0-smoke.mjs" --verify
     ;;
   prepare)
     [[ "${1:-}" == "--write-local" ]] || { echo "prepare requires --write-local" >&2; exit 2; }

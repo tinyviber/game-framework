@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 2,
   "width": 16,
   "height": 16,
   "terrain": [
@@ -10,9 +10,9 @@
     "ggppppgggggggggg",
     "ggppppgggggggggg",
     "gggggggggggggggg",
-    "wwwwwwwbbwwwwwww",
-    "wwwwwwwbbwwwwwww",
-    "wwwwwwwbbwwwwwww",
+    "wwwwwwwwwwwwwwww",
+    "wwwwwwwwwwwwwwww",
+    "wwwwwwwwwwwwwwww",
     "gggggggggggggggg",
     "gggggggggggggggg",
     "gggggggggggggggg",
@@ -23,8 +23,7 @@
   "legend": {
     "g": "ground",
     "p": "path",
-    "w": "water",
-    "b": "bridge"
+    "w": "water"
   },
   "objects": [
     { "id": "cliff-west", "role": "cliff", "x": 1, "y": 2, "width": 4, "height": 3, "layer": "terrain" },

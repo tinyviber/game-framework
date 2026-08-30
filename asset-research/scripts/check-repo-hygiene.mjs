@@ -75,8 +75,8 @@ function validateSources() {
   } catch (error) {
     fail(`cannot parse sources.json: ${error.message}`);
   }
-  if (!Array.isArray(manifest.sources) || manifest.schema !== 1) {
-    fail('sources.json must use schema 1 and contain sources[].');
+  if (!Array.isArray(manifest.sources) || manifest.schema !== 2) {
+    fail('sources.json must use schema 2 and contain sources[].');
   }
 
   for (const source of manifest.sources) {
@@ -86,6 +86,9 @@ function validateSources() {
       }
     }
     if (!/^[a-f0-9]{64}$/.test(source.sha256)) fail(`${source.id} has an invalid sha256.`);
+    if (source.ciRenderable === true && !/^[a-f0-9]{64}$/.test(source.benchmark?.ciExpectedOutputSha256 ?? '')) {
+      fail(`${source.id} has an invalid pinned CC0 benchmark hash.`);
+    }
     if (source.redistributable === true) {
       if (!source.input.startsWith('cc0/')) fail(`${source.id} is redistributable but not stored below cc0/.`);
       if (source.licenseClass !== 'CC0') fail(`${source.id} is redistributable without licenseClass CC0.`);

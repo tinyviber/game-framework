@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 2,
   "scene": "benchmark-scene-16x16.json",
   "sources": [
     {
@@ -13,28 +13,28 @@
       "redistributable": false,
       "attributionNotes": "Attribution is not stated as required; follow the source page terms.",
       "tileSize": 16,
+      "ciRenderable": false,
       "native": { "width": 304, "height": 320, "columns": 19, "rows": 20 },
       "input": "local/extracted/fawf-village/assets/village-palette01-day.png",
       "sha256": "0a97cbac7a51da56d74b801b9d8b5212eddbb580440d7510ebb960a5496a7d29",
       "benchmarkVariant": "palette01-day",
       "benchmark": {
-        "visualTileSize": 16,
         "output": "local/benchmarks/scene-16x16__fawf-village.png",
         "background": "#779b6d"
       },
       "roles": {
-        "terrain": { "rect": [48, 240, 16, 16] },
-        "path": { "rect": [16, 288, 16, 16] },
-        "water": { "rect": [272, 272, 16, 16] },
+        "terrain": { "sourceRect": [48, 240, 16, 16], "logicalFootprint": { "width": 1, "height": 1 }, "visualBounds": { "x": 0, "y": 0, "width": 16, "height": 16 }, "anchor": { "x": 0, "y": 0 }, "overflow": { "left": 0, "top": 0, "right": 0, "bottom": 0 } },
+        "path": { "sourceRect": [16, 288, 16, 16], "logicalFootprint": { "width": 1, "height": 1 }, "visualBounds": { "x": 0, "y": 0, "width": 16, "height": 16 }, "anchor": { "x": 0, "y": 0 }, "overflow": { "left": 0, "top": 0, "right": 0, "bottom": 0 } },
+        "water": { "sourceRect": [272, 272, 16, 16], "logicalFootprint": { "width": 1, "height": 1 }, "visualBounds": { "x": 0, "y": 0, "width": 16, "height": 16 }, "anchor": { "x": 0, "y": 0 }, "overflow": { "left": 0, "top": 0, "right": 0, "bottom": 0 } },
         "cliff": null,
         "stairs": null,
-        "wall": { "rect": [48, 176, 32, 32] },
-        "building": { "rect": [0, 112, 96, 96] },
+        "wall": { "sourceRect": [48, 176, 32, 32], "logicalFootprint": { "width": 3, "height": 3 }, "visualBounds": { "x": 0, "y": 0, "width": 32, "height": 32 }, "anchor": { "x": 0, "y": 0 }, "overflow": { "left": 0, "top": 0, "right": 0, "bottom": 0 } },
+        "building": { "sourceRect": [0, 112, 96, 96], "logicalFootprint": { "width": 6, "height": 6 }, "visualBounds": { "x": 0, "y": 0, "width": 96, "height": 96 }, "anchor": { "x": 0, "y": 0 }, "overflow": { "left": 0, "top": 0, "right": 0, "bottom": 0 } },
         "cave": null,
         "tree": null,
-        "movable-looking-object": { "rect": [0, 224, 32, 16] },
+        "movable-looking-object": { "sourceRect": [0, 224, 32, 16], "logicalFootprint": { "width": 3, "height": 2 }, "visualBounds": { "x": 0, "y": 0, "width": 32, "height": 16 }, "anchor": { "x": 0, "y": 0 }, "overflow": { "left": 0, "top": 0, "right": 0, "bottom": 0 } },
         "bridge": null,
-        "decoration": { "rect": [176, 224, 32, 16] },
+        "decoration": { "sourceRect": [176, 224, 32, 16], "logicalFootprint": { "width": 4, "height": 2 }, "visualBounds": { "x": 0, "y": 0, "width": 32, "height": 16 }, "anchor": { "x": 0, "y": 0 }, "overflow": { "left": 0, "top": 0, "right": 0, "bottom": 0 } },
         "character": null
       }
     },
@@ -49,28 +49,28 @@
       "redistributable": false,
       "attributionNotes": "Credit is not necessary but is appreciated; follow the source page terms.",
       "tileSize": 32,
+      "ciRenderable": false,
       "native": { "width": 800, "height": 800, "columns": 25, "rows": 25 },
       "input": "local/extracted/loomy-environment/Environment_assets.png",
       "sha256": "5f8516b29e886c3e28efaad35772328119e723cd9ca4d5c4cdc8a4acc9286d04",
       "benchmarkVariant": "single-sheet",
       "benchmark": {
-        "visualTileSize": 32,
         "output": "local/benchmarks/scene-16x16__loomy-environment__32px.png",
         "background": "#668b55"
       },
       "roles": {
-        "terrain": { "rect": [64, 64, 32, 32] },
-        "path": { "rect": [352, 128, 32, 32] },
-        "water": { "rect": [32, 256, 32, 32] },
-        "cliff": { "rect": [64, 160, 128, 96] },
-        "stairs": { "rect": [416, 128, 32, 96] },
-        "wall": { "rect": [512, 160, 96, 96] },
+        "terrain": { "sourceRect": [64, 64, 32, 32], "logicalFootprint": { "width": 1, "height": 1 }, "visualBounds": { "x": 0, "y": 0, "width": 32, "height": 32 }, "anchor": { "x": 0, "y": 0 }, "overflow": { "left": 0, "top": 0, "right": 0, "bottom": 0 } },
+        "path": { "sourceRect": [352, 128, 32, 32], "logicalFootprint": { "width": 1, "height": 1 }, "visualBounds": { "x": 0, "y": 0, "width": 32, "height": 32 }, "anchor": { "x": 0, "y": 0 }, "overflow": { "left": 0, "top": 0, "right": 0, "bottom": 0 } },
+        "water": { "sourceRect": [32, 256, 32, 32], "logicalFootprint": { "width": 1, "height": 1 }, "visualBounds": { "x": 0, "y": 0, "width": 32, "height": 32 }, "anchor": { "x": 0, "y": 0 }, "overflow": { "left": 0, "top": 0, "right": 0, "bottom": 0 } },
+        "cliff": { "sourceRect": [64, 160, 128, 96], "logicalFootprint": { "width": 4, "height": 3 }, "visualBounds": { "x": 0, "y": 0, "width": 128, "height": 96 }, "anchor": { "x": 0, "y": 0 }, "overflow": { "left": 0, "top": 0, "right": 0, "bottom": 0 } },
+        "stairs": { "sourceRect": [416, 128, 32, 96], "logicalFootprint": { "width": 1, "height": 3 }, "visualBounds": { "x": 0, "y": 0, "width": 32, "height": 96 }, "anchor": { "x": 0, "y": 0 }, "overflow": { "left": 0, "top": 0, "right": 0, "bottom": 0 } },
+        "wall": { "sourceRect": [512, 160, 96, 96], "logicalFootprint": { "width": 3, "height": 3 }, "visualBounds": { "x": 0, "y": 0, "width": 96, "height": 96 }, "anchor": { "x": 0, "y": 0 }, "overflow": { "left": 0, "top": 0, "right": 0, "bottom": 0 } },
         "building": null,
-        "cave": { "rect": [32, 576, 128, 128] },
-        "tree": { "rect": [288, 688, 64, 96] },
-        "movable-looking-object": { "rect": [240, 512, 96, 64] },
-        "bridge": { "rect": [512, 64, 160, 160] },
-        "decoration": { "rect": [320, 512, 128, 64] },
+        "cave": { "sourceRect": [32, 576, 128, 128], "logicalFootprint": { "width": 4, "height": 4 }, "visualBounds": { "x": 0, "y": 0, "width": 128, "height": 128 }, "anchor": { "x": 0, "y": 0 }, "overflow": { "left": 0, "top": 0, "right": 0, "bottom": 0 } },
+        "tree": { "sourceRect": [288, 688, 64, 96], "logicalFootprint": { "width": 2, "height": 3 }, "visualBounds": { "x": 0, "y": 0, "width": 64, "height": 96 }, "anchor": { "x": 0, "y": 0 }, "overflow": { "left": 0, "top": 0, "right": 0, "bottom": 0 } },
+        "movable-looking-object": { "sourceRect": [240, 512, 96, 64], "logicalFootprint": { "width": 3, "height": 2 }, "visualBounds": { "x": 0, "y": 0, "width": 96, "height": 64 }, "anchor": { "x": 0, "y": 0 }, "overflow": { "left": 0, "top": 0, "right": 0, "bottom": 0 } },
+        "bridge": { "sourceRect": [512, 64, 160, 160], "logicalFootprint": { "width": 5, "height": 3 }, "visualBounds": { "x": 0, "y": 0, "width": 160, "height": 160 }, "anchor": { "x": 0, "y": 0 }, "overflow": { "left": 0, "top": 0, "right": 0, "bottom": 64 } },
+        "decoration": { "sourceRect": [320, 512, 128, 64], "logicalFootprint": { "width": 4, "height": 2 }, "visualBounds": { "x": 0, "y": 0, "width": 128, "height": 64 }, "anchor": { "x": 0, "y": 0 }, "overflow": { "left": 0, "top": 0, "right": 0, "bottom": 0 } },
         "character": null
       }
     },
@@ -85,28 +85,29 @@
       "redistributable": true,
       "attributionNotes": "Attribution is not required; keeping the source notice is appreciated.",
       "tileSize": 16,
+      "ciRenderable": true,
       "native": { "width": 432, "height": 1040, "columns": 27, "rows": 65 },
       "input": "cc0/puny-world/punyworld-overworld-tileset.png",
       "sha256": "14d285bde8dee96cb0113947c8cce4922b86bf1d033b19123112145c7cef3a38",
       "benchmarkVariant": "single-sheet",
       "benchmark": {
-        "visualTileSize": 16,
         "output": "local/benchmarks/scene-16x16__puny-world.png",
+        "ciExpectedOutputSha256": "ce18f97c11cddeecdc1ae3e76b23908913f1edfdfd97b4bea053133172c6135b",
         "background": "#6ea05a"
       },
       "roles": {
-        "terrain": { "rect": [0, 0, 16, 16] },
-        "path": { "rect": [16, 0, 16, 16] },
-        "water": { "rect": [160, 192, 16, 16] },
-        "cliff": { "rect": [0, 64, 64, 64] },
-        "stairs": { "rect": [96, 64, 16, 16] },
-        "wall": { "rect": [160, 448, 64, 64] },
-        "building": { "rect": [144, 448, 64, 64] },
+        "terrain": { "sourceRect": [0, 0, 16, 16], "logicalFootprint": { "width": 1, "height": 1 }, "visualBounds": { "x": 0, "y": 0, "width": 16, "height": 16 }, "anchor": { "x": 0, "y": 0 }, "overflow": { "left": 0, "top": 0, "right": 0, "bottom": 0 } },
+        "path": { "sourceRect": [16, 0, 16, 16], "logicalFootprint": { "width": 1, "height": 1 }, "visualBounds": { "x": 0, "y": 0, "width": 16, "height": 16 }, "anchor": { "x": 0, "y": 0 }, "overflow": { "left": 0, "top": 0, "right": 0, "bottom": 0 } },
+        "water": { "sourceRect": [160, 192, 16, 16], "logicalFootprint": { "width": 1, "height": 1 }, "visualBounds": { "x": 0, "y": 0, "width": 16, "height": 16 }, "anchor": { "x": 0, "y": 0 }, "overflow": { "left": 0, "top": 0, "right": 0, "bottom": 0 } },
+        "cliff": { "sourceRect": [0, 64, 64, 64], "logicalFootprint": { "width": 4, "height": 3 }, "visualBounds": { "x": 0, "y": 0, "width": 64, "height": 64 }, "anchor": { "x": 0, "y": 0 }, "overflow": { "left": 0, "top": 0, "right": 0, "bottom": 16 } },
+        "stairs": { "sourceRect": [96, 64, 16, 16], "logicalFootprint": { "width": 1, "height": 3 }, "visualBounds": { "x": 0, "y": 0, "width": 16, "height": 16 }, "anchor": { "x": 0, "y": 0 }, "overflow": { "left": 0, "top": 0, "right": 0, "bottom": 0 } },
+        "wall": { "sourceRect": [160, 448, 64, 64], "logicalFootprint": { "width": 3, "height": 3 }, "visualBounds": { "x": 0, "y": 0, "width": 64, "height": 64 }, "anchor": { "x": 0, "y": 0 }, "overflow": { "left": 0, "top": 0, "right": 16, "bottom": 16 } },
+        "building": { "sourceRect": [144, 448, 64, 64], "logicalFootprint": { "width": 6, "height": 6 }, "visualBounds": { "x": 0, "y": 0, "width": 64, "height": 64 }, "anchor": { "x": 0, "y": 0 }, "overflow": { "left": 0, "top": 0, "right": 0, "bottom": 0 } },
         "cave": null,
-        "tree": { "rect": [0, 144, 32, 48] },
-        "movable-looking-object": { "rect": [16, 448, 16, 16] },
+        "tree": { "sourceRect": [0, 144, 32, 48], "logicalFootprint": { "width": 2, "height": 3 }, "visualBounds": { "x": 0, "y": 0, "width": 32, "height": 48 }, "anchor": { "x": 0, "y": 0 }, "overflow": { "left": 0, "top": 0, "right": 0, "bottom": 0 } },
+        "movable-looking-object": { "sourceRect": [16, 448, 16, 16], "logicalFootprint": { "width": 3, "height": 2 }, "visualBounds": { "x": 0, "y": 0, "width": 16, "height": 16 }, "anchor": { "x": 0, "y": 0 }, "overflow": { "left": 0, "top": 0, "right": 0, "bottom": 0 } },
         "bridge": null,
-        "decoration": { "rect": [0, 448, 16, 16] },
+        "decoration": { "sourceRect": [0, 448, 16, 16], "logicalFootprint": { "width": 4, "height": 2 }, "visualBounds": { "x": 0, "y": 0, "width": 16, "height": 16 }, "anchor": { "x": 0, "y": 0 }, "overflow": { "left": 0, "top": 0, "right": 0, "bottom": 0 } },
         "character": null
       }
     },
@@ -124,6 +125,7 @@
       "native": { "width": 640, "height": 288, "columns": 20, "rows": 9 },
       "input": "cc0/alternatives/outdoor-32x32/sheet.png",
       "sha256": "831785af95da3da0093c0c06a6c1df69c1f4e20be6681234b631e8ede70ba728",
+      "ciRenderable": false,
       "roles": {}
     },
     {
@@ -140,6 +142,7 @@
       "native": { "width": 96, "height": 112, "columns": 6, "rows": 7 },
       "input": "cc0/alternatives/overworld-16x16/tilemap.png",
       "sha256": "367b10e6cb612acf6a0788e17dbdff087a004d4949b1e1ca752af781f1bd5fc9",
+      "ciRenderable": false,
       "roles": {}
     }
   ]
