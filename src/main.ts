@@ -70,15 +70,10 @@ canvasRoot.className = 'canvas-root';
 
 const sidePanel = document.createElement('aside');
 sidePanel.className = 'side-panel';
-sidePanel.innerHTML = `
-  <div class="panel-section location-section">
-    <p class="section-label">GENERATED WORLD</p>
-    <h2 id="room-title">Generated Field</h2>
-    <p id="room-description" class="room-description"></p>
-    <p id="room-status" class="room-status"></p>
-  </div>
+const debugMapMarkup = DEBUG_MODE
+  ? `
   <div class="panel-section map-section">
-    <div class="section-row"><p class="section-label">40 × 40 FIELD</p><span id="seed-tag" class="grid-tag">SEED 2026</span></div>
+    <div class="section-row"><p class="section-label">40 × 40 FIELD</p><span id="seed-tag" class="grid-tag">SEED ${readSeed()}</span></div>
     <div id="minimap" class="minimap" aria-label="generated terrain overview"></div>
   </div>
   <div class="panel-section legend-section">
@@ -86,7 +81,16 @@ sidePanel.innerHTML = `
     <div class="legend-line"><span class="legend-dot start-dot"></span><span>start</span></div>
     <div class="legend-line"><span class="legend-dot goal-dot"></span><span>goal</span></div>
     <div class="legend-line"><span class="legend-dot high-dot"></span><span>raised terrain</span></div>
+  </div>`
+  : '';
+sidePanel.innerHTML = `
+  <div class="panel-section location-section">
+    <p class="section-label">GENERATED WORLD</p>
+    <h2 id="room-title">Generated Field</h2>
+    <p id="room-description" class="room-description"></p>
+    <p id="room-status" class="room-status"></p>
   </div>
+  ${debugMapMarkup}
 `;
 
 const controls = document.createElement('footer');
@@ -107,10 +111,10 @@ const title = header.querySelector<HTMLHeadingElement>('h1')!;
 const roomTitle = sidePanel.querySelector<HTMLHeadingElement>('#room-title')!;
 const roomDescription = sidePanel.querySelector<HTMLParagraphElement>('#room-description')!;
 const roomStatus = sidePanel.querySelector<HTMLParagraphElement>('#room-status')!;
-const seedTag = sidePanel.querySelector<HTMLSpanElement>('#seed-tag')!;
-const minimap = sidePanel.querySelector<HTMLDivElement>('#minimap')!;
+const seedTag = sidePanel.querySelector<HTMLSpanElement>('#seed-tag');
+const minimap = sidePanel.querySelector<HTMLDivElement>('#minimap');
 
-if (!title || !roomTitle || !roomDescription || !roomStatus || !seedTag || !minimap) {
+if (!title || !roomTitle || !roomDescription || !roomStatus) {
   throw new Error('Generated playground UI failed to initialize');
 }
 
@@ -214,6 +218,9 @@ function buildView(): IsoSceneView {
 }
 
 function renderMinimap(): void {
+  if (!DEBUG_MODE || !minimap) {
+    return;
+  }
   minimap.replaceChildren();
   const map = projectGeneratedMinimap({
     cells: world.cells,
@@ -255,7 +262,9 @@ function render(): void {
   roomStatus.textContent = reached
     ? 'GOAL REACHED'
     : `POSITION ${position.x},${position.y}`;
-  seedTag.textContent = `SEED ${world.seed}`;
+  if (seedTag) {
+    seedTag.textContent = `SEED ${world.seed}`;
+  }
   statusText.textContent = feedback ?? (reached ? 'GOAL REACHED' : `POSITION ${position.x},${position.y}`);
   renderer.render(buildView());
 }
@@ -286,25 +295,32 @@ function inspectTerrain(): void {
     ['left', { x: -1, y: 0 }],
     ['right', { x: 1, y: 0 }],
   ];
-  const traversableDirections = directions
-    .filter(([, delta]) => {
-      const target = { x: position.x + delta.x, y: position.y + delta.y };
-      const targetCell = generatedCellAt(world, target);
-      const edge = resolveGeneratedEdge(world, position, target);
-      return Boolean(targetCell && edge && canTraverse(cell, targetCell, edge, {}));
-    })
-    .map(([direction]) => direction);
-  feedback = formatGeneratedInspection({
+  const facts = {
     x: position.x,
     y: position.y,
     terrainType: cell.terrainType,
-    regionId: cell.regionId,
     biome: region?.biome ?? 'unknown',
     weather: region?.environment?.weather ?? world.environment.weather,
     lighting: region?.environment?.lighting ?? world.environment.lighting,
     elevation: cell.elevation,
-    traversableDirections,
-  });
+  };
+  if (DEBUG_MODE) {
+    const traversableDirections = directions
+      .filter(([, delta]) => {
+        const target = { x: position.x + delta.x, y: position.y + delta.y };
+        const targetCell = generatedCellAt(world, target);
+        const edge = resolveGeneratedEdge(world, position, target);
+        return Boolean(targetCell && edge && canTraverse(cell, targetCell, edge, {}));
+      })
+      .map(([direction]) => direction);
+    feedback = formatGeneratedInspection({
+      ...facts,
+      regionId: cell.regionId,
+      traversableDirections,
+    }, true);
+  } else {
+    feedback = formatGeneratedInspection(facts, false);
+  }
   render();
 }
 
