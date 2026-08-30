@@ -18,7 +18,16 @@ export const EXIT_DIRECTIONS: readonly ExitDirection[] = [
   'right',
 ];
 
+/**
+ * A single room exit. `at` is the trigger cell in THIS room's tile
+ * space; `spawn` is the entry cell in the TARGET room's tile space.
+ * Triggers are explicit cells, so a room may declare any number of
+ * exits per side — plus interior staircases or portals — without the
+ * spatial graph being locked to one exit per cardinal direction.
+ */
 export interface ExitDefinition {
+  readonly id: string;
+  readonly at: Position;
   readonly room: string;
   readonly spawn: Position;
 }
@@ -71,9 +80,7 @@ export interface TileRoom {
   /** Row-major: tiles[y][x]. */
   readonly tiles: readonly (readonly TileValue[])[];
   readonly spawn: Position;
-  readonly exits: Readonly<
-    Partial<Record<ExitDirection, ExitDefinition>>
-  >;
+  readonly exits: readonly ExitDefinition[];
   readonly doors: readonly DoorDefinition[];
   readonly pressurePlates: readonly PressurePlateDefinition[];
   readonly levers: readonly LeverDefinition[];
@@ -87,6 +94,26 @@ export class TileRoomParseError extends Error {
     this.name = 'TileRoomParseError';
   }
 }
+
+const ROOT_KEYS = [
+  'id',
+  'tiles',
+  'spawn',
+  'exits',
+  'doors',
+  'pressurePlates',
+  'levers',
+  'blocks',
+  'chests',
+] as const;
+
+const EXIT_KEYS = ['id', 'at', 'room', 'spawn'] as const;
+const DOOR_KEYS = ['id', 'pos', 'lockedBy'] as const;
+const PLATE_KEYS = ['id', 'pos', 'doors'] as const;
+const LEVER_KEYS = ['id', 'pos', 'doors'] as const;
+const BLOCK_KEYS = ['id', 'pos', 'target', 'onTarget'] as const;
+const ON_TARGET_KEYS = ['setFlag', 'openDoors'] as const;
+const CHEST_KEYS = ['id', 'pos', 'setFlag'] as const;
 
 interface RawPosition {
   x: unknown;
@@ -107,6 +134,25 @@ function isTile(
   value: unknown,
 ): value is TileValue {
   return value === 0 || value === 1;
+}
+
+/**
+ * Typos in room JSON (a misspelled key, a copied object) must fail
+ * at parse time, not produce a world that parses but cannot be
+ * played. Every object rejects keys outside its schema.
+ */
+function rejectUnknownKeys(
+  value: Record<string, unknown>,
+  allowed: readonly string[],
+  detail: string,
+): void {
+  for (const key of Object.keys(value)) {
+    if (!allowed.includes(key)) {
+      throw new TileRoomParseError(
+        `${detail} has unknown key "${key}" (allowed: ${allowed.join(', ')})`,
+      );
+    }
+  }
 }
 
 function parsePosition(
@@ -163,7 +209,14 @@ function parseTiles(
     throw new TileRoomParseError('tiles must be a non-empty 2D array');
   }
 
-  const width = (value[0] as unknown[]).length;
+  if (!Array.isArray(value[0])) {
+    // The first row decides the room width; anything that is not an
+    // array (null, a number, an object) is a malformed document and
+    // must surface as a parse error, never as a raw TypeError.
+    throw new TileRoomParseError('tiles must be a non-empty 2D array');
+  }
+
+  const width = value[0].length;
 
   if (width === 0) {
     throw new TileRoomParseError('tile rows must not be empty');
@@ -184,39 +237,29 @@ function parseTiles(
   });
 }
 
-function parseExits(
-  value: unknown,
-): Readonly<Partial<Record<ExitDirection, ExitDefinition>>> {
+function parseExits(value: unknown): readonly ExitDefinition[] {
   if (value === undefined) {
-    return {};
+    return [];
   }
 
-  if (!isPlainObject(value)) {
-    throw new TileRoomParseError('exits must be an object');
+  if (!Array.isArray(value)) {
+    throw new TileRoomParseError('exits must be an array of exit objects');
   }
 
-  const exits: Partial<Record<ExitDirection, ExitDefinition>> = {};
-
-  for (const direction of EXIT_DIRECTIONS) {
-    const raw = value[direction];
-
-    if (raw === undefined) {
-      continue;
-    }
-
+  return value.map((raw, index) => {
     if (!isPlainObject(raw)) {
-      throw new TileRoomParseError(
-        `exit "${direction}" must be an object`,
-      );
+      throw new TileRoomParseError(`exits[${index}] must be an object`);
     }
 
-    exits[direction] = deepFreeze({
-      room: parseStringId(raw.room, `exit "${direction}"`),
-      spawn: parsePosition(raw.spawn, `exit "${direction}" spawn`),
-    });
-  }
+    rejectUnknownKeys(raw, EXIT_KEYS, `exits[${index}]`);
 
-  return exits;
+    return deepFreeze({
+      id: parseStringId(raw.id, `exits[${index}] id`),
+      at: parsePosition(raw.at, `exits[${index}] at`),
+      room: parseStringId(raw.room, `exits[${index}] room`),
+      spawn: parsePosition(raw.spawn, `exits[${index}] spawn`),
+    });
+  });
 }
 
 function parseDoors(value: unknown): readonly DoorDefinition[] {
@@ -232,6 +275,8 @@ function parseDoors(value: unknown): readonly DoorDefinition[] {
     if (!isPlainObject(raw)) {
       throw new TileRoomParseError(`doors[${index}] must be an object`);
     }
+
+    rejectUnknownKeys(raw, DOOR_KEYS, `doors[${index}]`);
 
     return deepFreeze({
       id: parseStringId(raw.id, `doors[${index}]`),
@@ -266,6 +311,8 @@ function parsePressurePlates(
       );
     }
 
+    rejectUnknownKeys(raw, PLATE_KEYS, `pressurePlates[${index}]`);
+
     return deepFreeze({
       id: parseStringId(raw.id, `pressurePlates[${index}]`),
       pos: parsePosition(raw.pos, `pressurePlates[${index}] pos`),
@@ -291,10 +338,15 @@ function parseLevers(value: unknown): readonly LeverDefinition[] {
       throw new TileRoomParseError(`levers[${index}] must be an object`);
     }
 
+    rejectUnknownKeys(raw, LEVER_KEYS, `levers[${index}]`);
+
     return deepFreeze({
       id: parseStringId(raw.id, `levers[${index}]`),
       pos: parsePosition(raw.pos, `levers[${index}] pos`),
-      doors: parseStringList(raw.doors, `levers[${index}] doors`),
+      doors: parseStringList(
+        raw.doors,
+        `levers[${index}] doors`,
+      ),
     });
   });
 }
@@ -313,25 +365,43 @@ function parseBlocks(value: unknown): readonly BlockDefinition[] {
       throw new TileRoomParseError(`blocks[${index}] must be an object`);
     }
 
+    rejectUnknownKeys(raw, BLOCK_KEYS, `blocks[${index}]`);
+
+    if (raw.onTarget !== undefined && !isPlainObject(raw.onTarget)) {
+      throw new TileRoomParseError(
+        `blocks[${index}] onTarget must be an object`,
+      );
+    }
+
     const onTarget = isPlainObject(raw.onTarget)
-      ? deepFreeze({
-          ...(raw.onTarget.setFlag === undefined
-            ? {}
-            : {
-                setFlag: parseStringId(
-                  raw.onTarget.setFlag,
-                  `blocks[${index}] onTarget.setFlag`,
-                ),
-              }),
-          ...(raw.onTarget.openDoors === undefined
-            ? {}
-            : {
-                openDoors: parseStringList(
-                  raw.onTarget.openDoors,
-                  `blocks[${index}] onTarget.openDoors`,
-                ),
-              }),
-        })
+      ? ((): BlockOnTargetEffect => {
+          rejectUnknownKeys(
+            raw.onTarget as Record<string, unknown>,
+            ON_TARGET_KEYS,
+            `blocks[${index}] onTarget`,
+          );
+
+          return deepFreeze({
+            ...((raw.onTarget as Record<string, unknown>).setFlag ===
+            undefined
+              ? {}
+              : {
+                  setFlag: parseStringId(
+                    (raw.onTarget as Record<string, unknown>).setFlag,
+                    `blocks[${index}] onTarget.setFlag`,
+                  ),
+                }),
+            ...((raw.onTarget as Record<string, unknown>).openDoors ===
+            undefined
+              ? {}
+              : {
+                  openDoors: parseStringList(
+                    (raw.onTarget as Record<string, unknown>).openDoors,
+                    `blocks[${index}] onTarget.openDoors`,
+                  ),
+                }),
+          });
+        })()
       : undefined;
 
     return deepFreeze({
@@ -359,6 +429,8 @@ function parseChests(value: unknown): readonly ChestDefinition[] {
       throw new TileRoomParseError(`chests[${index}] must be an object`);
     }
 
+    rejectUnknownKeys(raw, CHEST_KEYS, `chests[${index}]`);
+
     return deepFreeze({
       id: parseStringId(raw.id, `chests[${index}]`),
       pos: parsePosition(raw.pos, `chests[${index}] pos`),
@@ -385,14 +457,83 @@ function assertInsideRoom(
   }
 }
 
+function assertOnFloor(
+  room: TileRoom,
+  position: Position,
+  detail: string,
+): void {
+  if (isWallAt(room, position.x, position.y)) {
+    throw new TileRoomParseError(`${detail} must be on a floor tile`);
+  }
+}
+
+function samePosition(a: Position, b: Position): boolean {
+  return a.x === b.x && a.y === b.y;
+}
+
+function positionKey(position: Position): string {
+  return `${position.x},${position.y}`;
+}
+
+function claimId(
+  claimed: Map<string, string>,
+  id: string,
+  owner: string,
+): void {
+  const existing = claimed.get(id);
+
+  if (existing) {
+    throw new TileRoomParseError(
+      `duplicate id "${id}" is used by ${existing} and ${owner}`,
+    );
+  }
+
+  claimed.set(id, owner);
+}
+
+function claimCell(
+  cells: Map<string, string>,
+  position: Position,
+  owner: string,
+): void {
+  const key = positionKey(position);
+  const existing = cells.get(key);
+
+  if (existing) {
+    throw new TileRoomParseError(
+      `${owner} at (${key}) overlaps ${existing}`,
+    );
+  }
+
+  cells.set(key, owner);
+}
+
+function assertDoorExists(
+  doorIds: ReadonlySet<string>,
+  doorId: string,
+  owner: string,
+): void {
+  if (!doorIds.has(doorId)) {
+    throw new TileRoomParseError(
+      `${owner} references unknown door "${doorId}"`,
+    );
+  }
+}
+
 /**
  * Parses and validates a room JSON document into a frozen TileRoom.
  * Throws TileRoomParseError with a precise detail on any violation.
+ * Room JSON is the level-authoring boundary: unknown keys, duplicate
+ * ids, dangling door references, objects on wall tiles, overlapping
+ * definitions and exit triggers that cannot be stood on all fail
+ * here, at load time, instead of producing an unplayable world.
  */
 export function parseTileRoom(json: unknown): TileRoom {
   if (!isPlainObject(json)) {
     throw new TileRoomParseError('root must be an object');
   }
+
+  rejectUnknownKeys(json, ROOT_KEYS, 'root');
 
   const tiles = parseTiles(json.tiles);
   const spawn = parsePosition(json.spawn, 'spawn');
@@ -423,33 +564,146 @@ export function parseTileRoom(json: unknown): TileRoom {
     throw new TileRoomParseError('spawn must be on a floor tile');
   }
 
+  // ── Authoring-boundary validation ────────────────────────────
+  // Ids are unique across every entity category (plus exits); every
+  // object sits on a floor tile at a position it does not share
+  // with another object.
+  const claimedIds = new Map<string, string>();
+  const entityCells = new Map<string, string>();
+  const plateCells = new Set<string>();
+  const doorIds = new Set<string>();
+
   for (const door of room.doors) {
+    claimId(claimedIds, door.id, `door "${door.id}"`);
+    doorIds.add(door.id);
     assertInsideRoom(room, door.pos, `door "${door.id}"`);
+    assertOnFloor(room, door.pos, `door "${door.id}"`);
+    claimCell(entityCells, door.pos, `door "${door.id}"`);
   }
 
   for (const plate of room.pressurePlates) {
+    claimId(claimedIds, plate.id, `plate "${plate.id}"`);
+
+    for (const doorId of plate.doors) {
+      assertDoorExists(doorIds, doorId, `plate "${plate.id}"`);
+    }
+
     assertInsideRoom(room, plate.pos, `plate "${plate.id}"`);
+    assertOnFloor(room, plate.pos, `plate "${plate.id}"`);
+    plateCells.add(positionKey(plate.pos));
+    claimCell(entityCells, plate.pos, `plate "${plate.id}"`);
   }
 
   for (const lever of room.levers) {
-    assertInsideRoom(room, lever.pos, `lever "${lever.id}"`);
-  }
+    claimId(claimedIds, lever.id, `lever "${lever.id}"`);
 
-  for (const block of room.blocks) {
-    assertInsideRoom(room, block.pos, `block "${block.id}"`);
-
-    if (block.target) {
-      assertInsideRoom(room, block.target, `block "${block.id}" target`);
+    for (const doorId of lever.doors) {
+      assertDoorExists(doorIds, doorId, `lever "${lever.id}"`);
     }
+
+    assertInsideRoom(room, lever.pos, `lever "${lever.id}"`);
+    assertOnFloor(room, lever.pos, `lever "${lever.id}"`);
+    claimCell(entityCells, lever.pos, `lever "${lever.id}"`);
   }
 
   for (const chest of room.chests) {
+    claimId(claimedIds, chest.id, `chest "${chest.id}"`);
     assertInsideRoom(room, chest.pos, `chest "${chest.id}"`);
+    assertOnFloor(room, chest.pos, `chest "${chest.id}"`);
+    claimCell(entityCells, chest.pos, `chest "${chest.id}"`);
+  }
+
+  for (const block of room.blocks) {
+    claimId(claimedIds, block.id, `block "${block.id}"`);
+
+    for (const doorId of block.onTarget?.openDoors ?? []) {
+      assertDoorExists(doorIds, doorId, `block "${block.id}" onTarget`);
+    }
+
+    assertInsideRoom(room, block.pos, `block "${block.id}"`);
+    assertOnFloor(room, block.pos, `block "${block.id}"`);
+    claimCell(entityCells, block.pos, `block "${block.id}"`);
+  }
+
+  // Block targets must be reachable floor. A target may sit on a
+  // pressure plate (the classic plate+target combo) but never on a
+  // door, lever, chest, block start or another block's target.
+  const targetCells = new Map<string, string>();
+
+  for (const block of room.blocks) {
+    if (!block.target) {
+      continue;
+    }
+
+    assertInsideRoom(room, block.target, `block "${block.id}" target`);
+    assertOnFloor(room, block.target, `block "${block.id}" target`);
+
+    const key = positionKey(block.target);
+    const occupant = entityCells.get(key);
+
+    if (occupant && !plateCells.has(key)) {
+      throw new TileRoomParseError(
+        `block "${block.id}" target (${key}) overlaps ${occupant}`,
+      );
+    }
+
+    const otherTarget = targetCells.get(key);
+
+    if (otherTarget) {
+      throw new TileRoomParseError(
+        `block "${block.id}" target (${key}) overlaps ${otherTarget}`,
+      );
+    }
+
+    targetCells.set(key, `block "${block.id}" target`);
+  }
+
+  // The player may stand on plates, levers and chests (the cellar
+  // lever and vault chest rely on it) but must not start inside a
+  // door or a block.
+  for (const door of room.doors) {
+    if (samePosition(door.pos, room.spawn)) {
+      throw new TileRoomParseError('spawn must not be on a door');
+    }
+  }
+
+  for (const block of room.blocks) {
+    if (samePosition(block.pos, room.spawn)) {
+      throw new TileRoomParseError('spawn must not be on a block');
+    }
+  }
+
+  // Exit triggers must be standable floor cells, unique per exit,
+  // and distinct from the spawn (entering a room must not place the
+  // player directly on a transition trigger).
+  const exitCells = new Map<string, string>();
+
+  for (const exit of room.exits) {
+    claimId(claimedIds, exit.id, `exit "${exit.id}"`);
+    assertInsideRoom(room, exit.at, `exit "${exit.id}" at`);
+    assertOnFloor(room, exit.at, `exit "${exit.id}" at`);
+
+    const key = positionKey(exit.at);
+    const other = exitCells.get(key);
+
+    if (other) {
+      throw new TileRoomParseError(
+        `exit "${exit.id}" trigger (${key}) is already used by ${other}`,
+      );
+    }
+
+    exitCells.set(key, `exit "${exit.id}"`);
+
+    if (samePosition(exit.at, room.spawn)) {
+      throw new TileRoomParseError(
+        `spawn is on exit "${exit.id}" trigger cell`,
+      );
+    }
   }
 
   // Exit spawns live in the TARGET room's coordinate space, so they
-  // are validated at transition time (see resolveTileExit), not here.
-
+  // are validated by validateTileRoomCatalog (which sees the whole
+  // catalog), not here.
   return room;
 }
 

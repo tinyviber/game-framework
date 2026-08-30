@@ -1,62 +1,34 @@
 import './style.css';
-import room01Json from '@/data/rooms/room_01.json';
-import room02Json from '@/data/rooms/room_02.json';
-import room03Json from '@/data/rooms/room_03.json';
-import hubJson from '@/data/rooms/hub.json';
-import vaultJson from '@/data/rooms/vault.json';
-import cellarJson from '@/data/rooms/cellar.json';
-import dialogueJson from '@/data/dialogue.json';
-import { parseTileRoom, type TileRoom } from '@/world/tilemap';
 import {
-  applyExternalFlag,
-  applyTileOperation,
-  createTileRoomState,
-  extractCarriedState,
-  type CarriedState,
-  type TileEvent,
-  type TileGameState,
-} from '@/world/tile-world';
+  generatedCellAt,
+  generateGeneratedWorld,
+  resolveGeneratedEdge,
+  type GeneratedWorld,
+} from '@/world/generated-world';
+import { canTraverse } from '@/world/traversal';
 import {
-  createDefaultFlagStore,
-  getUserFlags,
-  loadCarried,
-  persistCarried,
-  type FlagStore,
-} from '@/world/flags';
-import { createEventBus } from '@/world/event-bus';
+  createGeneratedPlayground,
+  generatedGoalReached,
+  moveGeneratedPlayer,
+  playerPosition,
+  type GeneratedDirection,
+  type GeneratedPlayground,
+} from '@/chapters/chapter-13/generated-playground';
 import {
-  resolveTileExit,
-  type TileRoomCatalog,
-} from '@/world/tile-transition';
-import {
-  tileCenterToPixels,
-  updateCamera,
-  type CameraState,
-} from '@/world/camera';
-import { createFadeOverlay } from '@/rendering/fade';
+  createIsometricScene,
+  projectIsoCell,
+  type IsoRoomView,
+  type IsoSceneView,
+  loadMarkTextures,
+  type MarkTextureSet,
+} from '@/rendering/isometric-scene';
 import { createPixiHost } from '@/rendering/pixi-host';
+import { projectGeneratedMinimap } from '@/generated-minimap';
 import {
-  createTileSceneRenderer,
-  TILE_SIZE,
-  TILE_VIEWPORT,
-  type TileSceneView,
-} from '@/rendering/tile-scene';
-import {
-  loadTileTextures,
-  setNearestFilter,
-  type TileTextureSet,
-} from '@/rendering/tile-textures';
-
-declare global {
-  interface Window {
-    /**
-     * Console debug command (Phase 3 DoD):
-     *   setFlag('cellar-key', true) → opens lockedBy doors instantly.
-     */
-    setFlag(key: string, value: boolean): void;
-    getFlags(): Readonly<Record<string, boolean>>;
-  }
-}
+  formatBlockedMovement,
+  formatGeneratedInspection,
+  isGeneratedDebugMode,
+} from '@/generated-playground-ui';
 
 const root = document.querySelector<HTMLDivElement>('#app');
 
@@ -64,390 +36,369 @@ if (!root) {
   throw new Error('Missing #app');
 }
 
-const status = document.createElement('p');
+const DEFAULT_SEED = 2026;
+const DEBUG_MODE = isGeneratedDebugMode(window.location.search);
+
+function readSeed(): number {
+  const value = new URLSearchParams(window.location.search).get('seed');
+  const parsed = value === null ? DEFAULT_SEED : Number(value);
+  return Number.isInteger(parsed) && Number.isFinite(parsed)
+    ? parsed
+    : DEFAULT_SEED;
+}
+
+const shell = document.createElement('main');
+shell.className = 'adventure-shell';
+
+const header = document.createElement('header');
+header.className = 'game-header';
+header.innerHTML = `
+  <div class="brand-lockup">
+    <span class="brand-mark">✦</span>
+    <div>
+      <p class="eyebrow">SEED → GEOGRAPHY → PLAY</p>
+      <h1>地形实验场 <span>· Generated Playground</span></h1>
+    </div>
+  </div>
+  <span class="world-mode-label">${DEBUG_MODE ? 'DEBUG VIEW' : 'FIELD STUDY'}</span>
+`;
+
+const stage = document.createElement('section');
+stage.className = 'stage-shell';
 const canvasRoot = document.createElement('div');
-const hint = document.createElement('p');
-const dialogue = document.createElement('div');
+canvasRoot.className = 'canvas-root';
 
-status.id = 'game-status';
-hint.id = 'game-hint';
-dialogue.id = 'dialogue';
-dialogue.hidden = true;
-hint.textContent = 'WASD / 方向键 移动 · E 互动 · Z 对话';
-root.replaceChildren(status, canvasRoot, hint, dialogue);
+const sidePanel = document.createElement('aside');
+sidePanel.className = 'side-panel';
+const debugMapMarkup = DEBUG_MODE
+  ? `
+  <div class="panel-section map-section">
+    <div class="section-row"><p class="section-label">40 × 40 FIELD</p><span id="seed-tag" class="grid-tag">SEED ${readSeed()}</span></div>
+    <div id="minimap" class="minimap" aria-label="generated terrain overview"></div>
+  </div>
+  <div class="panel-section legend-section">
+    <p class="section-label">FIELD NOTES</p>
+    <div class="legend-line"><span class="legend-dot start-dot"></span><span>start</span></div>
+    <div class="legend-line"><span class="legend-dot goal-dot"></span><span>goal</span></div>
+    <div class="legend-line"><span class="legend-dot high-dot"></span><span>raised terrain</span></div>
+  </div>`
+  : '';
+sidePanel.innerHTML = `
+  <div class="panel-section location-section">
+    <p class="section-label">GENERATED WORLD</p>
+    <h2 id="room-title">Generated Field</h2>
+    <p id="room-description" class="room-description"></p>
+    <p id="room-status" class="room-status"></p>
+  </div>
+  ${debugMapMarkup}
+`;
 
-/** Room catalog: every JSON document under src/data/rooms. */
-const rooms: TileRoomCatalog = {
-  room_01: parseTileRoom(room01Json),
-  room_02: parseTileRoom(room02Json),
-  room_03: parseTileRoom(room03Json),
-  hub: parseTileRoom(hubJson),
-  vault: parseTileRoom(vaultJson),
-  cellar: parseTileRoom(cellarJson),
-};
+const controls = document.createElement('footer');
+controls.className = 'controls-bar';
+controls.innerHTML = `
+  <span><kbd>W A S D</kbd> / <kbd>← ↑ ↓ →</kbd> move</span>
+  <span><kbd>E</kbd> inspect terrain</span>
+  <span><kbd>R</kbd> reset</span>
+  <span><kbd>N</kbd> new seed</span>
+  <span><kbd>[ ]</kbd> zoom</span>
+`;
 
-const flagStore: FlagStore = createDefaultFlagStore();
+stage.append(canvasRoot, sidePanel);
+shell.append(header, stage, controls);
+root.replaceChildren(shell);
 
-let carried: CarriedState = loadCarried(flagStore);
-let currentRoom: TileRoom = rooms['room_01']!;
-let state: TileGameState = createTileRoomState(
-  currentRoom,
-  currentRoom.spawn,
-  carried,
-);
-let camera: CameraState = { x: 0, y: 0 };
+const title = header.querySelector<HTMLHeadingElement>('h1')!;
+const roomTitle = sidePanel.querySelector<HTMLHeadingElement>('#room-title')!;
+const roomDescription = sidePanel.querySelector<HTMLParagraphElement>('#room-description')!;
+const roomStatus = sidePanel.querySelector<HTMLParagraphElement>('#room-status')!;
+const seedTag = sidePanel.querySelector<HTMLSpanElement>('#seed-tag');
+const minimap = sidePanel.querySelector<HTMLDivElement>('#minimap');
 
-const bus = createEventBus<TileEvent>();
-
-/**
- * ── Dialogue box (Phase 5 placeholder) ─────────────────────────
- * Pure DOM text box: Z opens (page 1), pages through, closes after
- * the last page. Input is ignored while it is open.
- */
-const dialoguePages: readonly string[] =
-  Array.isArray(dialogueJson.pages) && dialogueJson.pages.length > 0
-    ? dialogueJson.pages.map((page: unknown) => String(page))
-    : ['…'];
-
-let dialoguePage = 0;
-
-function dialogueVisible(): boolean {
-  return !dialogue.hidden;
+if (!title || !roomTitle || !roomDescription || !roomStatus) {
+  throw new Error('Generated playground UI failed to initialize');
 }
 
-function showDialogue(): void {
-  dialoguePage = 0;
-  dialogue.textContent = dialoguePages[0] ?? '';
-  dialogue.hidden = false;
-}
+let seed = readSeed();
+let world: GeneratedWorld = generateGeneratedWorld(seed);
+let playground: GeneratedPlayground = createGeneratedPlayground(world);
+let state = playground.initialState;
+let renderer: ReturnType<typeof createIsometricScene>;
+let zoom = 0.34;
+let camera = projectIsoCell(world.start.x, world.start.y, 0);
+const statusText = document.createElement('p');
+statusText.id = 'game-status';
+shell.append(statusText);
+let feedback: string | null = null;
 
-function advanceDialogue(): void {
-  dialoguePage += 1;
-
-  if (dialoguePage >= dialoguePages.length) {
-    dialogue.hidden = true;
-    return;
-  }
-
-  dialogue.textContent = dialoguePages[dialoguePage] ?? '';
-}
-
-function describeEvents(events: readonly TileEvent[]): string {
-  if (events.length === 0) {
-    return '—';
-  }
-
-  return events
-    .map((event) => {
-      switch (event.tag) {
-        case 'moved':
-          return `moved (${event.x},${event.y})`;
-        case 'pushed':
-          return `pushed ${event.blockId}`;
-        case 'blocked':
-          return `blocked: ${event.reason}`;
-        case 'door-opened':
-          return `door ${event.doorId} opened`;
-        case 'door-closed':
-          return `door ${event.doorId} closed`;
-        case 'plate-pressed':
-          return `plate ${event.plateId} pressed`;
-        case 'plate-released':
-          return `plate ${event.plateId} released`;
-        case 'lever-toggled':
-          return `lever ${event.leverId} ${event.on ? 'on' : 'off'}`;
-        case 'block-on-target':
-          return `block ${event.blockId} on target!`;
-        case 'chest-opened':
-          return `chest ${event.chestId} → flag ${event.flag}`;
-        case 'flag-set':
-          return `flag ${event.key} = ${event.value}`;
-        case 'interact-noop':
-          return 'nothing to interact';
-      }
-    })
-    .join(' · ');
-}
-
-function platePressed(id: string): boolean {
-  const plate = currentRoom.pressurePlates.find(
-    (entry) => entry.id === id,
-  );
-
-  if (!plate) {
-    return false;
-  }
-
-  const onPlate =
-    (state.player.x === plate.pos.x && state.player.y === plate.pos.y) ||
-    Object.values(state.blocks).some(
-      (block) =>
-        block.x === plate.pos.x && block.y === plate.pos.y,
+function createWorldView(): IsoRoomView {
+  const regions = new Map(world.regions.map((region) => [region.id, region]));
+  const connectorEdges = world.edges.filter((edge) => {
+    if (edge.kind !== 'stairs' && edge.kind !== 'ramp') {
+      return false;
+    }
+    return (
+      edge.from.x < edge.to.x ||
+      (edge.from.x === edge.to.x && edge.from.y < edge.to.y)
     );
+  });
 
-  return onPlate;
+  const view: IsoRoomView = {
+    id: `generated-${world.seed}`,
+    title: 'Generated Field',
+    description: 'A seed-built field of distinct terrain regions.',
+    width: world.width,
+    height: world.height,
+    cells: world.cells.map((row) => row.map((cell) => {
+      const region = regions.get(cell.regionId);
+      return {
+        x: cell.x,
+        y: cell.y,
+        elevation: cell.elevation,
+        terrainType: cell.terrainType,
+        biome: region?.biome ?? 'meadow',
+        environment: region?.environment ?? world.environment,
+        walkable: cell.walkable,
+      };
+    })),
+    props: world.props,
+    npcs: [],
+    node: {
+      id: 'generated-goal-node',
+      x: world.goal.x,
+      y: world.goal.y,
+      label: 'reach the goal',
+    },
+    exits: [],
+    connectors: connectorEdges.map((edge) => ({
+      id: `connector-${edge.from.x}-${edge.from.y}-${edge.to.x}-${edge.to.y}`,
+      kind: edge.kind === 'ramp' ? 'ramp' : 'stairs',
+      from: { ...edge.from },
+      to: { ...edge.to },
+    })),
+    start: { x: world.start.x, y: world.start.y, label: 'start' },
+    goal: { x: world.goal.x, y: world.goal.y, label: 'goal' },
+    environment: world.environment,
+    palette: world.palette,
+  };
+
+  if (DEBUG_MODE) {
+    return {
+      ...view,
+      debugOverlay: {
+        baselinePath: world.baselinePath,
+        finalPath: world.finalPath,
+        disruptionFootprint: world.perturbation.disruption.footprint,
+        diagnostics: {
+          family: world.topologyFamily,
+          attempts: world.generationAttempts,
+          baselineLength: world.perturbation.baselineShortestPathLength,
+          finalLength: world.perturbation.finalShortestPathLength,
+          wallCount: world.finalTopology.wallCount,
+          cycleRank: world.finalTopology.cycleRank,
+        },
+      },
+    };
+  }
+  return view;
 }
 
-function buildView(): TileSceneView {
+function buildView(): IsoSceneView {
+  const position = playerPosition(state);
+  const cell = world.cells[position.y]?.[position.x];
   return {
-    tiles: currentRoom.tiles,
-    player: state.player,
-    doors: currentRoom.doors.map((door) => ({
-      id: door.id,
-      x: door.pos.x,
-      y: door.pos.y,
-      open: state.doors[door.id]?.open ?? false,
-    })),
-    plates: currentRoom.pressurePlates.map((plate) => ({
-      id: plate.id,
-      x: plate.pos.x,
-      y: plate.pos.y,
-      pressed: platePressed(plate.id),
-    })),
-    levers: currentRoom.levers.map((lever) => ({
-      id: lever.id,
-      x: lever.pos.x,
-      y: lever.pos.y,
-      on: state.levers[lever.id]?.on ?? false,
-    })),
-    blocks: Object.entries(state.blocks).map(([id, block]) => ({
-      id,
-      x: block.x,
-      y: block.y,
-    })),
-    chests: currentRoom.chests.map((chest) => ({
-      id: chest.id,
-      x: chest.pos.x,
-      y: chest.pos.y,
-      opened: state.chests[chest.id]?.opened ?? false,
-    })),
+    room: createWorldView(),
+    player: {
+      x: position.x,
+      y: position.y,
+      elevation: cell?.elevation ?? 0,
+    },
+    windMarks: {},
+    goalReached: generatedGoalReached(playground, state),
   };
 }
 
-function snapCameraToPlayer(): void {
-  camera = tileCenterToPixels(state.player, TILE_SIZE);
+function renderMinimap(): void {
+  if (!DEBUG_MODE || !minimap) {
+    return;
+  }
+  minimap.replaceChildren();
+  const map = projectGeneratedMinimap({
+    cells: world.cells,
+    sourceWidth: world.width,
+    sourceHeight: world.height,
+    start: world.start,
+    goal: world.goal,
+    disruption: DEBUG_MODE ? world.perturbation.disruption.footprint : [],
+    columns: 20,
+    rows: 20,
+  });
+  for (const mapTile of map.tiles) {
+    const tile = document.createElement('span');
+    tile.className = `map-cell ${mapTile.walkable ? 'open' : 'blocked'}`;
+    if (mapTile.elevated) {
+      tile.classList.add('high');
+    }
+    if (mapTile.start) {
+      tile.classList.add('start');
+    }
+    if (mapTile.goal) {
+      tile.classList.add('goal');
+    }
+    if (mapTile.disrupted) {
+      tile.classList.add('disrupted');
+    }
+    minimap.append(tile);
+  }
 }
-
-let renderer: ReturnType<typeof createTileSceneRenderer>;
-let fade: ReturnType<typeof createFadeOverlay>;
 
 function render(): void {
+  const position = playerPosition(state);
+  const reached = generatedGoalReached(playground, state);
+  title.innerHTML = `地形实验场 <span>· Seed ${world.seed}</span>`;
+  const currentCell = world.cells[position.y]?.[position.x];
+  const currentRegion = world.regions.find((region) => region.id === currentCell?.regionId);
+  roomTitle.textContent = 'Generated Field';
+  roomDescription.textContent = `40×40 field · ${currentRegion?.biome ?? 'meadow'} · ${currentRegion?.environment?.weather ?? world.environment.weather} · ${currentRegion?.environment?.lighting ?? world.environment.lighting}`;
+  roomStatus.textContent = reached
+    ? 'GOAL REACHED'
+    : `POSITION ${position.x},${position.y}`;
+  if (seedTag) {
+    seedTag.textContent = `SEED ${world.seed}`;
+  }
+  statusText.textContent = feedback ?? (reached ? 'GOAL REACHED' : `POSITION ${position.x},${position.y}`);
   renderer.render(buildView());
-  status.textContent =
-    `${currentRoom.id} · (${state.player.x},${state.player.y}) · ${describeEvents(state.lastEvents)}`;
 }
 
-function publishEvents(events: readonly TileEvent[]): void {
-  for (const event of events) {
-    bus.publish(event);
-  }
+function currentCameraTarget(): { x: number; y: number } {
+  const position = playerPosition(state);
+  const cell = world.cells[position.y]?.[position.x];
+  return projectIsoCell(position.x, position.y, cell?.elevation ?? 0);
 }
 
-function afterAccepted(events: readonly TileEvent[]): void {
-  carried = extractCarriedState(state);
-  persistCarried(flagStore, carried);
-  publishEvents(events);
-}
-
-function setHint(text: string, ms = 2500): void {
-  hint.textContent = text;
-  window.setTimeout(() => {
-    if (hint.textContent === text) {
-      hint.textContent = 'WASD / 方向键 移动 · E 互动 · Z 对话';
-    }
-  }, ms);
-}
-
-function tryMove(direction: 'up' | 'down' | 'left' | 'right'): void {
-  const result = applyTileOperation(state, currentRoom, {
-    kind: 'move',
-    direction,
-  });
-
+function tryMove(direction: GeneratedDirection): void {
+  const result = moveGeneratedPlayer(playground, state, direction);
   state = result.state;
+  feedback = result.accepted ? null : formatBlockedMovement();
   render();
-
-  if (!result.accepted) {
-    if (
-      result.events.some(
-        (event) =>
-          event.tag === 'blocked' &&
-          event.reason === 'locked-door',
-      )
-    ) {
-      setHint(
-        "门锁住了……（占位提示：控制台 setFlag('flag名', true) 可开门）",
-      );
-    }
-    return;
-  }
-
-  afterAccepted(result.events);
-
-  if (result.events.some((event) => event.tag === 'block-on-target')) {
-    setHint('方块到位！机关触发了。', 3000);
-  }
-
-  beginTransitionIfOnExit();
 }
 
-function tryInteract(): void {
-  const result = applyTileOperation(state, currentRoom, {
-    kind: 'interact',
-  });
-
-  state = result.state;
-  render();
-
-  if (result.accepted) {
-    afterAccepted(result.events);
-  }
-}
-
-/**
- * ── Room transitions: fade to black, swap room, fade back ──────
- * Player input is ignored while a transition runs.
- */
-type FadePhase = 'idle' | 'closing' | 'opening';
-
-const FADE_MS = 260;
-
-let fadePhase: FadePhase = 'idle';
-let pendingTransition: {
-  roomId: string;
-  spawn: { x: number; y: number };
-} | null = null;
-
-function beginTransitionIfOnExit(): void {
-  if (fadePhase !== 'idle') {
+function inspectTerrain(): void {
+  const position = playerPosition(state);
+  const cell = generatedCellAt(world, position);
+  if (!cell) {
     return;
   }
-
-  const resolution = resolveTileExit(state, currentRoom, rooms);
-
-  if (!resolution.accepted) {
-    return;
-  }
-
-  pendingTransition = {
-    roomId: resolution.roomId,
-    spawn: resolution.spawn,
+  const region = world.regions.find((candidate) => candidate.id === cell.regionId);
+  const directions: Array<[GeneratedDirection, { x: number; y: number }]> = [
+    ['up', { x: 0, y: -1 }],
+    ['down', { x: 0, y: 1 }],
+    ['left', { x: -1, y: 0 }],
+    ['right', { x: 1, y: 0 }],
+  ];
+  const facts = {
+    x: position.x,
+    y: position.y,
+    terrainType: cell.terrainType,
+    biome: region?.biome ?? 'unknown',
+    weather: region?.environment?.weather ?? world.environment.weather,
+    lighting: region?.environment?.lighting ?? world.environment.lighting,
+    elevation: cell.elevation,
   };
-  fadePhase = 'closing';
+  if (DEBUG_MODE) {
+    const traversableDirections = directions
+      .filter(([, delta]) => {
+        const target = { x: position.x + delta.x, y: position.y + delta.y };
+        const targetCell = generatedCellAt(world, target);
+        const edge = resolveGeneratedEdge(world, position, target);
+        return Boolean(targetCell && edge && canTraverse(cell, targetCell, edge, {}));
+      })
+      .map(([direction]) => direction);
+    feedback = formatGeneratedInspection({
+      ...facts,
+      regionId: cell.regionId,
+      traversableDirections,
+    }, true);
+  } else {
+    feedback = formatGeneratedInspection(facts, false);
+  }
+  render();
 }
 
-function advanceFade(dtMs: number): void {
-  if (fadePhase === 'closing') {
-    fade.setAlpha(Math.min(1, fade.getAlpha() + dtMs / FADE_MS));
-
-    if (fade.getAlpha() >= 1 && pendingTransition) {
-      const target = rooms[pendingTransition.roomId];
-
-      if (target) {
-        currentRoom = target;
-        state = createTileRoomState(
-          target,
-          pendingTransition.spawn,
-          carried,
-        );
-        snapCameraToPlayer();
-        render();
-      } else {
-        setHint(
-          `transition failed: unknown room ${pendingTransition.roomId}`,
-        );
-      }
-
-      pendingTransition = null;
-      fadePhase = 'opening';
-    }
-
-    return;
-  }
-
-  if (fadePhase === 'opening') {
-    fade.setAlpha(Math.max(0, fade.getAlpha() - dtMs / FADE_MS));
-
-    if (fade.getAlpha() <= 0) {
-      fadePhase = 'idle';
-    }
-  }
+function resetWorld(): void {
+  state = playground.initialState;
+  camera = currentCameraTarget();
+  feedback = 'RUN RESET';
+  render();
 }
 
-/**
- * ── EventBus subscribers (wiring only) ─────────────────────────
- */
-bus.subscribe((event) => {
-  if (event.tag === 'flag-set' && event.value) {
-    status.textContent = `flag 已设置: ${event.key}`;
-  }
-});
+function createNewSeed(): void {
+  seed += 1;
+  world = generateGeneratedWorld(seed);
+  playground = createGeneratedPlayground(world);
+  state = playground.initialState;
+  camera = currentCameraTarget();
+  feedback = 'NEW FIELD GENERATED';
+  renderMinimap();
+  render();
+}
+
+function setZoom(nextZoom: number): void {
+  zoom = Math.min(0.52, Math.max(0.24, nextZoom));
+  renderer.setCamera(camera.x, camera.y, zoom);
+}
 
 void (async () => {
   try {
     const host = await createPixiHost(canvasRoot, {
-      width: TILE_VIEWPORT.width,
-      height: TILE_VIEWPORT.height,
-      backgroundColor: 0x0b1120,
+      width: 960,
+      height: 600,
+      backgroundColor: world.palette.sky,
     });
-
-    // Optional: if the Kenney sheet is present under public/assets,
-    // sprites render; otherwise the flat-color fallback is used.
-    const textures: TileTextureSet | null =
-      await loadTileTextures('/assets/tiny-dungeon/tilemap_packed.png');
-
-    setNearestFilter(textures);
-
-    renderer = createTileSceneRenderer(host.scene, textures);
-    fade = createFadeOverlay(host.ui);
-
-    snapCameraToPlayer();
+    const textures: MarkTextureSet = await loadMarkTextures();
+    renderer = createIsometricScene(host.scene, textures);
+    renderMinimap();
     render();
-    showDialogue();
+    renderer.setCamera(camera.x, camera.y, zoom);
 
     host.app.ticker.add(() => {
-      camera = updateCamera(
-        camera,
-        tileCenterToPixels(state.player, TILE_SIZE),
-        {
-          width: currentRoom.width * TILE_SIZE,
-          height: currentRoom.height * TILE_SIZE,
-        },
-        TILE_VIEWPORT,
-        0.18,
-      );
-      renderer.setCamera(camera.x, camera.y);
-      advanceFade(host.app.ticker.deltaMS);
+      const target = currentCameraTarget();
+      const amount = Math.min(1, host.app.ticker.deltaMS / 150);
+      camera = {
+        x: camera.x + (target.x - camera.x) * amount,
+        y: camera.y + (target.y - camera.y) * amount,
+      };
+      renderer.setCamera(camera.x, camera.y, zoom);
     });
 
-    window.addEventListener('keydown', (event) => {
-      if (fadePhase !== 'idle') {
-        return;
-      }
-
-      if (dialogueVisible()) {
-        if (event.key.toLowerCase() === 'z') {
-          event.preventDefault();
-          advanceDialogue();
-        }
-        return;
-      }
-
+    const handleKeyDown = (event: KeyboardEvent): void => {
       const key = event.key.toLowerCase();
-
-      if (key === 'z') {
-        event.preventDefault();
-        showDialogue();
-        return;
-      }
-
       if (key === 'e' || key === ' ') {
         event.preventDefault();
-        tryInteract();
+        inspectTerrain();
+        return;
+      }
+      if (key === 'r') {
+        event.preventDefault();
+        resetWorld();
+        return;
+      }
+      if (key === 'n') {
+        event.preventDefault();
+        createNewSeed();
+        return;
+      }
+      if (key === '[') {
+        event.preventDefault();
+        setZoom(zoom - 0.04);
+        return;
+      }
+      if (key === ']') {
+        event.preventDefault();
+        setZoom(zoom + 0.04);
         return;
       }
 
-      const direction =
+      const direction: GeneratedDirection | null =
         key === 'w' || key === 'arrowup'
           ? 'up'
           : key === 's' || key === 'arrowdown'
@@ -457,40 +408,20 @@ void (async () => {
               : key === 'd' || key === 'arrowright'
                 ? 'right'
                 : null;
-
       if (direction) {
         event.preventDefault();
         tryMove(direction);
       }
-    });
-
-    // ── Console debug commands (Phase 3 DoD) ────────────────────
-    window.setFlag = (key, value): void => {
-      flagStore.set(`flag:${key}`, value);
-
-      if (state.flags[key] !== value) {
-        state = applyExternalFlag(state, currentRoom, key, value);
-        carried = extractCarriedState(state);
-        persistCarried(flagStore, carried);
-        publishEvents(state.lastEvents);
-        render();
-      }
-
-      status.textContent = `setFlag('${key}', ${value}) → flag:${key}`;
     };
 
-    window.getFlags = (): Readonly<Record<string, boolean>> =>
-      getUserFlags(flagStore);
-
-    status.textContent =
-      '控制台调试: setFlag(\'cellar-key\', true) · getFlags()';
-
+    window.addEventListener('keydown', handleKeyDown);
     import.meta.hot?.dispose(() => {
+      window.removeEventListener('keydown', handleKeyDown);
       host.destroy();
     });
   } catch (error) {
     console.error(error);
-    root.textContent = 'Failed to create Pixi host';
+    root.textContent = 'Failed to create generated playground';
   }
 })();
 

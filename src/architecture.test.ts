@@ -73,12 +73,17 @@ const rules: readonly Rule[] = [
       imported.startsWith('../rendering'),
   },
   {
-    label: 'src/rendering must not depend on world or chapters',
+    label: 'src/rendering must not depend on world, chapters or runtime',
     matches: (path) => path.startsWith('rendering/'),
     violation: (_path, imported) =>
       imported.startsWith('@/world') ||
       imported.startsWith('@/chapters') ||
       imported.startsWith('@/runtime'),
+  },
+  {
+    label: 'no universal event bus anywhere in src (AGENTS.md)',
+    matches: () => true,
+    violation: (_path, imported) => imported.includes('event-bus'),
   },
   {
     label: 'src/runtime must not depend on rendering',

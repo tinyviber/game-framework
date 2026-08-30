@@ -8,10 +8,13 @@ export interface StorageLike {
 export interface FlagStore {
   get(key: string): boolean;
   set(key: string, value: boolean): void;
+  delete(key: string): void;
   snapshot(): Readonly<Record<string, boolean>>;
 }
 
-const STORAGE_KEY = 'tile-flags';
+// Versioned: earlier formats stored bare object ids (pre room
+// namespacing) and could never unset a flag once persisted.
+const STORAGE_KEY = 'tile-flags:v2';
 
 /**
  * In-memory flag store. The default in environments without a
@@ -29,6 +32,10 @@ export function createMemoryFlagStore(): FlagStore {
       values.set(key, value);
     },
 
+    delete(key): void {
+      values.delete(key);
+    },
+
     snapshot(): Readonly<Record<string, boolean>> {
       return Object.freeze(Object.fromEntries(values));
     },
@@ -37,9 +44,8 @@ export function createMemoryFlagStore(): FlagStore {
 
 /**
  * Flag store backed by a browser-like Storage object. The whole map
- * is persisted as one JSON blob under a single key, written through
- * on every set. Corrupt or missing storage falls back to an empty
- * map and never throws.
+ * is persisted as one JSON blob under a single key. Corrupt or
+ * missing storage falls back to an empty map and never throws.
  */
 export function createLocalStorageFlagStore(
   storage: StorageLike,
@@ -72,6 +78,17 @@ export function createLocalStorageFlagStore(
 
   load();
 
+  const writeThrough = (): void => {
+    try {
+      storage.setItem(
+        STORAGE_KEY,
+        JSON.stringify(memory.snapshot()),
+      );
+    } catch {
+      // Persistence is best-effort (private mode, quota, ...).
+    }
+  };
+
   return {
     get(key): boolean {
       return memory.get(key);
@@ -79,15 +96,12 @@ export function createLocalStorageFlagStore(
 
     set(key, value): void {
       memory.set(key, value);
+      writeThrough();
+    },
 
-      try {
-        storage.setItem(
-          STORAGE_KEY,
-          JSON.stringify(memory.snapshot()),
-        );
-      } catch {
-        // Persistence is best-effort (private mode, quota, ...).
-      }
+    delete(key): void {
+      memory.delete(key);
+      writeThrough();
     },
 
     snapshot(): Readonly<Record<string, boolean>> {
@@ -111,38 +125,65 @@ const CHEST_PREFIX = 'chest:';
 const TARGET_PREFIX = 'target:';
 const LATCH_PREFIX = 'latch:';
 
+const EMPTY_CARRIED: CarriedState = {
+  flags: {},
+  openedChests: {},
+  onTargetFired: {},
+  latchedOpenDoors: {},
+};
+
+function diffNamespace(
+  store: FlagStore,
+  prefix: string,
+  before: Readonly<Record<string, boolean>>,
+  after: Readonly<Record<string, boolean>>,
+): void {
+  for (const [key, value] of Object.entries(after)) {
+    if (value && !before[key]) {
+      store.set(`${prefix}${key}`, true);
+    }
+  }
+
+  // Keys that were true before but are gone now must be deleted,
+  // otherwise an unset flag would resurrect on the next reload.
+  for (const [key, value] of Object.entries(before)) {
+    if (value && !after[key]) {
+      store.delete(`${prefix}${key}`);
+    }
+  }
+}
+
 /**
  * Persists the carried cross-room state into the store using
  * prefixed boolean keys so a single flat store holds everything.
- * False values are skipped (absence == false).
+ * Only keys that changed relative to `previous` are written or
+ * deleted: ordinary moves cost zero storage writes. False values
+ * never enter the store (absence == false).
  */
 export function persistCarried(
   store: FlagStore,
   carried: CarriedState,
+  previous: CarriedState = EMPTY_CARRIED,
 ): void {
-  for (const [name, value] of Object.entries(carried.flags)) {
-    if (value) {
-      store.set(`${FLAG_PREFIX}${name}`, true);
-    }
-  }
-
-  for (const [id, value] of Object.entries(carried.openedChests)) {
-    if (value) {
-      store.set(`${CHEST_PREFIX}${id}`, true);
-    }
-  }
-
-  for (const [id, value] of Object.entries(carried.onTargetFired)) {
-    if (value) {
-      store.set(`${TARGET_PREFIX}${id}`, true);
-    }
-  }
-
-  for (const [id, value] of Object.entries(carried.latchedOpenDoors)) {
-    if (value) {
-      store.set(`${LATCH_PREFIX}${id}`, true);
-    }
-  }
+  diffNamespace(store, FLAG_PREFIX, previous.flags, carried.flags);
+  diffNamespace(
+    store,
+    CHEST_PREFIX,
+    previous.openedChests,
+    carried.openedChests,
+  );
+  diffNamespace(
+    store,
+    TARGET_PREFIX,
+    previous.onTargetFired,
+    carried.onTargetFired,
+  );
+  diffNamespace(
+    store,
+    LATCH_PREFIX,
+    previous.latchedOpenDoors,
+    carried.latchedOpenDoors,
+  );
 }
 
 function restorePrefixed(
