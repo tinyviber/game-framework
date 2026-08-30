@@ -1,0 +1,110 @@
+{
+  "schema": 1,
+  "atlas": {
+    "id": "puny-world",
+    "title": "16x16 Puny World Tileset",
+    "source": "asset-research/cc0/puny-world/punyworld-overworld-tileset.png",
+    "license": "CC0",
+    "tile_size": 16,
+    "native": {
+      "width": 432,
+      "height": 1040,
+      "columns": 27,
+      "rows": 65
+    }
+  },
+  "regions": [
+    {
+      "id": "puny.grass.base",
+      "category": "terrain",
+      "surface": "grass",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "edge": { "north": "grass", "south": "grass", "east": "grass", "west": "grass" },
+      "tags": ["grass", "plain", "base"],
+      "confidence": 0.98,
+      "source_rect": [0, 0, 16, 16],
+      "logical_footprint": { "width": 1, "height": 1 },
+      "visual_bounds": { "x": 0, "y": 0, "width": 16, "height": 16 },
+      "anchor": { "x": 0, "y": 0 }
+    },
+    {
+      "id": "puny.dirt.path",
+      "category": "terrain",
+      "surface": "dirt",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "edge": { "north": "dirt", "south": "dirt", "east": "dirt", "west": "dirt" },
+      "tags": ["dirt", "path"],
+      "confidence": 0.84,
+      "source_rect": [16, 0, 16, 16],
+      "logical_footprint": { "width": 1, "height": 1 },
+      "visual_bounds": { "x": 0, "y": 0, "width": 16, "height": 16 },
+      "anchor": { "x": 0, "y": 0 }
+    },
+    {
+      "id": "puny.water.base",
+      "category": "water",
+      "surface": "water",
+      "walkable": false,
+      "blocks_movement": true,
+      "height_class": 0,
+      "edge": { "north": "water", "south": "water", "east": "water", "west": "water" },
+      "tags": ["water", "animated-variant"],
+      "confidence": 0.96,
+      "source_rect": [160, 192, 16, 16],
+      "logical_footprint": { "width": 1, "height": 1 },
+      "visual_bounds": { "x": 0, "y": 0, "width": 16, "height": 16 },
+      "anchor": { "x": 0, "y": 0 }
+    },
+    {
+      "id": "puny.unresolved.ledge-candidate",
+      "category": "unknown",
+      "surface": "unknown",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 1,
+      "edge": { "north": "grass", "south": "cliff", "east": "cliff", "west": "cliff" },
+      "tags": ["cliff", "raised", "ledge", "multi-cell"],
+      "confidence": 0.35,
+      "source_rect": [0, 64, 64, 64],
+      "logical_footprint": { "width": 4, "height": 3 },
+      "visual_bounds": { "x": 0, "y": 0, "width": 64, "height": 64 },
+      "anchor": { "x": 32, "y": 64 },
+      "notes": "Contains adjacent rocky and foliage regions; do not use as a single cliff primitive until re-sliced."
+    },
+    {
+      "id": "puny.unresolved.connector-candidate",
+      "category": "unknown",
+      "surface": "unknown",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 1,
+      "edge": { "north": "stone", "south": "stone", "east": "stone", "west": "stone" },
+      "tags": ["stairs", "connector", "candidate"],
+      "confidence": 0.35,
+      "source_rect": [96, 64, 16, 16],
+      "logical_footprint": { "width": 1, "height": 3 },
+      "visual_bounds": { "x": 0, "y": 0, "width": 16, "height": 16 },
+      "anchor": { "x": 8, "y": 16 },
+      "notes": "Looks like a connector candidate in the atlas, but direction and stair semantics are not confirmed."
+    },
+    {
+      "id": "puny.tree.cluster",
+      "category": "decoration",
+      "surface": "grass",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 1,
+      "edge": { "north": "grass", "south": "grass", "east": "grass", "west": "grass" },
+      "tags": ["tree", "foliage", "visual-overflow", "multi-cell"],
+      "confidence": 0.88,
+      "source_rect": [0, 128, 32, 32],
+      "logical_footprint": { "width": 2, "height": 2 },
+      "visual_bounds": { "x": 0, "y": 0, "width": 32, "height": 32 },
+      "anchor": { "x": 16, "y": 32 }
+    }
+  ]
+}

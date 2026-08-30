@@ -3,9 +3,18 @@ import {
   formatBlockedMovement,
   formatGeneratedInspection,
   isGeneratedDebugMode,
+  parseGeneratedView,
 } from './generated-playground-ui';
 
 describe('generated playground UI contract', () => {
+  it('parses only the explicit orthogonal view and keeps iso as the default', () => {
+    expect(parseGeneratedView('')).toBe('iso');
+    expect(parseGeneratedView('?seed=2026&view=iso')).toBe('iso');
+    expect(parseGeneratedView('?seed=2026&view=ortho')).toBe('ortho');
+    expect(parseGeneratedView('?view=ORTHO')).toBe('iso');
+    expect(parseGeneratedView('?view=unknown')).toBe('iso');
+  });
+
   it('keeps blocked movement feedback exact and non-diagnostic', () => {
     expect(formatBlockedMovement()).toBe('MOVEMENT BLOCKED');
     expect(formatBlockedMovement()).not.toMatch(/route|barrier|path|height/i);
