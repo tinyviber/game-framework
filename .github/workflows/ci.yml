@@ -19,6 +19,14 @@ jobs:
       - name: Install
         run: npm ci
 
+      - name: Asset research hygiene
+        run: |
+          node asset-research/scripts/check-repo-hygiene.mjs --self-test
+          node asset-research/scripts/check-repo-hygiene.mjs
+
+      - name: Asset research CC0 smoke render
+        run: node asset-research/scripts/render-cc0-smoke.mjs --verify
+
       - name: Test
         run: npm test
 

@@ -1,0 +1,8 @@
+OpenGameArt · 16x16 Puny World Tileset
+
+License: Creative Commons Zero (CC0 1.0).
+Source: https://opengameart.org/content/16x16-puny-world-tileset
+Author: Shade
+
+The source page states that the sprites may be used commercially, modified,
+and used without attribution. Keep this notice with the asset when copying it.

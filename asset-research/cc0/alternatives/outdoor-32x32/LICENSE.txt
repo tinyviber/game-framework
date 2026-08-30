@@ -1,0 +1,8 @@
+OpenGameArt · Outdoor 32x32 tileset
+
+License: Creative Commons Zero (CC0 1.0).
+Source: https://opengameart.org/content/outdoor-32x32-tileset
+Author: Buch
+
+Attribution is not required by the source page, but crediting Buch and linking
+the source page is appreciated.

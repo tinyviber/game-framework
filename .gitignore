@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Asset research: restricted downloads and all generated imagery stay local.
+/asset-research/local/
+/asset-research/downloads/
+/asset-research/extracted/
+/asset-research/contact-sheets/

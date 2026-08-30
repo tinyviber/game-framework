@@ -1,0 +1,40 @@
+{
+  "schema": 2,
+  "width": 16,
+  "height": 16,
+  "terrain": [
+    "gggggggggggggggg",
+    "gggggggggggggggg",
+    "ggppppgggggggggg",
+    "ggppppgggggggggg",
+    "ggppppgggggggggg",
+    "ggppppgggggggggg",
+    "gggggggggggggggg",
+    "wwwwwwwwwwwwwwww",
+    "wwwwwwwwwwwwwwww",
+    "wwwwwwwwwwwwwwww",
+    "gggggggggggggggg",
+    "gggggggggggggggg",
+    "gggggggggggggggg",
+    "gggggggggggggggg",
+    "gggggggggggggggg",
+    "gggggggggggggggg"
+  ],
+  "legend": {
+    "g": "ground",
+    "p": "path",
+    "w": "water"
+  },
+  "objects": [
+    { "id": "cliff-west", "role": "cliff", "x": 1, "y": 2, "width": 4, "height": 3, "layer": "terrain" },
+    { "id": "stairs-west", "role": "stairs", "x": 5, "y": 4, "width": 1, "height": 3, "layer": "terrain" },
+    { "id": "bridge-river", "role": "bridge", "x": 7, "y": 7, "width": 5, "height": 3, "layer": "traversal" },
+    { "id": "building-north", "role": "building", "x": 9, "y": 0, "width": 6, "height": 6, "layer": "structure" },
+    { "id": "cave-southwest", "role": "cave", "x": 1, "y": 11, "width": 4, "height": 4, "layer": "structure" },
+    { "id": "wall-northeast", "role": "wall", "x": 13, "y": 6, "width": 3, "height": 3, "layer": "structure" },
+    { "id": "tree-southeast", "role": "tree", "x": 11, "y": 11, "width": 2, "height": 3, "layer": "foreground" },
+    { "id": "movable-rock", "role": "movable-looking-object", "x": 13, "y": 11, "width": 3, "height": 2, "layer": "foreground" },
+    { "id": "decoration", "role": "decoration", "x": 6, "y": 13, "width": 4, "height": 2, "layer": "foreground" },
+    { "id": "character-marker", "role": "character", "x": 8, "y": 5, "width": 1, "height": 1, "layer": "character" }
+  ]
+}
