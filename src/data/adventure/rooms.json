@@ -42,6 +42,7 @@
     "surface": "sunset",
     "palette": { "sky": 12237436, "ground": 7461968, "groundAlt": 8879672, "edge": 11448756, "glow": 16766720 },
     "layout": ["######.#####", "#..^.......#", "#..##..^...#", "#..........#", "............", "#...^..##..#", "#..........#", "#..#.......#", "######.#####"],
+    "connectors": [{ "from": { "x": 4, "y": 5 }, "to": { "x": 4, "y": 4 }, "kind": "stairs" }, { "from": { "x": 4, "y": 4 }, "to": { "x": 4, "y": 5 }, "kind": "stairs" }],
     "node": { "id": "node-02", "x": 4, "y": 5, "label": "bend the amber current" },
     "props": [
       { "id": "block-02", "assetKey": "block-grass-large", "x": 5, "y": 2, "elevation": 1, "foreground": false, "blocks": true },
@@ -59,6 +60,7 @@
     "surface": "sky",
     "palette": { "sky": 3297377, "ground": 4233588, "groundAlt": 5483654, "edge": 7456338, "glow": 13290751 },
     "layout": ["######.#####", "#..........#", "#..##..^...#", "#..........#", "............", "#......##..#", "#.....^....#", "#..#.......#", "######.#####"],
+    "connectors": [{ "from": { "x": 6, "y": 6 }, "to": { "x": 6, "y": 5 }, "kind": "stairs" }, { "from": { "x": 6, "y": 5 }, "to": { "x": 6, "y": 6 }, "kind": "stairs" }],
     "node": { "id": "node-03", "x": 6, "y": 6, "label": "read the weather" },
     "props": [
       { "id": "house-03", "assetKey": "building-sample-house-a", "x": 2, "y": 2, "elevation": 1, "foreground": true, "blocks": true },
@@ -76,6 +78,7 @@
     "surface": "meadow",
     "palette": { "sky": 5914909, "ground": 3225920, "groundAlt": 4210796, "edge": 6471168, "glow": 16239872 },
     "layout": ["######.#####", "#..........#", "#..##......#", "#...^......#", "............", "#......##..#", "#..........#", "#..#.......#", "######.#####"],
+    "connectors": [{ "from": { "x": 4, "y": 3 }, "to": { "x": 4, "y": 4 }, "kind": "stairs" }, { "from": { "x": 4, "y": 4 }, "to": { "x": 4, "y": 3 }, "kind": "stairs" }],
     "node": { "id": "node-04", "x": 4, "y": 3, "label": "listen at the market" },
     "props": [
       { "id": "house-04", "assetKey": "building-sample-house-b", "x": 2, "y": 2, "elevation": 1, "foreground": true, "blocks": true },
@@ -110,6 +113,7 @@
     "surface": "night",
     "palette": { "sky": 2108457, "ground": 3223863, "groundAlt": 4409443, "edge": 6579300, "glow": 16228114 },
     "layout": ["######.#####", "#..^.......#", "#..##......#", "#..........#", "............", "#......##..#", "#...^......#", "#..#.......#", "######.#####"],
+    "connectors": [{ "from": { "x": 4, "y": 6 }, "to": { "x": 4, "y": 5 }, "kind": "stairs" }, { "from": { "x": 4, "y": 5 }, "to": { "x": 4, "y": 6 }, "kind": "stairs" }],
     "node": { "id": "node-06", "x": 4, "y": 6, "label": "light the causeway" },
     "props": [
       { "id": "flag-06", "assetKey": "flag", "x": 2, "y": 2, "elevation": 1, "foreground": true, "blocks": false },
@@ -127,6 +131,7 @@
     "surface": "sunset",
     "palette": { "sky": 10580331, "ground": 5916957, "groundAlt": 7631711, "edge": 10731921, "glow": 16762710 },
     "layout": ["######.#####", "#..^.......#", "#..^^......#", "#..........#", "............", "#......^^..#", "#..........#", "#..#.......#", "######.#####"],
+    "connectors": [{ "from": { "x": 7, "y": 5 }, "to": { "x": 7, "y": 4 }, "kind": "stairs" }, { "from": { "x": 7, "y": 4 }, "to": { "x": 7, "y": 5 }, "kind": "stairs" }],
     "node": { "id": "node-07", "x": 7, "y": 5, "label": "turn the ridge" },
     "props": [
       { "id": "block-07", "assetKey": "block-grass", "x": 3, "y": 2, "elevation": 1, "foreground": false, "blocks": true },
@@ -161,6 +166,7 @@
     "surface": "meadow",
     "palette": { "sky": 3250295, "ground": 3327040, "groundAlt": 4603172, "edge": 6295706, "glow": 12969715 },
     "layout": ["######.#####", "#..^.......#", "#..##......#", "#...^......#", "............", "#......##..#", "#..........#", "#..#.......#", "######.#####"],
+    "connectors": [{ "from": { "x": 4, "y": 3 }, "to": { "x": 4, "y": 4 }, "kind": "stairs" }, { "from": { "x": 4, "y": 4 }, "to": { "x": 4, "y": 3 }, "kind": "stairs" }],
     "node": { "id": "node-09", "x": 4, "y": 3, "label": "hear the hollow" },
     "props": [
       { "id": "tree-09a", "assetKey": "tree", "x": 2, "y": 2, "elevation": 1, "foreground": true, "blocks": true },
@@ -178,6 +184,7 @@
     "surface": "sunset",
     "palette": { "sky": 6900038, "ground": 6370909, "groundAlt": 8083028, "edge": 11158542, "glow": 16376286 },
     "layout": ["######.#####", "#..^.......#", "#..^^......#", "#..........#", "............", "#...^..##..#", "#..........#", "#..#.......#", "######.#####"],
+    "connectors": [{ "from": { "x": 4, "y": 5 }, "to": { "x": 4, "y": 4 }, "kind": "stairs" }, { "from": { "x": 4, "y": 4 }, "to": { "x": 4, "y": 5 }, "kind": "stairs" }],
     "node": { "id": "node-10", "x": 4, "y": 5, "label": "open the sluice" },
     "props": [
       { "id": "block-10", "assetKey": "block-grass-large", "x": 3, "y": 2, "elevation": 1, "foreground": false, "blocks": true },
@@ -195,6 +202,7 @@
     "surface": "night",
     "palette": { "sky": 1646637, "ground": 3742751, "groundAlt": 5124212, "edge": 7305089, "glow": 15128767 },
     "layout": ["######.#####", "#..^.......#", "#..##..^...#", "#..........#", "............", "#......##..#", "#....^.....#", "#..#.......#", "######.#####"],
+    "connectors": [{ "from": { "x": 5, "y": 6 }, "to": { "x": 5, "y": 5 }, "kind": "stairs" }, { "from": { "x": 5, "y": 5 }, "to": { "x": 5, "y": 6 }, "kind": "stairs" }],
     "node": { "id": "node-11", "x": 5, "y": 6, "label": "mine the moonlight" },
     "props": [
       { "id": "rocks-11", "assetKey": "rocks", "x": 2, "y": 2, "elevation": 0, "foreground": false, "blocks": true },
@@ -229,6 +237,7 @@
     "surface": "cave",
     "palette": { "sky": 1579040, "ground": 3226426, "groundAlt": 4666726, "edge": 7231243, "glow": 13417599 },
     "layout": ["######.#####", "#..^.......#", "#..##..^...#", "#..........#", "............", "#...^..##..#", "#..........#", "#..#.......#", "######.#####"],
+    "connectors": [{ "from": { "x": 4, "y": 5 }, "to": { "x": 4, "y": 4 }, "kind": "stairs" }, { "from": { "x": 4, "y": 4 }, "to": { "x": 4, "y": 5 }, "kind": "stairs" }],
     "node": { "id": "node-13", "x": 4, "y": 5, "label": "send an echo" },
     "props": [
       { "id": "gate-13", "assetKey": "gate-rock", "x": 2, "y": 2, "elevation": 1, "foreground": true, "blocks": true },
@@ -246,6 +255,7 @@
     "surface": "meadow",
     "palette": { "sky": 2461727, "ground": 2783297, "groundAlt": 4113972, "edge": 5881066, "glow": 15421137 },
     "layout": ["######.#####", "#..^.......#", "#..##......#", "#...^......#", "............", "#......##..#", "#..........#", "#..#.......#", "######.#####"],
+    "connectors": [{ "from": { "x": 4, "y": 3 }, "to": { "x": 4, "y": 4 }, "kind": "stairs" }, { "from": { "x": 4, "y": 4 }, "to": { "x": 4, "y": 3 }, "kind": "stairs" }],
     "node": { "id": "node-14", "x": 4, "y": 3, "label": "bloom the pulse" },
     "props": [
       { "id": "mushrooms-14", "assetKey": "mushrooms", "x": 2, "y": 2, "elevation": 0, "foreground": false, "blocks": true },
@@ -263,6 +273,7 @@
     "surface": "rain",
     "palette": { "sky": 2502784, "ground": 3622453, "groundAlt": 4801858, "edge": 7170155, "glow": 13542143 },
     "layout": ["######.#####", "#..^.......#", "#..##..^...#", "#..........#", "............", "#...^..##..#", "#..........#", "#..#.......#", "######.#####"],
+    "connectors": [{ "from": { "x": 4, "y": 5 }, "to": { "x": 4, "y": 4 }, "kind": "stairs" }, { "from": { "x": 4, "y": 4 }, "to": { "x": 4, "y": 5 }, "kind": "stairs" }],
     "node": { "id": "node-15", "x": 4, "y": 5, "label": "restore the crossing" },
     "props": [
       { "id": "gate-15", "assetKey": "gate-rock", "x": 2, "y": 2, "elevation": 1, "foreground": true, "blocks": true },
@@ -280,6 +291,7 @@
     "surface": "sunset",
     "palette": { "sky": 11765355, "ground": 6053757, "groundAlt": 7436434, "edge": 10199111, "glow": 16442426 },
     "layout": ["######.#####", "#..........#", "#..##..^...#", "#..........#", "............", "#......##..#", "#....^.....#", "#..#.......#", "######.#####"],
+    "connectors": [{ "from": { "x": 5, "y": 6 }, "to": { "x": 5, "y": 5 }, "kind": "stairs" }, { "from": { "x": 5, "y": 5 }, "to": { "x": 5, "y": 6 }, "kind": "stairs" }],
     "node": { "id": "node-16", "x": 5, "y": 6, "label": "hold the dusk" },
     "props": [
       { "id": "tree-16", "assetKey": "tree", "x": 2, "y": 2, "elevation": 1, "foreground": true, "blocks": true },
@@ -297,6 +309,7 @@
     "surface": "cave",
     "palette": { "sky": 1710360, "ground": 3946042, "groundAlt": 5253412, "edge": 7829151, "glow": 14145513 },
     "layout": ["######.#####", "#..^.......#", "#..^^......#", "#..........#", "............", "#...^..##..#", "#..........#", "#..#.......#", "######.#####"],
+    "connectors": [{ "from": { "x": 4, "y": 5 }, "to": { "x": 4, "y": 4 }, "kind": "stairs" }, { "from": { "x": 4, "y": 4 }, "to": { "x": 4, "y": 5 }, "kind": "stairs" }],
     "node": { "id": "node-17", "x": 4, "y": 5, "label": "lift the basalt" },
     "props": [
       { "id": "block-17", "assetKey": "block-grass-large", "x": 3, "y": 2, "elevation": 1, "foreground": false, "blocks": true },
@@ -314,6 +327,7 @@
     "surface": "crystal",
     "palette": { "sky": 4141392, "ground": 5756144, "groundAlt": 7911441, "edge": 10731264, "glow": 16434943 },
     "layout": ["######.#####", "#..^.......#", "#..##..^...#", "#..........#", "............", "#......##..#", "#.....^....#", "#..#.......#", "######.#####"],
+    "connectors": [{ "from": { "x": 6, "y": 6 }, "to": { "x": 6, "y": 5 }, "kind": "stairs" }, { "from": { "x": 6, "y": 5 }, "to": { "x": 6, "y": 6 }, "kind": "stairs" }],
     "node": { "id": "node-18", "x": 6, "y": 6, "label": "split the prism" },
     "props": [
       { "id": "snow-18", "assetKey": "block-snow-large", "x": 2, "y": 2, "elevation": 1, "foreground": false, "blocks": true },

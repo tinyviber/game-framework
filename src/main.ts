@@ -1,15 +1,16 @@
 import './style.css';
-import { adventureCatalog } from '@/data/adventure/catalog';
 import {
-  adventureIsComplete,
-  applyAdventureAction,
-  createAdventureState,
-  resolveAdventureExit,
-  type AdventureDirection,
-  type AdventureRoom,
-  type AdventureState,
-} from '@/world/adventure';
-import { createFadeOverlay } from '@/rendering/fade';
+  generateGeneratedWorld,
+  type GeneratedWorld,
+} from '@/world/generated-world';
+import {
+  createGeneratedPlayground,
+  generatedGoalReached,
+  moveGeneratedPlayer,
+  playerPosition,
+  type GeneratedDirection,
+  type GeneratedPlayground,
+} from '@/chapters/chapter-13/generated-playground';
 import {
   createIsometricScene,
   projectIsoCell,
@@ -26,6 +27,16 @@ if (!root) {
   throw new Error('Missing #app');
 }
 
+const DEFAULT_SEED = 2026;
+
+function readSeed(): number {
+  const value = new URLSearchParams(window.location.search).get('seed');
+  const parsed = value === null ? DEFAULT_SEED : Number(value);
+  return Number.isInteger(parsed) && Number.isFinite(parsed)
+    ? parsed
+    : DEFAULT_SEED;
+}
+
 const shell = document.createElement('main');
 shell.className = 'adventure-shell';
 
@@ -35,12 +46,12 @@ header.innerHTML = `
   <div class="brand-lockup">
     <span class="brand-mark">✦</span>
     <div>
-      <p class="eyebrow">A 2.5D WIND ATLAS</p>
-      <h1>风场织线 <span>· Windweave</span></h1>
+      <p class="eyebrow">SEED → GEOGRAPHY → PLAY</p>
+      <h1>地形实验场 <span>· Generated Playground</span></h1>
     </div>
   </div>
   <div class="progress-block">
-    <span id="progress-label">WIND MARKS 00 / 20</span>
+    <span id="progress-label">BASELINE 00 · FINAL 00</span>
     <div class="progress-track"><i id="progress-fill"></i></div>
   </div>
 `;
@@ -54,20 +65,21 @@ const sidePanel = document.createElement('aside');
 sidePanel.className = 'side-panel';
 sidePanel.innerHTML = `
   <div class="panel-section location-section">
-    <p class="section-label">CURRENT THREAD</p>
-    <h2 id="room-title">Moss Gate</h2>
+    <p class="section-label">GENERATED WORLD</p>
+    <h2 id="room-title">Seed 2026</h2>
     <p id="room-description" class="room-description"></p>
     <p id="room-status" class="room-status"></p>
   </div>
   <div class="panel-section map-section">
-    <div class="section-row"><p class="section-label">ATLAS GRID</p><span class="grid-tag">4 × 5</span></div>
-    <div id="minimap" class="minimap" aria-label="20 room atlas"></div>
+    <div class="section-row"><p class="section-label">40 × 40 FIELD</p><span id="seed-tag" class="grid-tag">SEED 2026</span></div>
+    <div id="minimap" class="minimap" aria-label="generated terrain overview"></div>
   </div>
   <div class="panel-section legend-section">
     <p class="section-label">FIELD NOTES</p>
-    <div class="legend-line"><span class="legend-dot node-dot"></span><span>wind node</span></div>
-    <div class="legend-line"><span class="legend-dot exit-dot"></span><span>adjacent passage</span></div>
-    <div class="legend-line"><span class="legend-dot mark-dot"></span><span>thread awakened</span></div>
+    <div class="legend-line"><span class="legend-dot start-dot"></span><span>start</span></div>
+    <div class="legend-line"><span class="legend-dot goal-dot"></span><span>goal</span></div>
+    <div class="legend-line"><span class="legend-dot barrier-dot"></span><span>height barrier</span></div>
+    <div class="legend-line"><span class="legend-dot high-dot"></span><span>elevated ground</span></div>
   </div>
 `;
 
@@ -75,24 +87,15 @@ const controls = document.createElement('footer');
 controls.className = 'controls-bar';
 controls.innerHTML = `
   <span><kbd>W A S D</kbd> / <kbd>← ↑ ↓ →</kbd> move</span>
-  <span><kbd>E</kbd> resonate / speak</span>
-  <span><kbd>R</kbd> reset room</span>
+  <span><kbd>E</kbd> inspect terrain</span>
+  <span><kbd>R</kbd> reset</span>
+  <span><kbd>N</kbd> new seed</span>
   <span><kbd>[ ]</kbd> zoom</span>
-  <span id="hint-text" class="hint-text">Find a wind node. The atlas is yours to cross.</span>
+  <span id="hint-text" class="hint-text">Find the long way around the raised seam.</span>
 `;
 
-const dialogue = document.createElement('div');
-dialogue.id = 'dialogue';
-dialogue.className = 'dialogue-panel';
-dialogue.hidden = true;
-dialogue.setAttribute('role', 'status');
-
 stage.append(canvasRoot, sidePanel);
-
-const status = document.createElement('p');
-status.id = 'game-status';
-
-shell.append(header, stage, controls, dialogue, status);
+shell.append(header, stage, controls);
 root.replaceChildren(shell);
 
 const title = header.querySelector<HTMLHeadingElement>('h1')!;
@@ -101,215 +104,205 @@ const progressFill = header.querySelector<HTMLElement>('#progress-fill')!;
 const roomTitle = sidePanel.querySelector<HTMLHeadingElement>('#room-title')!;
 const roomDescription = sidePanel.querySelector<HTMLParagraphElement>('#room-description')!;
 const roomStatus = sidePanel.querySelector<HTMLParagraphElement>('#room-status')!;
+const seedTag = sidePanel.querySelector<HTMLSpanElement>('#seed-tag')!;
 const minimap = sidePanel.querySelector<HTMLDivElement>('#minimap')!;
 const hintText = controls.querySelector<HTMLSpanElement>('#hint-text')!;
 
-if (!title || !progressLabel || !progressFill || !roomTitle || !roomDescription || !roomStatus || !minimap || !hintText) {
-  throw new Error('Adventure UI failed to initialize');
+if (!title || !progressLabel || !progressFill || !roomTitle || !roomDescription || !roomStatus || !seedTag || !minimap || !hintText) {
+  throw new Error('Generated playground UI failed to initialize');
 }
 
-const roomById = (roomId: string): AdventureRoom => {
-  const room = adventureCatalog.rooms[roomId];
-  if (!room) {
-    throw new Error(`Unknown adventure room ${roomId}`);
-  }
-  return room;
-};
-
-let currentRoom = roomById(adventureCatalog.startRoomId);
-let state: AdventureState = createAdventureState(currentRoom);
+let seed = readSeed();
+let world: GeneratedWorld = generateGeneratedWorld(seed);
+let playground: GeneratedPlayground = createGeneratedPlayground(world);
+let state = playground.initialState;
 let renderer: ReturnType<typeof createIsometricScene>;
-let fade: ReturnType<typeof createFadeOverlay>;
-let zoom = 0.9;
-let camera = projectIsoCell(state.player.x, state.player.y);
+let zoom = 0.34;
+let camera = projectIsoCell(world.start.x, world.start.y, 0);
+const statusText = document.createElement('p');
+statusText.id = 'game-status';
+shell.append(statusText);
 
-const dialoguePages: string[] = [];
-let dialoguePage = 0;
-
-function setHint(message: string, duration = 2600): void {
+function setHint(message: string, duration = 3000): void {
   hintText.textContent = message;
   window.setTimeout(() => {
     if (hintText.textContent === message) {
-      hintText.textContent = 'Find a wind node. The atlas is yours to cross.';
+      hintText.textContent = 'Find the long way around the raised seam.';
     }
   }, duration);
 }
 
-function showDialogue(pages: readonly string[]): void {
-  dialoguePages.splice(0, dialoguePages.length, ...pages);
-  dialoguePage = 0;
-  dialogue.textContent = `${dialoguePages[0] ?? ''}  ·  [E] next`;
-  dialogue.hidden = false;
+function isSamePosition(a: { x: number; y: number }, b: { x: number; y: number }): boolean {
+  return a.x === b.x && a.y === b.y;
 }
 
-function advanceDialogue(): void {
-  dialoguePage += 1;
-  if (dialoguePage >= dialoguePages.length) {
-    dialogue.hidden = true;
-    return;
-  }
-  dialogue.textContent = `${dialoguePages[dialoguePage] ?? ''}  ·  [E] next`;
-}
+function createWorldView(): IsoRoomView {
+  const connectorEdges = world.edges.filter((edge) => {
+    if (edge.kind !== 'stairs' && edge.kind !== 'ramp') {
+      return false;
+    }
+    return (
+      edge.from.x < edge.to.x ||
+      (edge.from.x === edge.to.x && edge.from.y < edge.to.y)
+    );
+  });
 
-function createRoomView(room: AdventureRoom): IsoRoomView {
   return {
-    id: room.id,
-    title: room.title,
-    description: room.description,
-    width: room.width,
-    height: room.height,
-    cells: room.cells,
-    props: room.props,
-    npcs: room.npcs,
-    node: room.node,
-    exits: room.exits.map((exit) => ({
-      id: exit.id,
-      direction: exit.direction,
-      x: exit.at.x,
-      y: exit.at.y,
+    id: `generated-${world.seed}`,
+    title: `Seed ${world.seed}`,
+    description: 'A seed-built field of walls, loops, a raised island and one deliberate height barrier.',
+    width: world.width,
+    height: world.height,
+    cells: world.cells,
+    props: world.props,
+    npcs: [],
+    node: {
+      id: 'generated-goal-node',
+      x: world.goal.x,
+      y: world.goal.y,
+      label: 'reach the goal',
+    },
+    exits: [],
+    connectors: connectorEdges.map((edge) => ({
+      id: `connector-${edge.from.x}-${edge.from.y}-${edge.to.x}-${edge.to.y}`,
+      kind: edge.kind === 'ramp' ? 'ramp' : 'stairs',
+      from: { ...edge.from },
+      to: { ...edge.to },
     })),
-    palette: room.palette,
+    start: { x: world.start.x, y: world.start.y, label: 'start' },
+    goal: { x: world.goal.x, y: world.goal.y, label: 'goal' },
+    barrier: {
+      from: { ...world.perturbation.edge.from },
+      to: { ...world.perturbation.edge.to },
+    },
+    palette: world.palette,
   };
 }
 
 function buildView(): IsoSceneView {
-  const cell = currentRoom.cells[state.player.y]?.[state.player.x];
+  const position = playerPosition(state);
+  const cell = world.cells[position.y]?.[position.x];
   return {
-    room: createRoomView(currentRoom),
+    room: createWorldView(),
     player: {
-      x: state.player.x,
-      y: state.player.y,
+      x: position.x,
+      y: position.y,
       elevation: cell?.elevation ?? 0,
     },
-    windMarks: state.windMarks,
+    windMarks: {},
+    goalReached: generatedGoalReached(playground, state),
   };
 }
 
 function renderMinimap(): void {
   minimap.replaceChildren();
-  for (const room of adventureCatalog.roomList) {
-    const cell = document.createElement('span');
-    cell.className = 'map-cell';
-    cell.dataset.roomId = room.id;
-    cell.title = `${room.id} · ${room.title}`;
-    cell.textContent = room.id.slice(-2);
-    minimap.append(cell);
+  for (let y = 0; y < 20; y += 1) {
+    for (let x = 0; x < 20; x += 1) {
+      const cell = world.cells[y * 2]?.[x * 2];
+      const tile = document.createElement('span');
+      tile.className = 'map-cell';
+      if (!cell?.walkable) {
+        tile.classList.add('blocked');
+      } else {
+        tile.classList.add('open');
+        if (cell.elevation > 0) {
+          tile.classList.add('high');
+        }
+      }
+      if (cell && isSamePosition(cell, world.start)) {
+        tile.classList.add('start');
+      }
+      if (cell && isSamePosition(cell, world.goal)) {
+        tile.classList.add('goal');
+      }
+      minimap.append(tile);
+    }
   }
 }
 
 function render(): void {
-  const count = Object.values(state.windMarks).filter(Boolean).length;
-  const complete = adventureIsComplete(state, adventureCatalog);
-  const roomIndex = adventureCatalog.roomList.findIndex((room) => room.id === currentRoom.id);
-  const markIsLit = state.windMarks[currentRoom.id] === true;
-
+  const position = playerPosition(state);
+  const reached = generatedGoalReached(playground, state);
+  const baselineLength = world.perturbation.baselineShortestPathLength;
+  const finalLength = world.perturbation.finalShortestPathLength;
+  title.innerHTML = `地形实验场 <span>· Seed ${world.seed}</span>`;
+  roomTitle.textContent = `Seed ${world.seed}`;
+  roomDescription.textContent = `40×40 generated field · ${world.finalTopology.wallCount} walls · ${world.finalTopology.cycleRank} loops · ${world.finalTopology.articulationCount} bottlenecks`;
+  roomStatus.textContent = reached
+    ? 'GOAL REACHED · alternate route confirmed'
+    : `POSITION ${position.x},${position.y} · ${world.finalTopology.deadEndCount} dead ends in the field`;
+  seedTag.textContent = `SEED ${world.seed}`;
+  progressLabel.textContent = `BASELINE ${String(baselineLength).padStart(2, '0')} · FINAL ${String(finalLength).padStart(2, '0')}`;
+  progressFill.style.width = `${Math.min(100, (baselineLength / Math.max(1, finalLength)) * 100)}%`;
+  statusText.textContent = `SEED ${world.seed} · ${position.x},${position.y} · ${reached ? 'goal reached' : 'barrier ahead — route around'}`;
   renderer.render(buildView());
-  title.innerHTML = `风场织线 <span>· ${currentRoom.title}</span>`;
-  roomTitle.textContent = currentRoom.title;
-  roomDescription.textContent = currentRoom.description;
-  roomStatus.textContent = `${currentRoom.id.toUpperCase()}  /  SECTOR ${String(roomIndex + 1).padStart(2, '0')}  ·  ${markIsLit ? 'THREAD AWAKENED' : 'THREAD DORMANT'}`;
-  progressLabel.textContent = `WIND MARKS ${String(count).padStart(2, '0')} / 20`;
-  progressFill.style.width = `${(count / adventureCatalog.roomList.length) * 100}%`;
-  status.textContent = `${currentRoom.id} · position ${state.player.x},${state.player.y} · ${complete ? 'THE ATLAS IS BREATHING' : 'cross the adjacent rooms'}`;
-
-  minimap.querySelectorAll<HTMLElement>('.map-cell').forEach((cell) => {
-    const roomId = cell.dataset.roomId ?? '';
-    cell.classList.toggle('active', roomId === currentRoom.id);
-    cell.classList.toggle('marked', state.windMarks[roomId] === true);
-  });
-
-  if (complete) {
-    setHint('All 20 wind marks are awake. The whole atlas is breathing.', 6000);
-  }
 }
 
 function currentCameraTarget(): { x: number; y: number } {
-  const cell = currentRoom.cells[state.player.y]?.[state.player.x];
-  return projectIsoCell(state.player.x, state.player.y, cell?.elevation ?? 0);
+  const position = playerPosition(state);
+  const cell = world.cells[position.y]?.[position.x];
+  return projectIsoCell(position.x, position.y, cell?.elevation ?? 0);
 }
 
-function tryMove(direction: AdventureDirection): void {
-  const result = applyAdventureAction(state, currentRoom, { kind: 'move', direction });
+function tryMove(direction: GeneratedDirection): void {
+  const previous = playerPosition(state);
+  const result = moveGeneratedPlayer(playground, state, direction);
   state = result.state;
   render();
-
   if (!result.accepted) {
-    setHint('The terrain holds. Find the brighter seam around it.', 1200);
-    return;
-  }
-
-  const exit = resolveAdventureExit(state, currentRoom, adventureCatalog);
-  if (exit.accepted && exit.roomId && exit.spawn) {
-    pendingTransition = { roomId: exit.roomId, spawn: exit.spawn };
-    fadePhase = 'closing';
-  }
-}
-
-function tryInteract(): void {
-  if (!dialogue.hidden) {
-    advanceDialogue();
-    return;
-  }
-
-  const result = applyAdventureAction(state, currentRoom, { kind: 'interact' });
-  state = result.state;
-  render();
-
-  const event = result.events[0];
-  if (event?.tag === 'activated') {
-    setHint(`${currentRoom.node.label} · wind mark ${Object.values(state.windMarks).filter(Boolean).length} / 20`, 3600);
-    return;
-  }
-
-  if (event?.tag === 'dialogue-progressed') {
-    const npc = currentRoom.npcs.find(
-      (candidate) => Math.abs(candidate.x - state.player.x) + Math.abs(candidate.y - state.player.y) === 1,
-    );
-    if (npc) {
-      showDialogue([npc.name, npc.line]);
+    const barrier = world.perturbation.edge;
+    const next = {
+      x: previous.x + ({ up: 0, down: 0, left: -1, right: 1 }[direction] ?? 0),
+      y: previous.y + ({ up: -1, down: 1, left: 0, right: 0 }[direction] ?? 0),
+    };
+    if (
+      (isSamePosition(previous, barrier.from) && isSamePosition(next, barrier.to)) ||
+      (isSamePosition(previous, barrier.to) && isSamePosition(next, barrier.from))
+    ) {
+      setHint('The raised seam is a height barrier. Take the loop below it.', 4200);
+    } else {
+      setHint('No traversable edge there. Read the walls and find another opening.', 1800);
     }
-    return;
   }
-
-  setHint('Nothing resonates here yet. Stand beside a node or a traveler.', 1600);
 }
 
-function resetRoom(): void {
-  state = applyAdventureAction(state, currentRoom, { kind: 'reset' }).state;
+function inspectTerrain(): void {
+  const position = playerPosition(state);
+  const barrier = world.perturbation.edge;
+  if (
+    Math.abs(position.x - barrier.from.x) + Math.abs(position.y - barrier.from.y) <= 1 ||
+    Math.abs(position.x - barrier.to.x) + Math.abs(position.y - barrier.to.y) <= 1
+  ) {
+    setHint('The ground rises here without a connector. The lower loop is the natural route.', 4200);
+    return;
+  }
+  if (generatedGoalReached(playground, state)) {
+    setHint('Goal reached. Reset or press N to see a new geography.', 3600);
+    return;
+  }
+  setHint('Stairs connect the elevated island. The bright seam is intentionally impassable.', 2600);
+}
+
+function resetWorld(): void {
+  state = playground.initialState;
   camera = currentCameraTarget();
   render();
-  setHint('Room reset. The wind marks you have lit remain yours.', 2200);
+  setHint('Run reset. The seed and geography stayed the same.', 2400);
 }
 
-type FadePhase = 'idle' | 'closing' | 'opening';
-let fadePhase: FadePhase = 'idle';
-let pendingTransition: { roomId: string; spawn: { x: number; y: number } } | null = null;
-const FADE_MS = 220;
-
-function advanceFade(dtMs: number): void {
-  if (fadePhase === 'closing') {
-    fade.setAlpha(Math.min(1, fade.getAlpha() + dtMs / FADE_MS));
-    if (fade.getAlpha() >= 1 && pendingTransition) {
-      currentRoom = roomById(pendingTransition.roomId);
-      state = createAdventureState(currentRoom, pendingTransition.spawn, state.windMarks);
-      pendingTransition = null;
-      camera = currentCameraTarget();
-      render();
-      fadePhase = 'opening';
-    }
-    return;
-  }
-
-  if (fadePhase === 'opening') {
-    fade.setAlpha(Math.max(0, fade.getAlpha() - dtMs / FADE_MS));
-    if (fade.getAlpha() <= 0) {
-      fadePhase = 'idle';
-    }
-  }
+function createNewSeed(): void {
+  seed += 1;
+  world = generateGeneratedWorld(seed);
+  playground = createGeneratedPlayground(world);
+  state = playground.initialState;
+  camera = currentCameraTarget();
+  renderMinimap();
+  render();
+  setHint(`New geography generated from seed ${seed}.`, 3200);
 }
 
 function setZoom(nextZoom: number): void {
-  zoom = Math.min(1.18, Math.max(0.72, nextZoom));
+  zoom = Math.min(0.52, Math.max(0.24, nextZoom));
   renderer.setCamera(camera.x, camera.y, zoom);
 }
 
@@ -318,13 +311,13 @@ void (async () => {
     const host = await createPixiHost(canvasRoot, {
       width: 960,
       height: 600,
-      backgroundColor: currentRoom.palette.sky,
+      backgroundColor: world.palette.sky,
     });
     const textures: MarkTextureSet = await loadMarkTextures();
     renderer = createIsometricScene(host.scene, textures);
-    fade = createFadeOverlay(host.ui);
     renderMinimap();
     render();
+    renderer.setCamera(camera.x, camera.y, zoom);
 
     host.app.ticker.add(() => {
       const target = currentCameraTarget();
@@ -334,43 +327,37 @@ void (async () => {
         y: camera.y + (target.y - camera.y) * amount,
       };
       renderer.setCamera(camera.x, camera.y, zoom);
-      advanceFade(host.app.ticker.deltaMS);
     });
 
     const handleKeyDown = (event: KeyboardEvent): void => {
-      if (fadePhase !== 'idle') {
-        return;
-      }
       const key = event.key.toLowerCase();
-      if (!dialogue.hidden) {
-        if (key === 'e' || key === ' ') {
-          event.preventDefault();
-          advanceDialogue();
-        }
-        return;
-      }
       if (key === 'e' || key === ' ') {
         event.preventDefault();
-        tryInteract();
+        inspectTerrain();
         return;
       }
       if (key === 'r') {
         event.preventDefault();
-        resetRoom();
+        resetWorld();
+        return;
+      }
+      if (key === 'n') {
+        event.preventDefault();
+        createNewSeed();
         return;
       }
       if (key === '[') {
         event.preventDefault();
-        setZoom(zoom - 0.06);
+        setZoom(zoom - 0.04);
         return;
       }
       if (key === ']') {
         event.preventDefault();
-        setZoom(zoom + 0.06);
+        setZoom(zoom + 0.04);
         return;
       }
 
-      const direction: AdventureDirection | null =
+      const direction: GeneratedDirection | null =
         key === 'w' || key === 'arrowup'
           ? 'up'
           : key === 's' || key === 'arrowdown'
@@ -387,7 +374,7 @@ void (async () => {
     };
 
     window.addEventListener('keydown', handleKeyDown);
-    window.setTimeout(() => setHint('Move beside the heart-shaped node and press E to resonate.', 5000), 600);
+    window.setTimeout(() => setHint('The direct route is visible. Cross the field, then notice the raised seam.', 5200), 600);
 
     import.meta.hot?.dispose(() => {
       window.removeEventListener('keydown', handleKeyDown);
@@ -395,7 +382,7 @@ void (async () => {
     });
   } catch (error) {
     console.error(error);
-    root.textContent = 'Failed to create Windweave';
+    root.textContent = 'Failed to create generated playground';
   }
 })();
 

@@ -5,6 +5,12 @@ import {
   type OperationEvent,
   type Position,
 } from './types';
+import {
+  canTraverse,
+  createTraversalEdge,
+  isAdjacent,
+  type GeneratedEdge,
+} from './traversal';
 
 export const ADVENTURE_COLUMNS = 4;
 export const ADVENTURE_ROWS = 5;
@@ -86,6 +92,7 @@ export interface AdventureRoom {
   readonly cells: readonly (readonly AdventureCell[])[];
   readonly spawn: Position;
   readonly exits: readonly AdventureExit[];
+  readonly connectors: readonly GeneratedEdge[];
   readonly node: AdventureNode;
   readonly props: readonly AdventureProp[];
   readonly npcs: readonly AdventureNpc[];
@@ -100,6 +107,7 @@ export interface AdventureRoomSpec {
   readonly surface: AdventureSurface;
   readonly palette: AdventurePalette;
   readonly layout: readonly string[];
+  readonly connectors?: readonly GeneratedEdge[];
   readonly node: AdventureNode;
   readonly props: readonly AdventureProp[];
   readonly npcs: readonly AdventureNpc[];
@@ -230,6 +238,53 @@ function buildExits(spec: AdventureRoomSpec): readonly AdventureExit[] {
   });
 }
 
+function buildConnectors(
+  spec: AdventureRoomSpec,
+  cells: readonly (readonly AdventureCell[])[],
+): readonly GeneratedEdge[] {
+  const explicit = spec.connectors ?? [];
+  if (explicit.length > 0) {
+    return explicit.map((edge) =>
+      createTraversalEdge(edge.from, edge.to, edge.kind),
+    );
+  }
+
+  const connectors: GeneratedEdge[] = [];
+
+  for (const prop of spec.props) {
+    if (prop.assetKey !== 'stairs' && prop.assetKey !== 'ramp') {
+      continue;
+    }
+
+    const from = { x: prop.x, y: prop.y };
+    const fromCell = cells[from.y]?.[from.x];
+    if (!fromCell?.walkable) {
+      continue;
+    }
+
+    const neighbor = DIRECTIONS.map((direction) => {
+      const delta = DELTAS[direction];
+      return { x: from.x + delta.x, y: from.y + delta.y };
+    }).find((position) => {
+      const toCell = cells[position.y]?.[position.x];
+      return (
+        toCell?.walkable === true &&
+        Math.abs(fromCell.elevation - toCell.elevation) === 1
+      );
+    });
+
+    if (!neighbor) {
+      continue;
+    }
+
+    const kind = prop.assetKey === 'ramp' ? 'ramp' : 'stairs';
+    connectors.push(createTraversalEdge(from, neighbor, kind));
+    connectors.push(createTraversalEdge(neighbor, from, kind));
+  }
+
+  return connectors;
+}
+
 function isWithin(room: AdventureRoom, position: Position): boolean {
   return (
     position.x >= 0 &&
@@ -248,6 +303,27 @@ function cellAt(
 
 function samePosition(a: Position, b: Position): boolean {
   return a.x === b.x && a.y === b.y;
+}
+
+function edgeFor(
+  room: AdventureRoom,
+  from: Position,
+  to: Position,
+): GeneratedEdge | undefined {
+  const explicit = room.connectors.find(
+    (edge) => samePosition(edge.from, from) && samePosition(edge.to, to),
+  );
+  if (explicit) {
+    return explicit;
+  }
+
+  const fromCell = cellAt(room, from);
+  const toCell = cellAt(room, to);
+  if (!fromCell?.walkable || !toCell?.walkable || !isAdjacent(from, to)) {
+    return undefined;
+  }
+
+  return createTraversalEdge(from, to);
 }
 
 function adjacent(a: Position, b: Position): boolean {
@@ -282,6 +358,7 @@ export function createAdventureCatalog(
       cells,
       spawn: { x: 6, y: 4 },
       exits: buildExits(spec),
+      connectors: buildConnectors(spec, cells),
       node: spec.node,
       props: spec.props,
       npcs: spec.npcs,
@@ -364,6 +441,29 @@ export function validateAdventureCatalog(
         )
       ) {
         problems.push(`${room.id}: ${exit.id} has no reverse edge`);
+      }
+    }
+
+    for (const edge of room.connectors) {
+      const from = cellAt(room, edge.from);
+      const to = cellAt(room, edge.to);
+      if (!from?.walkable || !to?.walkable || !isAdjacent(edge.from, edge.to)) {
+        problems.push(`${room.id}: connector has invalid endpoints`);
+      } else if (
+        Math.abs(from.elevation - to.elevation) !== 1 ||
+        (edge.kind !== 'stairs' && edge.kind !== 'ramp')
+      ) {
+        problems.push(`${room.id}: connector must bridge exactly one elevation`);
+      }
+      if (
+        !room.connectors.some(
+          (candidate) =>
+            samePosition(candidate.from, edge.to) &&
+            samePosition(candidate.to, edge.from) &&
+            candidate.kind === edge.kind,
+        )
+      ) {
+        problems.push(`${room.id}: connector ${edge.kind} is missing its reverse edge`);
       }
     }
 
@@ -472,6 +572,7 @@ export function applyAdventureAction(
       x: state.player.x + delta.x,
       y: state.player.y + delta.y,
     };
+    const fromCell = cellAt(room, state.player);
     const targetCell = cellAt(room, target);
     const blockingProp = room.props.find(
       (prop) => prop.blocks && samePosition(prop, target),
@@ -480,6 +581,13 @@ export function applyAdventureAction(
 
     if (
       !targetCell?.walkable ||
+      !fromCell ||
+      !canTraverse(
+        fromCell,
+        targetCell,
+        edgeFor(room, state.player, target),
+        {},
+      ) ||
       blockingProp !== undefined ||
       blockingNpc !== undefined
     ) {
@@ -575,7 +683,21 @@ export function reachableCells(room: AdventureRoom, start = room.spawn): Readonl
 
     for (const direction of DIRECTIONS) {
       const delta = DELTAS[direction];
-      queue.push({ x: position.x + delta.x, y: position.y + delta.y });
+      const next = { x: position.x + delta.x, y: position.y + delta.y };
+      const fromCell = cellAt(room, position);
+      const toCell = cellAt(room, next);
+      if (
+        fromCell &&
+        toCell &&
+        canTraverse(
+          fromCell,
+          toCell,
+          edgeFor(room, position, next),
+          {},
+        )
+      ) {
+        queue.push(next);
+      }
     }
   }
 

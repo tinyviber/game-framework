@@ -92,6 +92,24 @@ export interface IsoExitView {
   readonly y: number;
 }
 
+export interface IsoConnectorView {
+  readonly id: string;
+  readonly kind: 'stairs' | 'ramp';
+  readonly from: { readonly x: number; readonly y: number };
+  readonly to: { readonly x: number; readonly y: number };
+}
+
+export interface IsoMarkerView {
+  readonly x: number;
+  readonly y: number;
+  readonly label: string;
+}
+
+export interface IsoBarrierView {
+  readonly from: { readonly x: number; readonly y: number };
+  readonly to: { readonly x: number; readonly y: number };
+}
+
 export interface IsoRoomView {
   readonly id: string;
   readonly title: string;
@@ -103,6 +121,10 @@ export interface IsoRoomView {
   readonly npcs: readonly IsoNpcView[];
   readonly node: IsoNodeView;
   readonly exits: readonly IsoExitView[];
+  readonly connectors?: readonly IsoConnectorView[];
+  readonly start?: IsoMarkerView;
+  readonly goal?: IsoMarkerView;
+  readonly barrier?: IsoBarrierView;
   readonly palette: {
     readonly sky: number;
     readonly ground: number;
@@ -112,10 +134,13 @@ export interface IsoRoomView {
   };
 }
 
+export interface IsoWorldView extends IsoRoomView {}
+
 export interface IsoSceneView {
-  readonly room: IsoRoomView;
+  readonly room: IsoWorldView;
   readonly player: { readonly x: number; readonly y: number; readonly elevation: number };
   readonly windMarks: Readonly<Record<string, boolean>>;
+  readonly goalReached?: boolean;
 }
 
 export interface IsometricSceneRenderer {
@@ -286,12 +311,101 @@ function drawExitMarkers(
   room: IsoRoomView,
 ): void {
   for (const exit of room.exits) {
-    const point = projectIsoCell(exit.x, exit.y);
+    const elevation = room.cells[exit.y]?.[exit.x]?.elevation ?? 0;
+    const point = projectIsoCell(exit.x, exit.y, elevation);
     graphics
       .moveTo(point.x, point.y - 9)
       .lineTo(point.x + (exit.direction === 'right' ? 10 : exit.direction === 'left' ? -10 : 0), point.y + (exit.direction === 'down' ? 10 : exit.direction === 'up' ? -10 : 0))
       .stroke({ width: 3, color: room.palette.glow, alpha: 0.92 });
   }
+}
+
+function drawConnectorMarkers(
+  graphics: Graphics,
+  room: IsoRoomView,
+): void {
+  for (const connector of room.connectors ?? []) {
+    const fromCell = room.cells[connector.from.y]?.[connector.from.x];
+    const toCell = room.cells[connector.to.y]?.[connector.to.x];
+    const from = projectIsoCell(
+      connector.from.x,
+      connector.from.y,
+      fromCell?.elevation ?? 0,
+    );
+    const to = projectIsoCell(
+      connector.to.x,
+      connector.to.y,
+      toCell?.elevation ?? 0,
+    );
+    graphics
+      .moveTo(from.x, from.y)
+      .lineTo(to.x, to.y)
+      .stroke({ width: 3, color: room.palette.glow, alpha: 0.72 });
+  }
+}
+
+function drawMarker(
+  graphics: Graphics,
+  room: IsoRoomView,
+  marker: IsoMarkerView,
+  color: number,
+  active = false,
+): void {
+  const elevation = room.cells[marker.y]?.[marker.x]?.elevation ?? 0;
+  const point = projectIsoCell(marker.x, marker.y, elevation);
+  graphics.ellipse(point.x, point.y + 7, 18, 7).fill({ color: 0x05080d, alpha: 0.26 });
+  graphics.circle(point.x, point.y - 12, active ? 17 : 13).fill({
+    color,
+    alpha: active ? 0.28 : 0.14,
+  });
+  graphics.circle(point.x, point.y - 12, active ? 8 : 6).fill(color);
+  graphics.circle(point.x, point.y - 12, active ? 15 : 11).stroke({
+    width: 2,
+    color,
+    alpha: 0.9,
+  });
+}
+
+function drawBarrier(
+  graphics: Graphics,
+  room: IsoRoomView,
+): void {
+  if (!room.barrier) {
+    return;
+  }
+
+  const fromCell = room.cells[room.barrier.from.y]?.[room.barrier.from.x];
+  const toCell = room.cells[room.barrier.to.y]?.[room.barrier.to.x];
+  const from = projectIsoCell(
+    room.barrier.from.x,
+    room.barrier.from.y,
+    fromCell?.elevation ?? 0,
+  );
+  const to = projectIsoCell(
+    room.barrier.to.x,
+    room.barrier.to.y,
+    toCell?.elevation ?? 0,
+  );
+  const midpoint = { x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 };
+  graphics
+    .moveTo(from.x, from.y - 4)
+    .lineTo(to.x, to.y - 4)
+    .stroke({ width: 5, color: 0xf08b73, alpha: 0.88 });
+  graphics.circle(midpoint.x, midpoint.y - 4, 8).fill({ color: 0xf08b73, alpha: 0.9 });
+}
+
+function backgroundBounds(room: IsoRoomView): {
+  readonly width: number;
+  readonly height: number;
+  readonly top: number;
+} {
+  const diagonalWidth = (room.width + room.height) * (ISO_TILE_WIDTH / 2);
+  const diagonalHeight = (room.width + room.height) * (ISO_TILE_HEIGHT / 2);
+  return {
+    width: Math.max(1800, diagonalWidth + 520),
+    height: Math.max(1200, diagonalHeight + 560),
+    top: -Math.max(280, diagonalHeight * 0.35),
+  };
 }
 
 export function createIsometricScene(
@@ -330,7 +444,10 @@ export function createIsometricScene(
       entityGraphics.clear();
 
       const { room } = view;
-      terrainGraphics.rect(-900, -280, 1800, 1200).fill(room.palette.sky);
+      const background = backgroundBounds(room);
+      terrainGraphics
+        .rect(-background.width / 2, background.top, background.width, background.height)
+        .fill(room.palette.sky);
 
       for (const row of room.cells) {
         for (const cell of row) {
@@ -351,6 +468,14 @@ export function createIsometricScene(
       }
 
       drawExitMarkers(propGraphics, room);
+      drawConnectorMarkers(propGraphics, room);
+      if (room.start) {
+        drawMarker(propGraphics, room, room.start, 0x8de2c6);
+      }
+      if (room.goal) {
+        drawMarker(propGraphics, room, room.goal, room.palette.glow, view.goalReached === true);
+      }
+      drawBarrier(propGraphics, room);
       drawNode(propGraphics, room, view.windMarks[room.id] === true);
       makeSprite(
         textures,

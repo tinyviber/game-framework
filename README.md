@@ -15,27 +15,29 @@ view model and rendered with PixiJS.
 
 ## Architecture at a glance
 
-The currently playable game is **Windweave**, a 2.5D isometric exploration
-atlas built from the selected Kenney previews in `textures_mark`:
+The currently playable game is a **seed-based 2.5D generated playground**
+built from the selected Kenney previews in `textures_mark`:
 
 ```text
-20-room authoring catalog (src/data/adventure/rooms.json)
-  → createAdventureCatalog (src/world/adventure) # strict 4×5 / 62-edge graph
-PlayerAction (src/main.ts)
-  → applyAdventureAction                         # frozen state + typed events
-  → resolveAdventureExit                         # paired boundary exits
+seed
+  → generated-world (src/world/generated-world)  # deterministic 40×40 geometry
+  → chapter-13 adapter                            # LocalWorld + scoped operation
   → IsoSceneView (src/rendering/isometric-scene)  # one-way presentation DTO
   → Pixi 2.5D dimetric scene
 ```
 
-Move through the 4×5 atlas, stand beside a wind node and press `E` to awaken
-its mark. NPCs also respond to `E`; `R` resets the current room without
-undoing already awakened marks. The renderer uses the committed 64×64 PNG
-previews as terrain props and characters, then adds elevation, shadows,
-foot-point sorting and a foreground occlusion layer for the 3D reading.
+Run through a generated 40×40 field. The baseline route is deliberately
+perturbed with a height barrier, so the visible goal requires noticing and
+taking the longer loop. `E` inspects the terrain, `R` resets the run, `N`
+generates the next seed, and `[ ]` changes zoom. Elevation is gameplay data:
+same-height cells traverse normally, while height changes require an explicit
+stairs/ramp edge. The renderer uses the committed 64×64 PNG previews as
+terrain props and characters, then adds elevation, shadows, foot-point sorting
+and a foreground occlusion layer for the 3D reading.
 
-The older tile runtime remains in the source tree for compatibility tests,
-but it is not wired into the current playable entry point.
+The 20-room **Windweave** catalog remains in `src/data/adventure` as a
+showcase/renderer fixture. It is not the canonical generated-world source and
+is not wired into the current playable entry point.
 
 The original **chapter pipeline** still exists and its tests still run:
 
@@ -49,9 +51,10 @@ PlayerAction (src/main.ts)
 ```
 
 The chapter pipeline is currently reference/test material for
-closures/topology/checkpoints, not the running game. Windweave is the
-current production entry point; the legacy tile runtime is retained only
-for compatibility coverage.
+closures/topology/checkpoints. Chapter 13 is the generated-playground level
+adapter and deliberately reuses `tryInitializeLocalWorld` and
+`applyScopedOperation`; the legacy tile runtime is retained only for
+compatibility coverage.
 
 See `docs/Current Design Synthesis and Reconstruction Plan.md` for the
 full design constitution and per-chapter rebuild plan, and `AGENTS.md`
@@ -71,16 +74,17 @@ tile player action          → tile-specific WorldOperation
                             → TileSceneView → Pixi
 ```
 
-The adventure path is now the production wiring. The older tile runtime and
-chapter pipeline remain as isolated framework/test material; the adventure
-world uses the same frozen world primitives and `OperationEvent` union, and
-does not introduce a global event bus or background room simulation.
+The generated-world path is now the production wiring. The older tile runtime,
+chapter pipeline examples and 20-room adventure remain isolated
+framework/showcase material; the generated world uses frozen definitions and
+the existing Local World/scoped-operation primitives, and does not introduce a
+global event bus or background room simulation.
 
 ## Getting started
 
 ```sh
 npm install
-npm run dev      # browser: the Windweave 20-room atlas
+npm run dev      # browser: the seed-based generated playground
 npm test         # vitest (node environment)
 npm run build    # tsc + vite build
 ```
@@ -94,16 +98,15 @@ npm test -- src/world/hub-playthrough.test.ts
 ## Repository layout
 
 ```text
-src/data/         adventure room catalog plus legacy room JSON/dialogue
+src/data/         showcase adventure catalog plus legacy room JSON/dialogue
 src/world/        pure state primitives: types, local-world, operation,
                   closure, topology, transition, checkpoint, spatial,
-                  and the legacy tile runtime (tilemap, tile-world,
-                  tile-transition, flags, camera)
+                  traversal, generated-world, and the legacy tile runtime
 src/runtime/      game session orchestration
-src/chapters/     level-specific rules and view projections, one folder
-                  per chapter of the rebuild plan
+src/chapters/     level-specific rules and view projections, including the
+                  generated playground adapter
 src/rendering/    Pixi host, world scene layers, legacy tile renderer,
-                  and the Windweave isometric renderer
+                  and the generated-world isometric renderer
 src/main.ts       browser wiring: the only module connecting DOM,
                   world operations and the Pixi host
 docs/             design plan and project analysis

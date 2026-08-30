@@ -22,6 +22,66 @@ function walk(
 }
 
 describe('Windweave adventure world', () => {
+  it('treats unconnected elevation changes as blocked traversal', () => {
+    for (const entry of adventureCatalog.roomList) {
+      const connectors = (entry as unknown as { readonly connectors?: readonly { readonly from: { readonly x: number; readonly y: number }; readonly to: { readonly x: number; readonly y: number } }[] }).connectors ?? [];
+      for (const row of entry.cells) for (const from of row) {
+        for (const to of entry.cells.flat().filter((candidate) => Math.abs(candidate.x - from.x) + Math.abs(candidate.y - from.y) === 1 && candidate.elevation !== from.elevation)) {
+          const connected = connectors.some((connector) => (connector.from.x === from.x && connector.from.y === from.y && connector.to.x === to.x && connector.to.y === to.y) || (connector.to.x === from.x && connector.to.y === from.y && connector.from.x === to.x && connector.from.y === to.y));
+          if (!connected && from.walkable && to.walkable) {
+            const direction = to.x > from.x ? 'right' : to.x < from.x ? 'left' : to.y > from.y ? 'down' : 'up';
+            const result = applyAdventureAction(createAdventureState(entry, { x: from.x, y: from.y }), entry, { kind: 'move', direction });
+            expect(result.accepted).toBe(false);
+            expect(result.state.player).toEqual({ x: from.x, y: from.y });
+            return;
+          }
+        }
+      }
+    }
+    throw new Error('showcase must contain an unconnected elevation edge');
+  });
+
+  it('allows a connected showcase staircase in both directions', () => {
+    for (const entry of adventureCatalog.roomList) {
+      const connector = entry.connectors.find(
+        (candidate) => candidate.kind === 'stairs' || candidate.kind === 'ramp',
+      );
+      if (!connector) {
+        continue;
+      }
+
+      const direction = connector.to.x > connector.from.x
+        ? 'right'
+        : connector.to.x < connector.from.x
+          ? 'left'
+          : connector.to.y > connector.from.y
+            ? 'down'
+            : 'up';
+      const reverseDirection = direction === 'left'
+        ? 'right'
+        : direction === 'right'
+          ? 'left'
+          : direction === 'up'
+            ? 'down'
+            : 'up';
+      const climbed = applyAdventureAction(
+        createAdventureState(entry, connector.from),
+        entry,
+        { kind: 'move', direction },
+      );
+      expect(climbed.accepted).toBe(true);
+
+      const descended = applyAdventureAction(
+        climbed.state,
+        entry,
+        { kind: 'move', direction: reverseDirection },
+      );
+      expect(descended.accepted).toBe(true);
+      return;
+    }
+    throw new Error('showcase must contain a connected staircase');
+  });
+
   it('builds a 4x5 graph with 20 rooms and 62 paired exits', () => {
     expect(adventureCatalog.roomList).toHaveLength(20);
     expect(new Set(adventureCatalog.roomList.map((entry) => entry.id)).size).toBe(20);
