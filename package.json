@@ -7,7 +7,12 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "test": "vitest run --environment node"
+    "test": "vitest run --environment node",
+    "assets:verify": "bash asset-research/scripts/research-assets.sh verify",
+    "assets:prepare-local": "bash asset-research/scripts/research-assets.sh prepare --write-local",
+    "assets:preview-local": "bash asset-research/scripts/research-assets.sh preview --write-local",
+    "assets:analyze-local": "bash asset-research/scripts/research-assets.sh analyze --write-local",
+    "assets:benchmark-local": "bash asset-research/scripts/research-assets.sh benchmark --write-local"
   },
   "devDependencies": {
     "@types/node": "^26.4.0",
