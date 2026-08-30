@@ -6,6 +6,7 @@ import {
   chooseTopologyFamily,
   generateGeneratedWorld,
   findGeneratedPath,
+  isGeneratedTopologyFamily,
   resolveGeneratedEdge,
   type GeneratedWorld,
 } from './generated-world';
@@ -120,6 +121,45 @@ function interRegionCrossings(world: GeneratedWorld): Set<string> {
     }
   }
   return crossings;
+}
+
+function validateStoredPathEndpoints(
+  world: GeneratedWorld,
+  path: readonly { readonly x: number; readonly y: number }[],
+): string | undefined {
+  if (path.length === 0) {
+    return 'stored path is empty';
+  }
+  if (positionKey(path[0]!) !== positionKey(world.start)) {
+    return 'stored path does not start at start';
+  }
+  if (positionKey(path.at(-1)!) !== positionKey(world.goal)) {
+    return 'stored path does not end at goal';
+  }
+  return undefined;
+}
+
+function validateStoredPath(
+  world: GeneratedWorld,
+  path: readonly { readonly x: number; readonly y: number }[],
+  baseline: boolean,
+): string | undefined {
+  const endpointError = validateStoredPathEndpoints(world, path);
+  if (endpointError) {
+    return endpointError;
+  }
+  const cells = baseline ? world.baselineCells : world.cells;
+  for (let index = 1; index < path.length; index += 1) {
+    const fromPosition = path[index - 1]!;
+    const toPosition = path[index]!;
+    const from = cells[fromPosition.y]?.[fromPosition.x];
+    const to = cells[toPosition.y]?.[toPosition.x];
+    const edge = resolveGeneratedEdge(world, fromPosition, toPosition, baseline);
+    if (!from || !to || !edge || !canTraverse(from, to, edge, {})) {
+      return `invalid transition at ${positionKey(fromPosition)}>${positionKey(toPosition)}`;
+    }
+  }
+  return undefined;
 }
 
 describe('seeded generated world', () => {
@@ -286,5 +326,95 @@ describe('seeded generated world', () => {
       },
     })).toThrow(/seed[^\d]*0|0[^\n]*seed/i);
     expect(callbackAttempts).toBe(2);
+  });
+
+  it('keeps every seed in the deterministic 0..9999 generation domain valid', { timeout: 300_000 }, () => {
+    const failures: string[] = [];
+    const familyPredicatesChecked = new Set<string>();
+    let failureCount = 0;
+
+    for (let seed = 0; seed <= 9_999; seed += 1) {
+      const expectedFamily = chooseTopologyFamily(seed);
+      let world: GeneratedWorld;
+
+      try {
+        world = generateGeneratedWorld(seed);
+      } catch (error) {
+        failureCount += 1;
+        if (failures.length < 8) {
+          const reason = error instanceof Error ? error.message : String(error);
+          failures.push(
+            `seed=${seed} expectedFamily=${expectedFamily} actualFamily=<generation-throw> reason=${reason}`,
+          );
+        }
+        continue;
+      }
+
+      const actualFamily = world.topologyFamily;
+      try {
+        if (actualFamily !== expectedFamily) {
+          throw new Error(`topology family mismatch: expected ${expectedFamily}, got ${actualFamily}`);
+        }
+
+        const baselineError = validateStoredPath(world, world.baselinePath, true);
+        if (baselineError) {
+          throw new Error(`baseline path invalid: ${baselineError}`);
+        }
+        if (world.perturbation.baselineShortestPathLength !== world.baselinePath.length - 1) {
+          throw new Error(
+            `baseline metadata mismatch: ${world.perturbation.baselineShortestPathLength} vs ${world.baselinePath.length - 1}`,
+          );
+        }
+
+        const finalError = validateStoredPath(world, world.finalPath, false);
+        if (finalError) {
+          throw new Error(`final path invalid: ${finalError}`);
+        }
+        if (world.perturbation.finalShortestPathLength !== world.finalPath.length - 1) {
+          throw new Error(
+            `final metadata mismatch: ${world.perturbation.finalShortestPathLength} vs ${world.finalPath.length - 1}`,
+          );
+        }
+        if (world.perturbation.finalShortestPathLength <= world.perturbation.baselineShortestPathLength) {
+          throw new Error(
+            `final path is not longer than baseline: ${world.perturbation.finalShortestPathLength} <= ${world.perturbation.baselineShortestPathLength}`,
+          );
+        }
+        // The generator already applies this predicate to every candidate. Re-running
+        // it for all 10,000 worlds would repeat the ring-family BFS needlessly, so the
+        // stress test checks the exported predicate once for each family while still
+        // validating generation and family stability for every seed.
+        if (!familyPredicatesChecked.has(actualFamily)) {
+          if (!isGeneratedTopologyFamily(
+            actualFamily,
+            world.baselineCells,
+            world.baselineEdges,
+            world.start,
+            world.goal,
+            world.baselinePath,
+            world.topology,
+          )) {
+            throw new Error('isGeneratedTopologyFamily returned false');
+          }
+          familyPredicatesChecked.add(actualFamily);
+        }
+      } catch (error) {
+        failureCount += 1;
+        if (failures.length < 8) {
+          const reason = error instanceof Error ? error.message : String(error);
+          failures.push(
+            `seed=${seed} expectedFamily=${expectedFamily} actualFamily=${actualFamily} reason=${reason}`,
+          );
+        }
+      }
+    }
+
+    const summary = failureCount === 0
+      ? ''
+      : `${failureCount} seed validation failure(s); first ${failures.length}:\n${failures.join('\n')}`;
+    if (failureCount === 0) {
+      expect(familyPredicatesChecked).toEqual(new Set(GENERATED_TOPOLOGY_FAMILIES));
+    }
+    expect(failureCount, summary).toBe(0);
   });
 });
