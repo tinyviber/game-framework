@@ -66,7 +66,7 @@ input {
 .eyebrow,
 .section-label,
 .grid-tag,
-.progress-block,
+.world-mode-label,
 .room-status,
 #game-status {
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
@@ -102,29 +102,10 @@ h1 span {
   letter-spacing: 0.02em;
 }
 
-.progress-block {
-  width: min(238px, 34vw);
+.world-mode-label {
   color: #9cbaa5;
   font-size: 10px;
   font-weight: 700;
-}
-
-.progress-track {
-  height: 5px;
-  margin-top: 9px;
-  overflow: hidden;
-  border-radius: 999px;
-  background: rgba(137, 181, 142, 0.16);
-}
-
-.progress-track i {
-  display: block;
-  width: 0;
-  height: 100%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, #8ad3a0, #ddf58e);
-  box-shadow: 0 0 16px rgba(204, 244, 143, 0.65);
-  transition: width 280ms ease;
 }
 
 .stage-shell {
@@ -259,6 +240,11 @@ h1 span {
   background: #f2c66d;
 }
 
+.map-cell.disrupted {
+  border-color: #f08b73;
+  box-shadow: inset 0 0 0 1px rgba(255, 209, 163, 0.75);
+}
+
 .map-cell.marked {
   color: #f0eea5;
   border-color: rgba(223, 232, 142, 0.58);
@@ -313,11 +299,6 @@ h1 span {
   box-shadow: 0 0 9px rgba(242, 198, 109, 0.55);
 }
 
-.barrier-dot {
-  background: #f08b73;
-  box-shadow: 0 0 9px rgba(240, 139, 115, 0.55);
-}
-
 .high-dot {
   background: #cda55d;
 }
@@ -343,12 +324,6 @@ kbd {
   color: #d7efbd;
   background: rgba(29, 62, 48, 0.8);
   font-size: 10px;
-}
-
-.hint-text {
-  flex: 1 1 240px;
-  color: #ddf09c;
-  text-align: right;
 }
 
 .dialogue-panel {
@@ -391,10 +366,6 @@ kbd {
     grid-column: 1 / -1;
   }
 
-  .hint-text {
-    flex-basis: 100%;
-    text-align: left;
-  }
 }
 
 @media (max-width: 540px) {
@@ -402,10 +373,6 @@ kbd {
     align-items: start;
     flex-direction: column;
     gap: 18px;
-  }
-
-  .progress-block {
-    width: 100%;
   }
 
   .side-panel {

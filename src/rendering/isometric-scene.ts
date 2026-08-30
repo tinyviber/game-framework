@@ -55,8 +55,15 @@ export interface IsoCellView {
   readonly x: number;
   readonly y: number;
   readonly elevation: number;
-  readonly surface: string;
+  readonly terrainType: string;
+  readonly biome: string;
+  readonly environment: IsoEnvironmentView;
   readonly walkable: boolean;
+}
+
+export interface IsoEnvironmentView {
+  readonly weather: string;
+  readonly lighting: string;
 }
 
 export interface IsoPropView {
@@ -105,9 +112,11 @@ export interface IsoMarkerView {
   readonly label: string;
 }
 
-export interface IsoBarrierView {
-  readonly from: { readonly x: number; readonly y: number };
-  readonly to: { readonly x: number; readonly y: number };
+export interface IsoDebugOverlay {
+  readonly baselinePath?: readonly IsoPoint[];
+  readonly finalPath?: readonly IsoPoint[];
+  readonly disruptionFootprint?: readonly IsoPoint[];
+  readonly diagnostics?: Readonly<Record<string, string | number | boolean>>;
 }
 
 export interface IsoRoomView {
@@ -124,7 +133,8 @@ export interface IsoRoomView {
   readonly connectors?: readonly IsoConnectorView[];
   readonly start?: IsoMarkerView;
   readonly goal?: IsoMarkerView;
-  readonly barrier?: IsoBarrierView;
+  readonly environment: IsoEnvironmentView;
+  readonly debugOverlay?: IsoDebugOverlay;
   readonly palette: {
     readonly sky: number;
     readonly ground: number;
@@ -168,26 +178,38 @@ function clearContainer(container: Container): void {
   container.removeChildren().forEach((child) => child.destroy());
 }
 
-function colorForSurface(surface: string, palette: IsoRoomView['palette']): number {
-  switch (surface) {
-    case 'sky':
-      return palette.groundAlt;
-    case 'rain':
-      return 0x2f7186;
-    case 'night':
-      return 0x343b64;
-    case 'snow':
-      return 0xbad4d3;
-    case 'cave':
-      return 0x4b3f59;
-    case 'crystal':
-      return 0x6f63a1;
-    case 'sunset':
-      return 0xb66f55;
-    case 'meadow':
-    default:
-      return palette.ground;
-  }
+function colorForTerrain(
+  terrainType: string,
+  biome: string,
+  environment: IsoEnvironmentView,
+  palette: IsoRoomView['palette'],
+): number {
+  const base = (() => {
+    switch (terrainType) {
+      case 'dirt':
+        return 0x9a6a4d;
+      case 'stone':
+        return 0x788793;
+      case 'snow':
+        return 0xbad4d3;
+      case 'crystal':
+        return 0x6f63a1;
+      case 'cliff':
+        return palette.edge;
+      case 'grass':
+      default:
+        return palette.ground;
+    }
+  })();
+
+  const biomeShift = biome === 'wetland' ? 0x07140d : biome === 'ridge' ? 0x090909 : 0;
+  const weatherShift = environment.weather === 'rainy' ? 0x060b12 : 0;
+  const lightingShift = environment.lighting === 'night'
+    ? 0x202020
+    : environment.lighting === 'dusk'
+      ? 0x0b0710
+      : 0;
+  return Math.max(0, base - biomeShift - weatherShift - lightingShift);
 }
 
 function tintForCell(
@@ -200,7 +222,7 @@ function tintForCell(
 
   return (cell.x + cell.y) % 3 === 0
     ? palette.groundAlt
-    : colorForSurface(cell.surface, palette);
+    : colorForTerrain(cell.terrainType, cell.biome, cell.environment, palette);
 }
 
 function diamond(
@@ -366,32 +388,37 @@ function drawMarker(
   });
 }
 
-function drawBarrier(
+function drawDebugOverlay(
   graphics: Graphics,
   room: IsoRoomView,
 ): void {
-  if (!room.barrier) {
+  const overlay = room.debugOverlay;
+  if (!overlay) {
     return;
   }
 
-  const fromCell = room.cells[room.barrier.from.y]?.[room.barrier.from.x];
-  const toCell = room.cells[room.barrier.to.y]?.[room.barrier.to.x];
-  const from = projectIsoCell(
-    room.barrier.from.x,
-    room.barrier.from.y,
-    fromCell?.elevation ?? 0,
-  );
-  const to = projectIsoCell(
-    room.barrier.to.x,
-    room.barrier.to.y,
-    toCell?.elevation ?? 0,
-  );
-  const midpoint = { x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 };
-  graphics
-    .moveTo(from.x, from.y - 4)
-    .lineTo(to.x, to.y - 4)
-    .stroke({ width: 5, color: 0xf08b73, alpha: 0.88 });
-  graphics.circle(midpoint.x, midpoint.y - 4, 8).fill({ color: 0xf08b73, alpha: 0.9 });
+  if (overlay.finalPath && overlay.finalPath.length > 1) {
+    for (let index = 1; index < overlay.finalPath.length; index += 1) {
+      const from = overlay.finalPath[index - 1]!;
+      const to = overlay.finalPath[index]!;
+      const fromCell = room.cells[from.y]?.[from.x];
+      const toCell = room.cells[to.y]?.[to.x];
+      const fromPoint = projectIsoCell(from.x, from.y, fromCell?.elevation ?? 0);
+      const toPoint = projectIsoCell(to.x, to.y, toCell?.elevation ?? 0);
+      graphics
+        .moveTo(fromPoint.x, fromPoint.y - 3)
+        .lineTo(toPoint.x, toPoint.y - 3)
+        .stroke({ width: 3, color: room.palette.glow, alpha: 0.52 });
+    }
+  }
+
+  for (const position of overlay.disruptionFootprint ?? []) {
+    const cell = room.cells[position.y]?.[position.x];
+    const point = projectIsoCell(position.x, position.y, cell?.elevation ?? 0);
+    diamond(graphics, point, ISO_TILE_WIDTH * 0.62, ISO_TILE_HEIGHT * 0.62);
+    graphics.fill({ color: 0xf08b73, alpha: 0.58 });
+    graphics.stroke({ width: 2, color: 0xffd1a3, alpha: 0.9 });
+  }
 }
 
 function backgroundBounds(room: IsoRoomView): {
@@ -475,7 +502,7 @@ export function createIsometricScene(
       if (room.goal) {
         drawMarker(propGraphics, room, room.goal, room.palette.glow, view.goalReached === true);
       }
-      drawBarrier(propGraphics, room);
+      drawDebugOverlay(propGraphics, room);
       drawNode(propGraphics, room, view.windMarks[room.id] === true);
       makeSprite(
         textures,

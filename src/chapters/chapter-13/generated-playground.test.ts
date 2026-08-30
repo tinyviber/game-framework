@@ -79,7 +79,7 @@ describe('generated playground LocalWorld adapter', () => {
 
   it('returns the original state when the perturbed edge is hit directly', () => {
     const world = generateGeneratedWorld(2026);
-    const barrier = world.perturbation.edge;
+    const barrier = world.perturbation.disruption.blockedEdges[0]!;
     const playground = createGeneratedPlayground(world, barrier.from);
     const result = moveGeneratedPlayer(
       playground,

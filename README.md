@@ -26,12 +26,13 @@ seed
   → Pixi 2.5D dimetric scene
 ```
 
-Run through a generated 40×40 field. The baseline route is deliberately
-perturbed with a height barrier, so the visible goal requires noticing and
-taking the longer loop. `E` inspects the terrain, `R` resets the run, `N`
-generates the next seed, and `[ ]` changes zoom. Elevation is gameplay data:
-same-height cells traverse normally, while height changes require an explicit
-stairs/ramp edge. The renderer uses the committed 64×64 PNG previews as
+Run through a generated 40×40 field. Each seed chooses a macro topology,
+then a route-local height disruption is applied to the generated terrain.
+`E` inspects local terrain facts, `R` resets the run, `N` generates the next
+seed, and `[ ]` changes zoom. Elevation is gameplay data: same-height cells
+traverse normally, while height changes require an explicit stairs/ramp edge.
+Append `?debug=1` when inspecting the generator rather than playing the
+normal field study. The renderer uses the committed 64×64 PNG previews as
 terrain props and characters, then adds elevation, shadows, foot-point sorting
 and a foreground occlusion layer for the 3D reading.
 

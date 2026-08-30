@@ -1,8 +1,11 @@
 import './style.css';
 import {
+  generatedCellAt,
   generateGeneratedWorld,
+  resolveGeneratedEdge,
   type GeneratedWorld,
 } from '@/world/generated-world';
+import { canTraverse } from '@/world/traversal';
 import {
   createGeneratedPlayground,
   generatedGoalReached,
@@ -20,6 +23,12 @@ import {
   type MarkTextureSet,
 } from '@/rendering/isometric-scene';
 import { createPixiHost } from '@/rendering/pixi-host';
+import { projectGeneratedMinimap } from '@/generated-minimap';
+import {
+  formatBlockedMovement,
+  formatGeneratedInspection,
+  isGeneratedDebugMode,
+} from '@/generated-playground-ui';
 
 const root = document.querySelector<HTMLDivElement>('#app');
 
@@ -28,6 +37,7 @@ if (!root) {
 }
 
 const DEFAULT_SEED = 2026;
+const DEBUG_MODE = isGeneratedDebugMode(window.location.search);
 
 function readSeed(): number {
   const value = new URLSearchParams(window.location.search).get('seed');
@@ -50,10 +60,7 @@ header.innerHTML = `
       <h1>地形实验场 <span>· Generated Playground</span></h1>
     </div>
   </div>
-  <div class="progress-block">
-    <span id="progress-label">BASELINE 00 · FINAL 00</span>
-    <div class="progress-track"><i id="progress-fill"></i></div>
-  </div>
+  <span class="world-mode-label">${DEBUG_MODE ? 'DEBUG VIEW' : 'FIELD STUDY'}</span>
 `;
 
 const stage = document.createElement('section');
@@ -66,7 +73,7 @@ sidePanel.className = 'side-panel';
 sidePanel.innerHTML = `
   <div class="panel-section location-section">
     <p class="section-label">GENERATED WORLD</p>
-    <h2 id="room-title">Seed 2026</h2>
+    <h2 id="room-title">Generated Field</h2>
     <p id="room-description" class="room-description"></p>
     <p id="room-status" class="room-status"></p>
   </div>
@@ -78,8 +85,7 @@ sidePanel.innerHTML = `
     <p class="section-label">FIELD NOTES</p>
     <div class="legend-line"><span class="legend-dot start-dot"></span><span>start</span></div>
     <div class="legend-line"><span class="legend-dot goal-dot"></span><span>goal</span></div>
-    <div class="legend-line"><span class="legend-dot barrier-dot"></span><span>height barrier</span></div>
-    <div class="legend-line"><span class="legend-dot high-dot"></span><span>elevated ground</span></div>
+    <div class="legend-line"><span class="legend-dot high-dot"></span><span>raised terrain</span></div>
   </div>
 `;
 
@@ -91,7 +97,6 @@ controls.innerHTML = `
   <span><kbd>R</kbd> reset</span>
   <span><kbd>N</kbd> new seed</span>
   <span><kbd>[ ]</kbd> zoom</span>
-  <span id="hint-text" class="hint-text">Find the long way around the raised seam.</span>
 `;
 
 stage.append(canvasRoot, sidePanel);
@@ -99,16 +104,13 @@ shell.append(header, stage, controls);
 root.replaceChildren(shell);
 
 const title = header.querySelector<HTMLHeadingElement>('h1')!;
-const progressLabel = header.querySelector<HTMLSpanElement>('#progress-label')!;
-const progressFill = header.querySelector<HTMLElement>('#progress-fill')!;
 const roomTitle = sidePanel.querySelector<HTMLHeadingElement>('#room-title')!;
 const roomDescription = sidePanel.querySelector<HTMLParagraphElement>('#room-description')!;
 const roomStatus = sidePanel.querySelector<HTMLParagraphElement>('#room-status')!;
 const seedTag = sidePanel.querySelector<HTMLSpanElement>('#seed-tag')!;
 const minimap = sidePanel.querySelector<HTMLDivElement>('#minimap')!;
-const hintText = controls.querySelector<HTMLSpanElement>('#hint-text')!;
 
-if (!title || !progressLabel || !progressFill || !roomTitle || !roomDescription || !roomStatus || !seedTag || !minimap || !hintText) {
+if (!title || !roomTitle || !roomDescription || !roomStatus || !seedTag || !minimap) {
   throw new Error('Generated playground UI failed to initialize');
 }
 
@@ -122,21 +124,10 @@ let camera = projectIsoCell(world.start.x, world.start.y, 0);
 const statusText = document.createElement('p');
 statusText.id = 'game-status';
 shell.append(statusText);
-
-function setHint(message: string, duration = 3000): void {
-  hintText.textContent = message;
-  window.setTimeout(() => {
-    if (hintText.textContent === message) {
-      hintText.textContent = 'Find the long way around the raised seam.';
-    }
-  }, duration);
-}
-
-function isSamePosition(a: { x: number; y: number }, b: { x: number; y: number }): boolean {
-  return a.x === b.x && a.y === b.y;
-}
+let feedback: string | null = null;
 
 function createWorldView(): IsoRoomView {
+  const regions = new Map(world.regions.map((region) => [region.id, region]));
   const connectorEdges = world.edges.filter((edge) => {
     if (edge.kind !== 'stairs' && edge.kind !== 'ramp') {
       return false;
@@ -147,13 +138,24 @@ function createWorldView(): IsoRoomView {
     );
   });
 
-  return {
+  const view: IsoRoomView = {
     id: `generated-${world.seed}`,
-    title: `Seed ${world.seed}`,
-    description: 'A seed-built field of walls, loops, a raised island and one deliberate height barrier.',
+    title: 'Generated Field',
+    description: 'A seed-built field of distinct terrain regions.',
     width: world.width,
     height: world.height,
-    cells: world.cells,
+    cells: world.cells.map((row) => row.map((cell) => {
+      const region = regions.get(cell.regionId);
+      return {
+        x: cell.x,
+        y: cell.y,
+        elevation: cell.elevation,
+        terrainType: cell.terrainType,
+        biome: region?.biome ?? 'meadow',
+        environment: region?.environment ?? world.environment,
+        walkable: cell.walkable,
+      };
+    })),
     props: world.props,
     npcs: [],
     node: {
@@ -171,12 +173,29 @@ function createWorldView(): IsoRoomView {
     })),
     start: { x: world.start.x, y: world.start.y, label: 'start' },
     goal: { x: world.goal.x, y: world.goal.y, label: 'goal' },
-    barrier: {
-      from: { ...world.perturbation.edge.from },
-      to: { ...world.perturbation.edge.to },
-    },
+    environment: world.environment,
     palette: world.palette,
   };
+
+  if (DEBUG_MODE) {
+    return {
+      ...view,
+      debugOverlay: {
+        baselinePath: world.baselinePath,
+        finalPath: world.finalPath,
+        disruptionFootprint: world.perturbation.disruption.footprint,
+        diagnostics: {
+          family: world.topologyFamily,
+          attempts: world.generationAttempts,
+          baselineLength: world.perturbation.baselineShortestPathLength,
+          finalLength: world.perturbation.finalShortestPathLength,
+          wallCount: world.finalTopology.wallCount,
+          cycleRank: world.finalTopology.cycleRank,
+        },
+      },
+    };
+  }
+  return view;
 }
 
 function buildView(): IsoSceneView {
@@ -196,45 +215,48 @@ function buildView(): IsoSceneView {
 
 function renderMinimap(): void {
   minimap.replaceChildren();
-  for (let y = 0; y < 20; y += 1) {
-    for (let x = 0; x < 20; x += 1) {
-      const cell = world.cells[y * 2]?.[x * 2];
-      const tile = document.createElement('span');
-      tile.className = 'map-cell';
-      if (!cell?.walkable) {
-        tile.classList.add('blocked');
-      } else {
-        tile.classList.add('open');
-        if (cell.elevation > 0) {
-          tile.classList.add('high');
-        }
-      }
-      if (cell && isSamePosition(cell, world.start)) {
-        tile.classList.add('start');
-      }
-      if (cell && isSamePosition(cell, world.goal)) {
-        tile.classList.add('goal');
-      }
-      minimap.append(tile);
+  const map = projectGeneratedMinimap({
+    cells: world.cells,
+    sourceWidth: world.width,
+    sourceHeight: world.height,
+    start: world.start,
+    goal: world.goal,
+    disruption: DEBUG_MODE ? world.perturbation.disruption.footprint : [],
+    columns: 20,
+    rows: 20,
+  });
+  for (const mapTile of map.tiles) {
+    const tile = document.createElement('span');
+    tile.className = `map-cell ${mapTile.walkable ? 'open' : 'blocked'}`;
+    if (mapTile.elevated) {
+      tile.classList.add('high');
     }
+    if (mapTile.start) {
+      tile.classList.add('start');
+    }
+    if (mapTile.goal) {
+      tile.classList.add('goal');
+    }
+    if (mapTile.disrupted) {
+      tile.classList.add('disrupted');
+    }
+    minimap.append(tile);
   }
 }
 
 function render(): void {
   const position = playerPosition(state);
   const reached = generatedGoalReached(playground, state);
-  const baselineLength = world.perturbation.baselineShortestPathLength;
-  const finalLength = world.perturbation.finalShortestPathLength;
   title.innerHTML = `地形实验场 <span>· Seed ${world.seed}</span>`;
-  roomTitle.textContent = `Seed ${world.seed}`;
-  roomDescription.textContent = `40×40 generated field · ${world.finalTopology.wallCount} walls · ${world.finalTopology.cycleRank} loops · ${world.finalTopology.articulationCount} bottlenecks`;
+  const currentCell = world.cells[position.y]?.[position.x];
+  const currentRegion = world.regions.find((region) => region.id === currentCell?.regionId);
+  roomTitle.textContent = 'Generated Field';
+  roomDescription.textContent = `40×40 field · ${currentRegion?.biome ?? 'meadow'} · ${currentRegion?.environment?.weather ?? world.environment.weather} · ${currentRegion?.environment?.lighting ?? world.environment.lighting}`;
   roomStatus.textContent = reached
-    ? 'GOAL REACHED · alternate route confirmed'
-    : `POSITION ${position.x},${position.y} · ${world.finalTopology.deadEndCount} dead ends in the field`;
+    ? 'GOAL REACHED'
+    : `POSITION ${position.x},${position.y}`;
   seedTag.textContent = `SEED ${world.seed}`;
-  progressLabel.textContent = `BASELINE ${String(baselineLength).padStart(2, '0')} · FINAL ${String(finalLength).padStart(2, '0')}`;
-  progressFill.style.width = `${Math.min(100, (baselineLength / Math.max(1, finalLength)) * 100)}%`;
-  statusText.textContent = `SEED ${world.seed} · ${position.x},${position.y} · ${reached ? 'goal reached' : 'barrier ahead — route around'}`;
+  statusText.textContent = feedback ?? (reached ? 'GOAL REACHED' : `POSITION ${position.x},${position.y}`);
   renderer.render(buildView());
 }
 
@@ -245,49 +267,52 @@ function currentCameraTarget(): { x: number; y: number } {
 }
 
 function tryMove(direction: GeneratedDirection): void {
-  const previous = playerPosition(state);
   const result = moveGeneratedPlayer(playground, state, direction);
   state = result.state;
+  feedback = result.accepted ? null : formatBlockedMovement();
   render();
-  if (!result.accepted) {
-    const barrier = world.perturbation.edge;
-    const next = {
-      x: previous.x + ({ up: 0, down: 0, left: -1, right: 1 }[direction] ?? 0),
-      y: previous.y + ({ up: -1, down: 1, left: 0, right: 0 }[direction] ?? 0),
-    };
-    if (
-      (isSamePosition(previous, barrier.from) && isSamePosition(next, barrier.to)) ||
-      (isSamePosition(previous, barrier.to) && isSamePosition(next, barrier.from))
-    ) {
-      setHint('The raised seam is a height barrier. Take the loop below it.', 4200);
-    } else {
-      setHint('No traversable edge there. Read the walls and find another opening.', 1800);
-    }
-  }
 }
 
 function inspectTerrain(): void {
   const position = playerPosition(state);
-  const barrier = world.perturbation.edge;
-  if (
-    Math.abs(position.x - barrier.from.x) + Math.abs(position.y - barrier.from.y) <= 1 ||
-    Math.abs(position.x - barrier.to.x) + Math.abs(position.y - barrier.to.y) <= 1
-  ) {
-    setHint('The ground rises here without a connector. The lower loop is the natural route.', 4200);
+  const cell = generatedCellAt(world, position);
+  if (!cell) {
     return;
   }
-  if (generatedGoalReached(playground, state)) {
-    setHint('Goal reached. Reset or press N to see a new geography.', 3600);
-    return;
-  }
-  setHint('Stairs connect the elevated island. The bright seam is intentionally impassable.', 2600);
+  const region = world.regions.find((candidate) => candidate.id === cell.regionId);
+  const directions: Array<[GeneratedDirection, { x: number; y: number }]> = [
+    ['up', { x: 0, y: -1 }],
+    ['down', { x: 0, y: 1 }],
+    ['left', { x: -1, y: 0 }],
+    ['right', { x: 1, y: 0 }],
+  ];
+  const traversableDirections = directions
+    .filter(([, delta]) => {
+      const target = { x: position.x + delta.x, y: position.y + delta.y };
+      const targetCell = generatedCellAt(world, target);
+      const edge = resolveGeneratedEdge(world, position, target);
+      return Boolean(targetCell && edge && canTraverse(cell, targetCell, edge, {}));
+    })
+    .map(([direction]) => direction);
+  feedback = formatGeneratedInspection({
+    x: position.x,
+    y: position.y,
+    terrainType: cell.terrainType,
+    regionId: cell.regionId,
+    biome: region?.biome ?? 'unknown',
+    weather: region?.environment?.weather ?? world.environment.weather,
+    lighting: region?.environment?.lighting ?? world.environment.lighting,
+    elevation: cell.elevation,
+    traversableDirections,
+  });
+  render();
 }
 
 function resetWorld(): void {
   state = playground.initialState;
   camera = currentCameraTarget();
+  feedback = 'RUN RESET';
   render();
-  setHint('Run reset. The seed and geography stayed the same.', 2400);
 }
 
 function createNewSeed(): void {
@@ -296,9 +321,9 @@ function createNewSeed(): void {
   playground = createGeneratedPlayground(world);
   state = playground.initialState;
   camera = currentCameraTarget();
+  feedback = 'NEW FIELD GENERATED';
   renderMinimap();
   render();
-  setHint(`New geography generated from seed ${seed}.`, 3200);
 }
 
 function setZoom(nextZoom: number): void {
@@ -374,8 +399,6 @@ void (async () => {
     };
 
     window.addEventListener('keydown', handleKeyDown);
-    window.setTimeout(() => setHint('The direct route is visible. Cross the field, then notice the raised seam.', 5200), 600);
-
     import.meta.hot?.dispose(() => {
       window.removeEventListener('keydown', handleKeyDown);
       host.destroy();
