@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { deflateSync, inflateSync } from 'node:zlib';
+import { inflateSync } from 'node:zlib';
 import { existsSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -119,6 +119,34 @@ function pngChunk(type, data) {
   return chunk;
 }
 
+function adler32(bytes) {
+  let sum1 = 1;
+  let sum2 = 0;
+  for (const byte of bytes) {
+    sum1 = (sum1 + byte) % 65521;
+    sum2 = (sum2 + sum1) % 65521;
+  }
+  return ((sum2 << 16) | sum1) >>> 0;
+}
+
+function zlibStored(bytes) {
+  const chunks = [Buffer.from([0x78, 0x01])];
+  let offset = 0;
+  do {
+    const length = Math.min(65535, bytes.length - offset);
+    const header = Buffer.alloc(5);
+    header[0] = offset + length >= bytes.length ? 1 : 0;
+    header.writeUInt16LE(length, 1);
+    header.writeUInt16LE((~length) & 0xffff, 3);
+    chunks.push(header, bytes.subarray(offset, offset + length));
+    offset += length;
+  } while (offset < bytes.length);
+  const checksum = Buffer.alloc(4);
+  checksum.writeUInt32BE(adler32(bytes), 0);
+  chunks.push(checksum);
+  return Buffer.concat(chunks);
+}
+
 export function encodePng(width, height, rgba) {
   if (rgba.length !== width * height * 4) fail('RGBA buffer length does not match PNG dimensions.');
   const scanlines = Buffer.alloc(height * (width * 4 + 1));
@@ -131,7 +159,7 @@ export function encodePng(width, height, rgba) {
   header.writeUInt32BE(height, 4);
   header[8] = 8;
   header[9] = 6;
-  const idat = deflateSync(scanlines, { level: 9, strategy: 4 });
+  const idat = zlibStored(scanlines);
   return Buffer.concat([PNG_SIGNATURE, pngChunk('IHDR', header), pngChunk('IDAT', idat), pngChunk('IEND', Buffer.alloc(0))]);
 }
 

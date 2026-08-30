@@ -96,7 +96,8 @@ are native: Fawf 256×256 at 16 px/cell, Loomy 512×512 at 32 px/cell, and Puny
 256×256 at 16 px/cell. Loomy is not reduced to 16 px. Outputs and the manifest
 are local-only. The local full benchmark uses ImageMagick; the CI smoke lane
 uses only the tracked CC0 Puny PNG and Node built-ins, writes to a temporary
-directory, and checks a pinned canonical PNG hash.
+directory, and checks a pinned canonical PNG hash
+(`ab836e0183c3fdfe6f4d981302be8f6dd1bd51f466b1a3a37cd8e1183d7cdf9b`).
 
 ## Validation
 

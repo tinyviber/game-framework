@@ -92,7 +92,7 @@
       "benchmarkVariant": "single-sheet",
       "benchmark": {
         "output": "local/benchmarks/scene-16x16__puny-world.png",
-        "ciExpectedOutputSha256": "ce18f97c11cddeecdc1ae3e76b23908913f1edfdfd97b4bea053133172c6135b",
+        "ciExpectedOutputSha256": "ab836e0183c3fdfe6f4d981302be8f6dd1bd51f466b1a3a37cd8e1183d7cdf9b",
         "background": "#6ea05a"
       },
       "roles": {
