@@ -171,6 +171,8 @@ function createWorldView(): IsoRoomView {
         y: cell.y,
         elevation: cell.elevation,
         terrainType: cell.terrainType,
+        surface: cell.surface,
+        obstacle: cell.obstacle,
         biome: region?.biome ?? 'meadow',
         environment: region?.environment ?? world.environment,
         walkable: cell.walkable,
@@ -201,6 +203,7 @@ function createWorldView(): IsoRoomView {
     return {
       ...view,
       debugOverlay: {
+        showBlocked: true,
         baselinePath: world.baselinePath,
         finalPath: world.finalPath,
         disruptionFootprint: world.perturbation.disruption.footprint,

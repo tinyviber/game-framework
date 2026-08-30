@@ -68,6 +68,8 @@ function colorForTerrain(
         return 0xbad4d3;
       case 'crystal':
         return 0x6f63a1;
+      case 'water':
+        return 0x2d5f7f;
       case 'cliff':
         return 0x6e8852;
       case 'grass':
@@ -110,21 +112,24 @@ function drawGroundCell(
   const top = cellTopLeft(cell);
   const base = cellBaseTopLeft(cell);
   const sideHeight = Math.max(0, base.y - top.y);
-  const color = colorForTerrain(cell.terrainType, cell.biome, cell.environment, palette);
+  const surface = cell.surface ?? cell.terrainType;
+  const color = colorForTerrain(surface, cell.biome, cell.environment, palette);
 
   if (sideHeight > 0) {
+    // Vertical cliff face under a raised cell: the plateau itself is normal
+    // world; only the height transition constrains traversal.
     graphics
       .rect(top.x, top.y + ORTHO_TILE_SIZE - 2, ORTHO_TILE_SIZE, sideHeight + 2)
-      .fill(cell.terrainType === 'cliff' ? palette.edge : Math.max(0, palette.edge - 0x0b0b0b));
+      .fill(surface === 'cliff' ? palette.edge : Math.max(0, palette.edge - 0x0b0b0b));
     graphics
       .rect(top.x, base.y + ORTHO_TILE_SIZE - 3, ORTHO_TILE_SIZE, 3)
       .fill(Math.max(0, palette.edge - 0x171717));
   }
 
-  graphics.rect(top.x, top.y, ORTHO_TILE_SIZE, ORTHO_TILE_SIZE).fill(
-    cell.walkable ? color : palette.edge,
-  );
-  if (cell.terrainType === 'cliff' || cell.elevation > 0) {
+  // The ground tile is always real world terrain - non-walkable cells are
+  // water, forest or rock features, never a generic void marker.
+  graphics.rect(top.x, top.y, ORTHO_TILE_SIZE, ORTHO_TILE_SIZE).fill(color);
+  if (surface === 'cliff' || cell.elevation > 0) {
     graphics
       .moveTo(top.x + 2, top.y + ORTHO_TILE_SIZE - 3)
       .lineTo(top.x + ORTHO_TILE_SIZE - 2, top.y + ORTHO_TILE_SIZE - 3)
@@ -134,14 +139,49 @@ function drawGroundCell(
       .lineTo(top.x + ORTHO_TILE_SIZE - 2, top.y + 4)
       .stroke({ width: 1, color: 0xf2e6a4, alpha: 0.38 });
   }
-  if (!cell.walkable) {
+  if (surface === 'water') {
     graphics
-      .moveTo(top.x + 5, top.y + 5)
-      .lineTo(top.x + ORTHO_TILE_SIZE - 5, top.y + ORTHO_TILE_SIZE - 5)
-      .moveTo(top.x + ORTHO_TILE_SIZE - 5, top.y + 5)
-      .lineTo(top.x + 5, top.y + ORTHO_TILE_SIZE - 5)
-      .stroke({ width: 2, color: 0x081312, alpha: 0.55 });
+      .moveTo(top.x + 6, top.y + 12)
+      .lineTo(top.x + 14, top.y + 12)
+      .moveTo(top.x + 18, top.y + 21)
+      .lineTo(top.x + 27, top.y + 21)
+      .stroke({ width: 1, color: 0x8fd2e8, alpha: 0.35 });
   }
+}
+
+function drawForestFallback(
+  graphics: Graphics,
+  cell: IsoCellView,
+  palette: IsoRoomView['palette'],
+): void {
+  const top = cellTopLeft(cell);
+  const canopy = Math.max(0, palette.edge - 0x0a140a);
+  for (const [cx, cy, size] of [[10, 20, 7], [22, 17, 8], [16, 26, 6]] as const) {
+    graphics
+      .moveTo(top.x + cx, top.y + cy - size)
+      .lineTo(top.x + cx - size * 0.7, top.y + cy + 3)
+      .lineTo(top.x + cx + size * 0.7, top.y + cy + 3)
+      .closePath()
+      .fill(canopy);
+  }
+}
+
+function drawRockFeature(
+  graphics: Graphics,
+  cell: IsoCellView,
+  palette: IsoRoomView['palette'],
+): void {
+  const top = cellTopLeft(cell);
+  const color = Math.max(0, palette.edge + 0x2a2a2a);
+  graphics
+    .roundRect(top.x + 6, top.y + 14, 12, 12, 4)
+    .fill(color)
+    .roundRect(top.x + 17, top.y + 9, 9, 9, 3)
+    .fill(Math.max(0, color - 0x121212));
+  graphics
+    .moveTo(top.x + 8, top.y + 16)
+    .lineTo(top.x + 13, top.y + 16)
+    .stroke({ width: 1, color: 0xffffff, alpha: 0.16 });
 }
 
 function drawRegionSprite(
@@ -251,6 +291,24 @@ function drawDebugOverlay(graphics: Graphics, room: IsoRoomView): void {
   if (!overlay) {
     return;
   }
+  // Diagnostic-only representation of blocked cells; normal play renders
+  // semantic world terrain instead.
+  if (overlay.showBlocked) {
+    for (const row of room.cells) {
+      for (const cell of row) {
+        if (cell.walkable) {
+          continue;
+        }
+        const point = cellTopLeft(cell);
+        graphics
+          .moveTo(point.x + 5, point.y + 5)
+          .lineTo(point.x + ORTHO_TILE_SIZE - 5, point.y + ORTHO_TILE_SIZE - 5)
+          .moveTo(point.x + ORTHO_TILE_SIZE - 5, point.y + 5)
+          .lineTo(point.x + 5, point.y + ORTHO_TILE_SIZE - 5)
+          .stroke({ width: 2, color: 0x081312, alpha: 0.55 });
+      }
+    }
+  }
   if (overlay.baselinePath) {
     drawPath(graphics, room, overlay.baselinePath, 0x8de2c6, 0.55);
   }
@@ -354,19 +412,38 @@ export function createOrthogonalScene(
           const point = cellTopLeft(cell);
           drawShadow(terrainGraphics, point, cell.walkable ? 0.1 : 0.2);
           drawGroundCell(terrainGraphics, cell, room.palette);
-          if (cell.walkable && cell.terrainType === 'grass') {
-            drawRegionSprite(
+          if (cell.obstacle === 'rock') {
+            drawRockFeature(terrainGraphics, cell, room.palette);
+          }
+          if (cell.obstacle === 'forest') {
+            // Tree metadata is bottom-center anchored. Place that foot at
+            // the cell's bottom-center rather than at its top-left corner.
+            const foot = {
+              x: point.x + ORTHO_TILE_SIZE / 2,
+              y: point.y + ORTHO_TILE_SIZE,
+            };
+            const drewTrees = drawRegionSprite(
               orthogonalTextures,
-              'grass',
+              'tree',
               terrainSprites,
-              point,
+              foot,
               ORTHO_TILE_SIZE / 16,
               orthogonalSortKey(cell.x, cell.y),
             );
-          } else if (cell.walkable && cell.terrainType === 'dirt') {
+            if (!drewTrees) {
+              drawForestFallback(terrainGraphics, cell, room.palette);
+            }
+          }
+          const surface = cell.surface ?? cell.terrainType;
+          const spriteRole = surface === 'water'
+            ? 'water'
+            : !cell.obstacle && (surface === 'grass' || surface === 'dirt')
+              ? surface
+              : null;
+          if (spriteRole) {
             drawRegionSprite(
               orthogonalTextures,
-              'dirt',
+              spriteRole,
               terrainSprites,
               point,
               ORTHO_TILE_SIZE / 16,
