@@ -1,62 +1,24 @@
 import './style.css';
-import room01Json from '@/data/rooms/room_01.json';
-import room02Json from '@/data/rooms/room_02.json';
-import room03Json from '@/data/rooms/room_03.json';
-import hubJson from '@/data/rooms/hub.json';
-import vaultJson from '@/data/rooms/vault.json';
-import cellarJson from '@/data/rooms/cellar.json';
-import dialogueJson from '@/data/dialogue.json';
-import { parseTileRoom, type TileRoom } from '@/world/tilemap';
+import { adventureCatalog } from '@/data/adventure/catalog';
 import {
-  applyExternalFlag,
-  applyTileOperation,
-  createTileRoomState,
-  extractCarriedState,
-  type CarriedState,
-  type TileEvent,
-  type TileGameState,
-} from '@/world/tile-world';
-import {
-  createDefaultFlagStore,
-  getUserFlags,
-  loadCarried,
-  persistCarried,
-  type FlagStore,
-} from '@/world/flags';
-import { createEventBus } from '@/world/event-bus';
-import {
-  resolveTileExit,
-  type TileRoomCatalog,
-} from '@/world/tile-transition';
-import {
-  tileCenterToPixels,
-  updateCamera,
-  type CameraState,
-} from '@/world/camera';
+  adventureIsComplete,
+  applyAdventureAction,
+  createAdventureState,
+  resolveAdventureExit,
+  type AdventureDirection,
+  type AdventureRoom,
+  type AdventureState,
+} from '@/world/adventure';
 import { createFadeOverlay } from '@/rendering/fade';
+import {
+  createIsometricScene,
+  projectIsoCell,
+  type IsoRoomView,
+  type IsoSceneView,
+  loadMarkTextures,
+  type MarkTextureSet,
+} from '@/rendering/isometric-scene';
 import { createPixiHost } from '@/rendering/pixi-host';
-import {
-  createTileSceneRenderer,
-  TILE_SIZE,
-  TILE_VIEWPORT,
-  type TileSceneView,
-} from '@/rendering/tile-scene';
-import {
-  loadTileTextures,
-  setNearestFilter,
-  type TileTextureSet,
-} from '@/rendering/tile-textures';
-
-declare global {
-  interface Window {
-    /**
-     * Console debug command (Phase 3 DoD):
-     *   setFlag('cellar-key', true) → opens lockedBy doors instantly.
-     */
-    setFlag(key: string, value: boolean): void;
-    getFlags(): Readonly<Record<string, boolean>>;
-  }
-}
 
 const root = document.querySelector<HTMLDivElement>('#app');
 
@@ -64,390 +26,351 @@ if (!root) {
   throw new Error('Missing #app');
 }
 
-const status = document.createElement('p');
+const shell = document.createElement('main');
+shell.className = 'adventure-shell';
+
+const header = document.createElement('header');
+header.className = 'game-header';
+header.innerHTML = `
+  <div class="brand-lockup">
+    <span class="brand-mark">✦</span>
+    <div>
+      <p class="eyebrow">A 2.5D WIND ATLAS</p>
+      <h1>风场织线 <span>· Windweave</span></h1>
+    </div>
+  </div>
+  <div class="progress-block">
+    <span id="progress-label">WIND MARKS 00 / 20</span>
+    <div class="progress-track"><i id="progress-fill"></i></div>
+  </div>
+`;
+
+const stage = document.createElement('section');
+stage.className = 'stage-shell';
 const canvasRoot = document.createElement('div');
-const hint = document.createElement('p');
+canvasRoot.className = 'canvas-root';
+
+const sidePanel = document.createElement('aside');
+sidePanel.className = 'side-panel';
+sidePanel.innerHTML = `
+  <div class="panel-section location-section">
+    <p class="section-label">CURRENT THREAD</p>
+    <h2 id="room-title">Moss Gate</h2>
+    <p id="room-description" class="room-description"></p>
+    <p id="room-status" class="room-status"></p>
+  </div>
+  <div class="panel-section map-section">
+    <div class="section-row"><p class="section-label">ATLAS GRID</p><span class="grid-tag">4 × 5</span></div>
+    <div id="minimap" class="minimap" aria-label="20 room atlas"></div>
+  </div>
+  <div class="panel-section legend-section">
+    <p class="section-label">FIELD NOTES</p>
+    <div class="legend-line"><span class="legend-dot node-dot"></span><span>wind node</span></div>
+    <div class="legend-line"><span class="legend-dot exit-dot"></span><span>adjacent passage</span></div>
+    <div class="legend-line"><span class="legend-dot mark-dot"></span><span>thread awakened</span></div>
+  </div>
+`;
+
+const controls = document.createElement('footer');
+controls.className = 'controls-bar';
+controls.innerHTML = `
+  <span><kbd>W A S D</kbd> / <kbd>← ↑ ↓ →</kbd> move</span>
+  <span><kbd>E</kbd> resonate / speak</span>
+  <span><kbd>R</kbd> reset room</span>
+  <span><kbd>[ ]</kbd> zoom</span>
+  <span id="hint-text" class="hint-text">Find a wind node. The atlas is yours to cross.</span>
+`;
+
 const dialogue = document.createElement('div');
-
-status.id = 'game-status';
-hint.id = 'game-hint';
 dialogue.id = 'dialogue';
+dialogue.className = 'dialogue-panel';
 dialogue.hidden = true;
-hint.textContent = 'WASD / 方向键 移动 · E 互动 · Z 对话';
-root.replaceChildren(status, canvasRoot, hint, dialogue);
+dialogue.setAttribute('role', 'status');
 
-/** Room catalog: every JSON document under src/data/rooms. */
-const rooms: TileRoomCatalog = {
-  room_01: parseTileRoom(room01Json),
-  room_02: parseTileRoom(room02Json),
-  room_03: parseTileRoom(room03Json),
-  hub: parseTileRoom(hubJson),
-  vault: parseTileRoom(vaultJson),
-  cellar: parseTileRoom(cellarJson),
-};
+stage.append(canvasRoot, sidePanel);
 
-const flagStore: FlagStore = createDefaultFlagStore();
+const status = document.createElement('p');
+status.id = 'game-status';
 
-let carried: CarriedState = loadCarried(flagStore);
-let currentRoom: TileRoom = rooms['room_01']!;
-let state: TileGameState = createTileRoomState(
-  currentRoom,
-  currentRoom.spawn,
-  carried,
-);
-let camera: CameraState = { x: 0, y: 0 };
+shell.append(header, stage, controls, dialogue, status);
+root.replaceChildren(shell);
 
-const bus = createEventBus<TileEvent>();
+const title = header.querySelector<HTMLHeadingElement>('h1')!;
+const progressLabel = header.querySelector<HTMLSpanElement>('#progress-label')!;
+const progressFill = header.querySelector<HTMLElement>('#progress-fill')!;
+const roomTitle = sidePanel.querySelector<HTMLHeadingElement>('#room-title')!;
+const roomDescription = sidePanel.querySelector<HTMLParagraphElement>('#room-description')!;
+const roomStatus = sidePanel.querySelector<HTMLParagraphElement>('#room-status')!;
+const minimap = sidePanel.querySelector<HTMLDivElement>('#minimap')!;
+const hintText = controls.querySelector<HTMLSpanElement>('#hint-text')!;
 
-/**
- * ── Dialogue box (Phase 5 placeholder) ─────────────────────────
- * Pure DOM text box: Z opens (page 1), pages through, closes after
- * the last page. Input is ignored while it is open.
- */
-const dialoguePages: readonly string[] =
-  Array.isArray(dialogueJson.pages) && dialogueJson.pages.length > 0
-    ? dialogueJson.pages.map((page: unknown) => String(page))
-    : ['…'];
-
-let dialoguePage = 0;
-
-function dialogueVisible(): boolean {
-  return !dialogue.hidden;
+if (!title || !progressLabel || !progressFill || !roomTitle || !roomDescription || !roomStatus || !minimap || !hintText) {
+  throw new Error('Adventure UI failed to initialize');
 }
 
-function showDialogue(): void {
+const roomById = (roomId: string): AdventureRoom => {
+  const room = adventureCatalog.rooms[roomId];
+  if (!room) {
+    throw new Error(`Unknown adventure room ${roomId}`);
+  }
+  return room;
+};
+
+let currentRoom = roomById(adventureCatalog.startRoomId);
+let state: AdventureState = createAdventureState(currentRoom);
+let renderer: ReturnType<typeof createIsometricScene>;
+let fade: ReturnType<typeof createFadeOverlay>;
+let zoom = 0.9;
+let camera = projectIsoCell(state.player.x, state.player.y);
+
+const dialoguePages: string[] = [];
+let dialoguePage = 0;
+
+function setHint(message: string, duration = 2600): void {
+  hintText.textContent = message;
+  window.setTimeout(() => {
+    if (hintText.textContent === message) {
+      hintText.textContent = 'Find a wind node. The atlas is yours to cross.';
+    }
+  }, duration);
+}
+
+function showDialogue(pages: readonly string[]): void {
+  dialoguePages.splice(0, dialoguePages.length, ...pages);
   dialoguePage = 0;
-  dialogue.textContent = dialoguePages[0] ?? '';
+  dialogue.textContent = `${dialoguePages[0] ?? ''}  ·  [E] next`;
   dialogue.hidden = false;
 }
 
 function advanceDialogue(): void {
   dialoguePage += 1;
-
   if (dialoguePage >= dialoguePages.length) {
     dialogue.hidden = true;
     return;
   }
-
-  dialogue.textContent = dialoguePages[dialoguePage] ?? '';
+  dialogue.textContent = `${dialoguePages[dialoguePage] ?? ''}  ·  [E] next`;
 }
 
-function describeEvents(events: readonly TileEvent[]): string {
-  if (events.length === 0) {
-    return '—';
-  }
-
-  return events
-    .map((event) => {
-      switch (event.tag) {
-        case 'moved':
-          return `moved (${event.x},${event.y})`;
-        case 'pushed':
-          return `pushed ${event.blockId}`;
-        case 'blocked':
-          return `blocked: ${event.reason}`;
-        case 'door-opened':
-          return `door ${event.doorId} opened`;
-        case 'door-closed':
-          return `door ${event.doorId} closed`;
-        case 'plate-pressed':
-          return `plate ${event.plateId} pressed`;
-        case 'plate-released':
-          return `plate ${event.plateId} released`;
-        case 'lever-toggled':
-          return `lever ${event.leverId} ${event.on ? 'on' : 'off'}`;
-        case 'block-on-target':
-          return `block ${event.blockId} on target!`;
-        case 'chest-opened':
-          return `chest ${event.chestId} → flag ${event.flag}`;
-        case 'flag-set':
-          return `flag ${event.key} = ${event.value}`;
-        case 'interact-noop':
-          return 'nothing to interact';
-      }
-    })
-    .join(' · ');
-}
-
-function platePressed(id: string): boolean {
-  const plate = currentRoom.pressurePlates.find(
-    (entry) => entry.id === id,
-  );
-
-  if (!plate) {
-    return false;
-  }
-
-  const onPlate =
-    (state.player.x === plate.pos.x && state.player.y === plate.pos.y) ||
-    Object.values(state.blocks).some(
-      (block) =>
-        block.x === plate.pos.x && block.y === plate.pos.y,
-    );
-
-  return onPlate;
-}
-
-function buildView(): TileSceneView {
+function createRoomView(room: AdventureRoom): IsoRoomView {
   return {
-    tiles: currentRoom.tiles,
-    player: state.player,
-    doors: currentRoom.doors.map((door) => ({
-      id: door.id,
-      x: door.pos.x,
-      y: door.pos.y,
-      open: state.doors[door.id]?.open ?? false,
+    id: room.id,
+    title: room.title,
+    description: room.description,
+    width: room.width,
+    height: room.height,
+    cells: room.cells,
+    props: room.props,
+    npcs: room.npcs,
+    node: room.node,
+    exits: room.exits.map((exit) => ({
+      id: exit.id,
+      direction: exit.direction,
+      x: exit.at.x,
+      y: exit.at.y,
     })),
-    plates: currentRoom.pressurePlates.map((plate) => ({
-      id: plate.id,
-      x: plate.pos.x,
-      y: plate.pos.y,
-      pressed: platePressed(plate.id),
-    })),
-    levers: currentRoom.levers.map((lever) => ({
-      id: lever.id,
-      x: lever.pos.x,
-      y: lever.pos.y,
-      on: state.levers[lever.id]?.on ?? false,
-    })),
-    blocks: Object.entries(state.blocks).map(([id, block]) => ({
-      id,
-      x: block.x,
-      y: block.y,
-    })),
-    chests: currentRoom.chests.map((chest) => ({
-      id: chest.id,
-      x: chest.pos.x,
-      y: chest.pos.y,
-      opened: state.chests[chest.id]?.opened ?? false,
-    })),
+    palette: room.palette,
   };
 }
 
-function snapCameraToPlayer(): void {
-  camera = tileCenterToPixels(state.player, TILE_SIZE);
+function buildView(): IsoSceneView {
+  const cell = currentRoom.cells[state.player.y]?.[state.player.x];
+  return {
+    room: createRoomView(currentRoom),
+    player: {
+      x: state.player.x,
+      y: state.player.y,
+      elevation: cell?.elevation ?? 0,
+    },
+    windMarks: state.windMarks,
+  };
 }
 
-let renderer: ReturnType<typeof createTileSceneRenderer>;
-let fade: ReturnType<typeof createFadeOverlay>;
-
-function render(): void {
-  renderer.render(buildView());
-  status.textContent =
-    `${currentRoom.id} · (${state.player.x},${state.player.y}) · ${describeEvents(state.lastEvents)}`;
-}
-
-function publishEvents(events: readonly TileEvent[]): void {
-  for (const event of events) {
-    bus.publish(event);
+function renderMinimap(): void {
+  minimap.replaceChildren();
+  for (const room of adventureCatalog.roomList) {
+    const cell = document.createElement('span');
+    cell.className = 'map-cell';
+    cell.dataset.roomId = room.id;
+    cell.title = `${room.id} · ${room.title}`;
+    cell.textContent = room.id.slice(-2);
+    minimap.append(cell);
   }
 }
 
-function afterAccepted(events: readonly TileEvent[]): void {
-  carried = extractCarriedState(state);
-  persistCarried(flagStore, carried);
-  publishEvents(events);
-}
+function render(): void {
+  const count = Object.values(state.windMarks).filter(Boolean).length;
+  const complete = adventureIsComplete(state, adventureCatalog);
+  const roomIndex = adventureCatalog.roomList.findIndex((room) => room.id === currentRoom.id);
+  const markIsLit = state.windMarks[currentRoom.id] === true;
 
-function setHint(text: string, ms = 2500): void {
-  hint.textContent = text;
-  window.setTimeout(() => {
-    if (hint.textContent === text) {
-      hint.textContent = 'WASD / 方向键 移动 · E 互动 · Z 对话';
-    }
-  }, ms);
-}
+  renderer.render(buildView());
+  title.innerHTML = `风场织线 <span>· ${currentRoom.title}</span>`;
+  roomTitle.textContent = currentRoom.title;
+  roomDescription.textContent = currentRoom.description;
+  roomStatus.textContent = `${currentRoom.id.toUpperCase()}  /  SECTOR ${String(roomIndex + 1).padStart(2, '0')}  ·  ${markIsLit ? 'THREAD AWAKENED' : 'THREAD DORMANT'}`;
+  progressLabel.textContent = `WIND MARKS ${String(count).padStart(2, '0')} / 20`;
+  progressFill.style.width = `${(count / adventureCatalog.roomList.length) * 100}%`;
+  status.textContent = `${currentRoom.id} · position ${state.player.x},${state.player.y} · ${complete ? 'THE ATLAS IS BREATHING' : 'cross the adjacent rooms'}`;
 
-function tryMove(direction: 'up' | 'down' | 'left' | 'right'): void {
-  const result = applyTileOperation(state, currentRoom, {
-    kind: 'move',
-    direction,
+  minimap.querySelectorAll<HTMLElement>('.map-cell').forEach((cell) => {
+    const roomId = cell.dataset.roomId ?? '';
+    cell.classList.toggle('active', roomId === currentRoom.id);
+    cell.classList.toggle('marked', state.windMarks[roomId] === true);
   });
 
+  if (complete) {
+    setHint('All 20 wind marks are awake. The whole atlas is breathing.', 6000);
+  }
+}
+
+function currentCameraTarget(): { x: number; y: number } {
+  const cell = currentRoom.cells[state.player.y]?.[state.player.x];
+  return projectIsoCell(state.player.x, state.player.y, cell?.elevation ?? 0);
+}
+
+function tryMove(direction: AdventureDirection): void {
+  const result = applyAdventureAction(state, currentRoom, { kind: 'move', direction });
   state = result.state;
   render();
 
   if (!result.accepted) {
-    if (
-      result.events.some(
-        (event) =>
-          event.tag === 'blocked' &&
-          event.reason === 'locked-door',
-      )
-    ) {
-      setHint(
-        "门锁住了……（占位提示：控制台 setFlag('flag名', true) 可开门）",
-      );
+    setHint('The terrain holds. Find the brighter seam around it.', 1200);
+    return;
+  }
+
+  const exit = resolveAdventureExit(state, currentRoom, adventureCatalog);
+  if (exit.accepted && exit.roomId && exit.spawn) {
+    pendingTransition = { roomId: exit.roomId, spawn: exit.spawn };
+    fadePhase = 'closing';
+  }
+}
+
+function tryInteract(): void {
+  if (!dialogue.hidden) {
+    advanceDialogue();
+    return;
+  }
+
+  const result = applyAdventureAction(state, currentRoom, { kind: 'interact' });
+  state = result.state;
+  render();
+
+  const event = result.events[0];
+  if (event?.tag === 'activated') {
+    setHint(`${currentRoom.node.label} · wind mark ${Object.values(state.windMarks).filter(Boolean).length} / 20`, 3600);
+    return;
+  }
+
+  if (event?.tag === 'dialogue-progressed') {
+    const npc = currentRoom.npcs.find(
+      (candidate) => Math.abs(candidate.x - state.player.x) + Math.abs(candidate.y - state.player.y) === 1,
+    );
+    if (npc) {
+      showDialogue([npc.name, npc.line]);
     }
     return;
   }
 
-  afterAccepted(result.events);
-
-  if (result.events.some((event) => event.tag === 'block-on-target')) {
-    setHint('方块到位！机关触发了。', 3000);
-  }
-
-  beginTransitionIfOnExit();
+  setHint('Nothing resonates here yet. Stand beside a node or a traveler.', 1600);
 }
 
-function tryInteract(): void {
-  const result = applyTileOperation(state, currentRoom, {
-    kind: 'interact',
-  });
-
-  state = result.state;
+function resetRoom(): void {
+  state = applyAdventureAction(state, currentRoom, { kind: 'reset' }).state;
+  camera = currentCameraTarget();
   render();
-
-  if (result.accepted) {
-    afterAccepted(result.events);
-  }
+  setHint('Room reset. The wind marks you have lit remain yours.', 2200);
 }
 
-/**
- * ── Room transitions: fade to black, swap room, fade back ──────
- * Player input is ignored while a transition runs.
- */
 type FadePhase = 'idle' | 'closing' | 'opening';
-
-const FADE_MS = 260;
-
 let fadePhase: FadePhase = 'idle';
-let pendingTransition: {
-  roomId: string;
-  spawn: { x: number; y: number };
-} | null = null;
-
-function beginTransitionIfOnExit(): void {
-  if (fadePhase !== 'idle') {
-    return;
-  }
-
-  const resolution = resolveTileExit(state, currentRoom, rooms);
-
-  if (!resolution.accepted) {
-    return;
-  }
-
-  pendingTransition = {
-    roomId: resolution.roomId,
-    spawn: resolution.spawn,
-  };
-  fadePhase = 'closing';
-}
+let pendingTransition: { roomId: string; spawn: { x: number; y: number } } | null = null;
+const FADE_MS = 220;
 
 function advanceFade(dtMs: number): void {
   if (fadePhase === 'closing') {
     fade.setAlpha(Math.min(1, fade.getAlpha() + dtMs / FADE_MS));
-
     if (fade.getAlpha() >= 1 && pendingTransition) {
-      const target = rooms[pendingTransition.roomId];
-
-      if (target) {
-        currentRoom = target;
-        state = createTileRoomState(
-          target,
-          pendingTransition.spawn,
-          carried,
-        );
-        snapCameraToPlayer();
-        render();
-      } else {
-        setHint(
-          `transition failed: unknown room ${pendingTransition.roomId}`,
-        );
-      }
-
+      currentRoom = roomById(pendingTransition.roomId);
+      state = createAdventureState(currentRoom, pendingTransition.spawn, state.windMarks);
       pendingTransition = null;
+      camera = currentCameraTarget();
+      render();
       fadePhase = 'opening';
     }
-
     return;
   }
 
   if (fadePhase === 'opening') {
     fade.setAlpha(Math.max(0, fade.getAlpha() - dtMs / FADE_MS));
-
     if (fade.getAlpha() <= 0) {
       fadePhase = 'idle';
     }
   }
 }
 
-/**
- * ── EventBus subscribers (wiring only) ─────────────────────────
- */
-bus.subscribe((event) => {
-  if (event.tag === 'flag-set' && event.value) {
-    status.textContent = `flag 已设置: ${event.key}`;
-  }
-});
+function setZoom(nextZoom: number): void {
+  zoom = Math.min(1.18, Math.max(0.72, nextZoom));
+  renderer.setCamera(camera.x, camera.y, zoom);
+}
 
 void (async () => {
   try {
     const host = await createPixiHost(canvasRoot, {
-      width: TILE_VIEWPORT.width,
-      height: TILE_VIEWPORT.height,
-      backgroundColor: 0x0b1120,
+      width: 960,
+      height: 600,
+      backgroundColor: currentRoom.palette.sky,
     });
-
-    // Optional: if the Kenney sheet is present under public/assets,
-    // sprites render; otherwise the flat-color fallback is used.
-    const textures: TileTextureSet | null =
-      await loadTileTextures('/assets/tiny-dungeon/tilemap_packed.png');
-
-    setNearestFilter(textures);
-
-    renderer = createTileSceneRenderer(host.scene, textures);
+    const textures: MarkTextureSet = await loadMarkTextures();
+    renderer = createIsometricScene(host.scene, textures);
     fade = createFadeOverlay(host.ui);
-
-    snapCameraToPlayer();
+    renderMinimap();
     render();
-    showDialogue();
 
     host.app.ticker.add(() => {
-      camera = updateCamera(
-        camera,
-        tileCenterToPixels(state.player, TILE_SIZE),
-        {
-          width: currentRoom.width * TILE_SIZE,
-          height: currentRoom.height * TILE_SIZE,
-        },
-        TILE_VIEWPORT,
-        0.18,
-      );
-      renderer.setCamera(camera.x, camera.y);
+      const target = currentCameraTarget();
+      const amount = Math.min(1, host.app.ticker.deltaMS / 150);
+      camera = {
+        x: camera.x + (target.x - camera.x) * amount,
+        y: camera.y + (target.y - camera.y) * amount,
+      };
+      renderer.setCamera(camera.x, camera.y, zoom);
       advanceFade(host.app.ticker.deltaMS);
     });
 
-    window.addEventListener('keydown', (event) => {
+    const handleKeyDown = (event: KeyboardEvent): void => {
       if (fadePhase !== 'idle') {
         return;
       }
-
-      if (dialogueVisible()) {
-        if (event.key.toLowerCase() === 'z') {
+      const key = event.key.toLowerCase();
+      if (!dialogue.hidden) {
+        if (key === 'e' || key === ' ') {
           event.preventDefault();
           advanceDialogue();
         }
         return;
       }
-
-      const key = event.key.toLowerCase();
-
-      if (key === 'z') {
-        event.preventDefault();
-        showDialogue();
-        return;
-      }
-
       if (key === 'e' || key === ' ') {
         event.preventDefault();
         tryInteract();
         return;
       }
+      if (key === 'r') {
+        event.preventDefault();
+        resetRoom();
+        return;
+      }
+      if (key === '[') {
+        event.preventDefault();
+        setZoom(zoom - 0.06);
+        return;
+      }
+      if (key === ']') {
+        event.preventDefault();
+        setZoom(zoom + 0.06);
+        return;
+      }
 
-      const direction =
+      const direction: AdventureDirection | null =
         key === 'w' || key === 'arrowup'
           ? 'up'
           : key === 's' || key === 'arrowdown'
@@ -457,40 +380,22 @@ void (async () => {
               : key === 'd' || key === 'arrowright'
                 ? 'right'
                 : null;
-
       if (direction) {
         event.preventDefault();
         tryMove(direction);
       }
-    });
-
-    // ── Console debug commands (Phase 3 DoD) ────────────────────
-    window.setFlag = (key, value): void => {
-      flagStore.set(`flag:${key}`, value);
-
-      if (state.flags[key] !== value) {
-        state = applyExternalFlag(state, currentRoom, key, value);
-        carried = extractCarriedState(state);
-        persistCarried(flagStore, carried);
-        publishEvents(state.lastEvents);
-        render();
-      }
-
-      status.textContent = `setFlag('${key}', ${value}) → flag:${key}`;
     };
 
-    window.getFlags = (): Readonly<Record<string, boolean>> =>
-      getUserFlags(flagStore);
-
-    status.textContent =
-      '控制台调试: setFlag(\'cellar-key\', true) · getFlags()';
+    window.addEventListener('keydown', handleKeyDown);
+    window.setTimeout(() => setHint('Move beside the heart-shaped node and press E to resonate.', 5000), 600);
 
     import.meta.hot?.dispose(() => {
+      window.removeEventListener('keydown', handleKeyDown);
       host.destroy();
     });
   } catch (error) {
     console.error(error);
-    root.textContent = 'Failed to create Pixi host';
+    root.textContent = 'Failed to create Windweave';
   }
 })();
 

@@ -450,24 +450,29 @@ describe('Phase 4: moving block', () => {
   });
 
   it('rejects pushing a block onto a lever or chest cell', () => {
-    for (const object of [
-      { kind: 'lever', id: 'lv', pos: { x: 3, y: 0 }, doors: [] },
-      { kind: 'chest', id: 'ch', pos: { x: 3, y: 0 }, setFlag: 'x' },
-    ]) {
-      const { room: r, state: s } = fixture({
-        id: 'push-object',
-        spawn: { x: 0, y: 0 },
-        blocks: [{ id: 'b', pos: { x: 2, y: 0 } }],
-        levers:
-          object.kind === 'lever' ? [object] : [],
-        chests:
-          object.kind === 'chest' ? [object] : [],
-        tiles: [
-          [0, 0, 0, 0],
-          [1, 1, 1, 1],
-        ],
-      });
+    const leverRoom = fixture({
+      id: 'push-object',
+      spawn: { x: 0, y: 0 },
+      blocks: [{ id: 'b', pos: { x: 2, y: 0 } }],
+      levers: [{ id: 'lv', pos: { x: 3, y: 0 }, doors: [] }],
+      tiles: [
+        [0, 0, 0, 0],
+        [1, 1, 1, 1],
+      ],
+    });
 
+    const chestRoom = fixture({
+      id: 'push-object',
+      spawn: { x: 0, y: 0 },
+      blocks: [{ id: 'b', pos: { x: 2, y: 0 } }],
+      chests: [{ id: 'ch', pos: { x: 3, y: 0 }, setFlag: 'x' }],
+      tiles: [
+        [0, 0, 0, 0],
+        [1, 1, 1, 1],
+      ],
+    });
+
+    for (const { room: r, state: s } of [leverRoom, chestRoom]) {
       const behind = move(s, r, 'right').state;
       const rejected = move(behind, r, 'right');
 
@@ -514,7 +519,8 @@ describe('Phase 4: moving block', () => {
       value: true,
     });
     expect(fired.state.flags.solved).toBe(true);
-    expect(fired.state.onTargetFired.b).toBe(true);
+    // Carried object state is namespaced <roomId>.<objectId>.
+    expect(fired.state.onTargetFired['target.b']).toBe(true);
 
     // Re-entering with the latch carried: pushing the block onto the
     // target again must NOT re-fire.
@@ -539,7 +545,7 @@ describe('Phase 4: moving block', () => {
       {
         flags: { solved: true },
         openedChests: {},
-        onTargetFired: { b: true },
+        onTargetFired: { 'target.b': true },
         latchedOpenDoors: {},
       },
     );
@@ -630,6 +636,83 @@ describe('Phase 4: lever', () => {
   });
 });
 
+describe('interact target priority', () => {
+  it('prefers the faced cell over other neighbors', () => {
+    const { room: r, state: s } = fixture({
+      id: 'facing',
+      spawn: { x: 1, y: 0 },
+      levers: [{ id: 'lv', pos: { x: 0, y: 0 }, doors: [] }],
+      chests: [{ id: 'ch', pos: { x: 2, y: 0 }, setFlag: 'k' }],
+      tiles: [
+        [0, 0, 0],
+        [0, 0, 0],
+      ],
+    });
+
+    // Default facing is 'down'; nothing in the faced cell, so the
+    // fixed fallback order (up/down/left/right) finds the lever on
+    // the left before the chest on the right.
+    const lever = applyTileOperation(s, r, { kind: 'interact' });
+
+    expect(lever.events).toContainEqual({
+      tag: 'lever-toggled',
+      leverId: 'lv',
+      on: true,
+    });
+
+    // Step onto the lever cell, walk right (now facing right) and
+    // interact from the middle cell: the faced chest wins even
+    // though the lever is still adjacent.
+    const facingRight = applyTileOperation(
+      applyTileOperation(
+        applyTileOperation(s, r, { kind: 'move', direction: 'left' })
+          .state,
+        r,
+        { kind: 'move', direction: 'right' },
+      ).state,
+      r,
+      { kind: 'interact' },
+    );
+
+    expect(facingRight.events).toContainEqual({
+      tag: 'chest-opened',
+      chestId: 'ch',
+      flag: 'k',
+    });
+  });
+
+  it('updates facing only on accepted moves', () => {
+    const { room: r, state: s } = fixture({
+      id: 'facing-reject',
+      spawn: { x: 1, y: 0 },
+      tiles: [
+        [0, 0, 0],
+        [1, 1, 1],
+      ],
+    });
+
+    expect(s.facing).toBe('down');
+
+    const accepted = applyTileOperation(s, r, {
+      kind: 'move',
+      direction: 'right',
+    });
+
+    expect(accepted.state.facing).toBe('right');
+
+    // Bumping into the wall keeps the previous state (by reference)
+    // and therefore the previous facing.
+    const rejected = applyTileOperation(accepted.state, r, {
+      kind: 'move',
+      direction: 'down',
+    });
+
+    expect(rejected.accepted).toBe(false);
+    expect(rejected.state).toBe(accepted.state);
+    expect(rejected.state.facing).toBe('right');
+  });
+});
+
 describe('Phase 4: chest', () => {
   it('opens once and sets its flag; further interacts are noops', () => {
     const { room: r, state: s } = fixture({
@@ -668,7 +751,7 @@ describe('Phase 4: chest', () => {
   it('does not re-open a chest that was opened before a room re-entry', () => {
     const carried = {
       flags: { k: true },
-      openedChests: { ch: true },
+      openedChests: { 'chest.ch': true },
       onTargetFired: {},
       latchedOpenDoors: {},
     };

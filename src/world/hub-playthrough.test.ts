@@ -16,6 +16,7 @@ import {
 } from './tile-world';
 import {
   resolveTileExit,
+  validateTileRoomCatalog,
   type TileRoomCatalog,
 } from './tile-transition';
 
@@ -104,6 +105,12 @@ function corridorCheckPath(state: TileGameState): TileGameState {
     'up',
   ]);
 }
+
+describe('catalog integrity', () => {
+  it('the shipped hub cluster validates: every exit target exists and every spawn is walkable', () => {
+    expect(validateTileRoomCatalog(catalog)).toEqual([]);
+  });
+});
 
 describe('connectivity (review B1)', () => {
   it('the boot room reaches the hub cluster through room_02 and room_03', () => {
@@ -272,7 +279,7 @@ describe('hub playthrough (Phase 5 DoD)', () => {
     const carriedAfterChest: CarriedState =
       extractCarriedState(state);
     expect(carriedAfterChest.flags['cellar-key']).toBe(true);
-    expect(carriedAfterChest.openedChests['vault-chest']).toBe(true);
+    expect(carriedAfterChest.openedChests['vault.vault-chest']).toBe(true);
 
     // ── vault → hub (flag survives; spawn lands in the plaza) ───
     transition = exitRoom(state, 'vault', ['down', 'down', 'down']);
@@ -342,7 +349,7 @@ describe('hub playthrough (Phase 5 DoD)', () => {
 
     expect(state.blocks['cellar-block']).toEqual({ x: 8, y: 6 });
     expect(state.flags['cellar-solved']).toBe(true);
-    expect(state.onTargetFired['cellar-block']).toBe(true);
+    expect(state.onTargetFired['cellar.cellar-block']).toBe(true);
     expect(state.doors['exit-door']).toEqual({ open: true });
 
     // ── back to hub through both open doors ─────────────────────
@@ -367,13 +374,68 @@ describe('hub playthrough (Phase 5 DoD)', () => {
       'cellar-key': true,
       'cellar-solved': true,
     });
-    expect(finalCarried.onTargetFired['cellar-block']).toBe(true);
+    expect(finalCarried.onTargetFired['cellar.cellar-block']).toBe(true);
+  });
+
+  it('identically-named objects in different rooms never alias (review P1-3)', () => {
+    const roomA = parseTileRoom({
+      id: 'room-a',
+      spawn: { x: 0, y: 0 },
+      chests: [{ id: 'chest-1', pos: { x: 1, y: 0 }, setFlag: 'ka' }],
+      tiles: [
+        [0, 0],
+        [1, 1],
+      ],
+    });
+    const roomB = parseTileRoom({
+      id: 'room-b',
+      spawn: { x: 0, y: 0 },
+      chests: [{ id: 'chest-1', pos: { x: 1, y: 0 }, setFlag: 'kb' }],
+      tiles: [
+        [0, 0],
+        [1, 1],
+      ],
+    });
+
+    // Open chest-1 in room A...
+    const stateA = applyTileOperation(
+      createTileRoomState(roomA),
+      roomA,
+      { kind: 'move', direction: 'right' },
+    ).state;
+    const openedA = applyTileOperation(stateA, roomA, {
+      kind: 'interact',
+    });
+
+    expect(openedA.state.flags.ka).toBe(true);
+
+    // ...then enter room B with that carried state: room B's
+    // chest-1 must still be closed and must set its OWN flag.
+    const stateB = createTileRoomState(
+      roomB,
+      roomB.spawn,
+      extractCarriedState(openedA.state),
+    );
+
+    expect(stateB.chests['chest-1']).toEqual({ opened: false });
+
+    const openedB = applyTileOperation(
+      applyTileOperation(stateB, roomB, {
+        kind: 'move',
+        direction: 'right',
+      }).state,
+      roomB,
+      { kind: 'interact' },
+    );
+
+    expect(openedB.state.flags.ka).toBe(true);
+    expect(openedB.state.flags.kb).toBe(true);
   });
 
   it('re-entering the vault does not re-open the chest', () => {
     const carried = {
       flags: { 'cellar-key': true },
-      openedChests: { 'vault-chest': true },
+      openedChests: { 'vault.vault-chest': true },
       onTargetFired: {},
       latchedOpenDoors: {},
     };

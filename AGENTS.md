@@ -36,11 +36,19 @@ Enforced by `src/architecture.test.ts`:
   regress to string labels or `startsWith` sniffing.
 - Room initialization validates through `tryInitializeLocalWorld` only;
   transition layers must not call `validateEntry` themselves.
-- Movement rules use `createSpatialIndex` / `movementIsLegal` against room
-  definitions, not hardcoded cell coordinates.
+- Movement rules validate against room definitions, never hardcoded cell
+  coordinates: object-based chapters use `createSpatialIndex` /
+  `movementIsLegal`; tile rooms validate against their parsed tilemap
+  (`isWallAt`) plus door/block/object definitions.
 - The Pixi host owns the `WorldScene` lifecycle (`createWorldScene` in
   `createPixiHost`, destroyed by `handle.destroy()`). There is no global
   scene registry.
+- Room JSON is the level-authoring boundary: `parseTileRoom` rejects
+  unknown keys, duplicate ids, dangling door references, objects on
+  walls and overlapping definitions, and the wiring layer validates the
+  room graph with `validateTileRoomCatalog` at boot. A broken map must
+  fail at build/test time, not produce a world that parses but cannot
+  be played.
 - Rendering is a pure consumer of view models; gameplay state must never
   be read back from `Container`/`Graphics` objects.
 

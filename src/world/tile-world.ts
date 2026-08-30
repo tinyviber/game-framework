@@ -11,15 +11,23 @@ import {
 
 /**
  * Cross-room state that must survive room transitions (and page
- * reloads, via the FlagStore mirror): flags, opened chests, fired
- * block targets and latched doors. Lever states and block positions
- * are per-room puzzle state and intentionally reset on entry.
+ * reloads, via the FlagStore mirror). Object-state entries are
+ * namespaced as `<roomId>.<objectId>` so identically-named objects
+ * in different rooms can never alias each other (two rooms may both
+ * contain a `chest-1`). Flags are intentionally global: they are
+ * the explicit cross-room progression mechanism. Lever states and
+ * block positions are per-room puzzle state and intentionally
+ * reset on entry.
  */
 export interface CarriedState {
   readonly flags: Readonly<Record<string, boolean>>;
   readonly openedChests: Readonly<Record<string, boolean>>;
   readonly onTargetFired: Readonly<Record<string, boolean>>;
   readonly latchedOpenDoors: Readonly<Record<string, boolean>>;
+}
+
+function carriedKey(roomId: string, objectId: string): string {
+  return `${roomId}.${objectId}`;
 }
 
 export function emptyCarried(): CarriedState {
@@ -79,6 +87,8 @@ export type TileEvent =
 export interface TileGameState {
   readonly roomId: string;
   readonly player: Position;
+  /** Last accepted move direction; drives interact target priority. */
+  readonly facing: ExitDirection;
   readonly flags: Readonly<Record<string, boolean>>;
   readonly doors: Readonly<
     Record<string, { readonly open: boolean }>
@@ -168,7 +178,7 @@ function doorOpen(
   door: DoorDefinition,
   context: DoorEvalContext,
 ): boolean {
-  if (context.latchedOpenDoors[door.id]) {
+  if (context.latchedOpenDoors[carriedKey(room.id, door.id)]) {
     return true;
   }
 
@@ -308,6 +318,9 @@ export function createTileRoomState(
   return deepFreeze({
     roomId: room.id,
     player: { ...spawn },
+    // Entry does not know the walk direction; 'down' is a neutral
+    // default until the first accepted move sets the real facing.
+    facing: 'down',
     flags: { ...carried.flags },
     doors: computeDoorStates(room, context),
     levers: Object.fromEntries(
@@ -317,7 +330,12 @@ export function createTileRoomState(
     chests: Object.fromEntries(
       room.chests.map((chest) => [
         chest.id,
-        { opened: carried.openedChests[chest.id] === true },
+        {
+          opened:
+            carried.openedChests[
+              carriedKey(room.id, chest.id)
+            ] === true,
+        },
       ]),
     ),
     openedChests: { ...carried.openedChests },
@@ -468,7 +486,7 @@ function applyMove(
     }
   }
 
-  // Block target latch (fires exactly once).
+  // Block target latch (fires exactly once per room+block).
   const flags = { ...state.flags };
   const onTargetFired = { ...state.onTargetFired };
   const latchedOpenDoors = { ...state.latchedOpenDoors };
@@ -478,13 +496,14 @@ function applyMove(
     const definition = room.blocks.find(
       (block) => block.id === pushedBlockId,
     );
+    const firedKey = carriedKey(state.roomId, pushedBlockId);
 
     if (
       definition?.target &&
       samePosition(moved, definition.target) &&
-      !onTargetFired[pushedBlockId]
+      !onTargetFired[firedKey]
     ) {
-      onTargetFired[pushedBlockId] = true;
+      onTargetFired[firedKey] = true;
       events.push({ tag: 'block-on-target', blockId: pushedBlockId });
 
       if (definition.onTarget?.setFlag) {
@@ -497,7 +516,7 @@ function applyMove(
       }
 
       for (const doorId of definition.onTarget?.openDoors ?? []) {
-        latchedOpenDoors[doorId] = true;
+        latchedOpenDoors[carriedKey(state.roomId, doorId)] = true;
       }
     }
   }
@@ -524,6 +543,7 @@ function applyMove(
   const nextState = deepFreeze({
     ...state,
     player,
+    facing: direction,
     flags,
     doors: postMoveDoors,
     blocks,
@@ -539,21 +559,44 @@ function applyMove(
   };
 }
 
+/**
+ * Deterministic interact priority: the cell the player stands on,
+ * then the faced cell, then the remaining neighbors in fixed
+ * order (up, down, left, right). Facing updates only on accepted
+ * moves, so "press E" always targets what the player just walked
+ * toward, never an array-order accident.
+ */
+function interactCandidateCells(state: TileGameState): readonly Position[] {
+  const facingDelta = directionDelta(state.facing);
+  const cells: Position[] = [
+    state.player,
+    {
+      x: state.player.x + facingDelta.x,
+      y: state.player.y + facingDelta.y,
+    },
+  ];
+
+  for (const direction of NEIGHBOR_ORDER) {
+    if (direction === state.facing) {
+      continue;
+    }
+
+    const delta = directionDelta(direction);
+
+    cells.push({
+      x: state.player.x + delta.x,
+      y: state.player.y + delta.y,
+    });
+  }
+
+  return cells;
+}
+
 function applyInteract(
   state: TileGameState,
   room: TileRoom,
 ): TileOperationResult {
-  const cells: Position[] = [
-    state.player,
-    ...NEIGHBOR_ORDER.map((direction) => {
-      const delta = directionDelta(direction);
-
-      return {
-        x: state.player.x + delta.x,
-        y: state.player.y + delta.y,
-      };
-    }),
-  ];
+  const cells = interactCandidateCells(state);
 
   for (const cell of cells) {
     const target = objectAt(room, cell.x, cell.y);
@@ -613,7 +656,7 @@ function applyInteract(
         },
         openedChests: {
           ...state.openedChests,
-          [target.id]: true,
+          [carriedKey(state.roomId, target.id)]: true,
         },
         doors,
         lastEvents: events,
@@ -745,4 +788,31 @@ function reject(
     events: [{ tag: 'blocked', reason }],
     reason,
   };
+}
+
+function booleanRecordsEqual(
+  a: Readonly<Record<string, boolean>>,
+  b: Readonly<Record<string, boolean>>,
+): boolean {
+  const aKeys = Object.keys(a);
+  const bKeys = Object.keys(b);
+
+  if (aKeys.length !== bKeys.length) {
+    return false;
+  }
+
+  return aKeys.every((key) => a[key] === b[key]);
+}
+
+/** Structural equality of two carried snapshots. */
+export function carriedEquals(
+  a: CarriedState,
+  b: CarriedState,
+): boolean {
+  return (
+    booleanRecordsEqual(a.flags, b.flags) &&
+    booleanRecordsEqual(a.openedChests, b.openedChests) &&
+    booleanRecordsEqual(a.onTargetFired, b.onTargetFired) &&
+    booleanRecordsEqual(a.latchedOpenDoors, b.latchedOpenDoors)
+  );
 }

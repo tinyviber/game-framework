@@ -4,15 +4,14 @@
     "x": 2,
     "y": 1
   },
-  "exits": {
-    "up": {
+  "exits": [
+    {
+      "id": "to-hub",
+      "at": { "x": 5, "y": 0 },
       "room": "hub",
-      "spawn": {
-        "x": 7,
-        "y": 9
-      }
+      "spawn": { "x": 7, "y": 9 }
     }
-  },
+  ],
   "doors": [
     {
       "id": "treasure-door",

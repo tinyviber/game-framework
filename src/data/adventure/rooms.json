@@ -1,0 +1,342 @@
+[
+  {
+    "id": "wind-00",
+    "gridX": 0,
+    "gridY": 0,
+    "title": "Moss Gate",
+    "description": "A quiet green threshold where the first wind thread wakes.",
+    "surface": "meadow",
+    "palette": { "sky": 794908, "ground": 3752252, "groundAlt": 4549732, "edge": 1854783, "glow": 14085521 },
+    "layout": ["######.#####", "#..........#", "#..##......#", "#..........#", "............", "#......##..#", "#..........#", "#..#.......#", "######.#####"],
+    "node": { "id": "node-00", "x": 3, "y": 3, "label": "wake the thread" },
+    "props": [
+      { "id": "tree-00", "assetKey": "tree", "x": 2, "y": 2, "elevation": 1, "foreground": true, "blocks": true },
+      { "id": "flowers-00", "assetKey": "flowers", "x": 9, "y": 6, "elevation": 0, "foreground": false, "blocks": false },
+      { "id": "flag-00", "assetKey": "flag", "x": 9, "y": 2, "elevation": 0, "foreground": false, "blocks": false }
+    ],
+    "npcs": [{ "id": "guide-00", "name": "Nilo", "line": "Follow the bright seams. Every room has a rhythm.", "assetKey": "character-oopi", "x": 8, "y": 4, "elevation": 0 }]
+  },
+  {
+    "id": "wind-01",
+    "gridX": 1,
+    "gridY": 0,
+    "title": "Cloud Orchard",
+    "description": "Floating grass shelves catch soft blue light above the mist.",
+    "surface": "sky",
+    "palette": { "sky": 5984358, "ground": 5559741, "groundAlt": 6908528, "edge": 9627856, "glow": 15595547 },
+    "layout": ["######.#####", "#..^.......#", "#..^^......#", "#..........#", "............", "#......^...#", "#..........#", "#..#.......#", "######.#####"],
+    "node": { "id": "node-01", "x": 8, "y": 2, "label": "catch the updraft" },
+    "props": [
+      { "id": "tree-01", "assetKey": "tree-pine", "x": 2, "y": 6, "elevation": 1, "foreground": true, "blocks": true },
+      { "id": "stairs-01", "assetKey": "stairs", "x": 9, "y": 5, "elevation": 1, "foreground": false, "blocks": false },
+      { "id": "star-01", "assetKey": "star", "x": 4, "y": 2, "elevation": 1, "foreground": false, "blocks": false }
+    ],
+    "npcs": []
+  },
+  {
+    "id": "wind-02",
+    "gridX": 2,
+    "gridY": 0,
+    "title": "Amber Switchyard",
+    "description": "Copper-colored ramps turn a single gust into three directions.",
+    "surface": "sunset",
+    "palette": { "sky": 12237436, "ground": 7461968, "groundAlt": 8879672, "edge": 11448756, "glow": 16766720 },
+    "layout": ["######.#####", "#..^.......#", "#..##..^...#", "#..........#", "............", "#...^..##..#", "#..........#", "#..#.......#", "######.#####"],
+    "node": { "id": "node-02", "x": 4, "y": 5, "label": "bend the amber current" },
+    "props": [
+      { "id": "block-02", "assetKey": "block-grass-large", "x": 5, "y": 2, "elevation": 1, "foreground": false, "blocks": true },
+      { "id": "rocks-02", "assetKey": "rocks", "x": 8, "y": 6, "elevation": 0, "foreground": false, "blocks": true },
+      { "id": "key-02", "assetKey": "key", "x": 9, "y": 2, "elevation": 1, "foreground": false, "blocks": false }
+    ],
+    "npcs": [{ "id": "keeper-02", "name": "Aster", "line": "The wind never moves straight. It remembers the shape of the room.", "assetKey": "character-ooli", "x": 2, "y": 4, "elevation": 0 }]
+  },
+  {
+    "id": "wind-03",
+    "gridX": 3,
+    "gridY": 0,
+    "title": "High Observatory",
+    "description": "A little watchtower looks over a sea of pale, moving clouds.",
+    "surface": "sky",
+    "palette": { "sky": 3297377, "ground": 4233588, "groundAlt": 5483654, "edge": 7456338, "glow": 13290751 },
+    "layout": ["######.#####", "#..........#", "#..##..^...#", "#..........#", "............", "#......##..#", "#.....^....#", "#..#.......#", "######.#####"],
+    "node": { "id": "node-03", "x": 6, "y": 6, "label": "read the weather" },
+    "props": [
+      { "id": "house-03", "assetKey": "building-sample-house-a", "x": 2, "y": 2, "elevation": 1, "foreground": true, "blocks": true },
+      { "id": "flag-03", "assetKey": "flag", "x": 9, "y": 6, "elevation": 0, "foreground": false, "blocks": false },
+      { "id": "heart-03", "assetKey": "heart", "x": 8, "y": 2, "elevation": 1, "foreground": false, "blocks": false }
+    ],
+    "npcs": [{ "id": "watcher-03", "name": "Mara", "line": "North is not higher. It only has fewer places to hide.", "assetKey": "character-oozi", "x": 8, "y": 4, "elevation": 0 }]
+  },
+  {
+    "id": "wind-04",
+    "gridX": 0,
+    "gridY": 1,
+    "title": "Root Market",
+    "description": "Lanterns, flowers and low stone tables make a safe turning point.",
+    "surface": "meadow",
+    "palette": { "sky": 5914909, "ground": 3225920, "groundAlt": 4210796, "edge": 6471168, "glow": 16239872 },
+    "layout": ["######.#####", "#..........#", "#..##......#", "#...^......#", "............", "#......##..#", "#..........#", "#..#.......#", "######.#####"],
+    "node": { "id": "node-04", "x": 4, "y": 3, "label": "listen at the market" },
+    "props": [
+      { "id": "house-04", "assetKey": "building-sample-house-b", "x": 2, "y": 2, "elevation": 1, "foreground": true, "blocks": true },
+      { "id": "flowers-04", "assetKey": "flowers", "x": 9, "y": 6, "elevation": 0, "foreground": false, "blocks": false },
+      { "id": "sign-04", "assetKey": "sign", "x": 8, "y": 2, "elevation": 0, "foreground": false, "blocks": false }
+    ],
+    "npcs": [{ "id": "vendor-04", "name": "Pip", "line": "A good route leaves room for somebody else to pass.", "assetKey": "character-oobi", "x": 9, "y": 4, "elevation": 0 }]
+  },
+  {
+    "id": "wind-05",
+    "gridX": 1,
+    "gridY": 1,
+    "title": "Rain Basin",
+    "description": "Blue channels split the floor into stepping-stone islands.",
+    "surface": "rain",
+    "palette": { "sky": 2045273, "ground": 2647486, "groundAlt": 3368546, "edge": 4558791, "glow": 6881279 },
+    "layout": ["######.#####", "#..~~......#", "#..~~..^...#", "#..........#", "............", "#...^..~~..#", "#..........#", "#..#.......#", "######.#####"],
+    "node": { "id": "node-05", "x": 8, "y": 3, "label": "raise the rain" },
+    "props": [
+      { "id": "rock-05", "assetKey": "rocks", "x": 2, "y": 1, "elevation": 0, "foreground": false, "blocks": true },
+      { "id": "mushrooms-05", "assetKey": "mushrooms", "x": 9, "y": 6, "elevation": 0, "foreground": false, "blocks": false },
+      { "id": "stairs-05", "assetKey": "stairs", "x": 5, "y": 5, "elevation": 1, "foreground": false, "blocks": false }
+    ],
+    "npcs": []
+  },
+  {
+    "id": "wind-06",
+    "gridX": 2,
+    "gridY": 1,
+    "title": "Lantern Causeway",
+    "description": "A narrow orange route threads between quiet dark pools.",
+    "surface": "night",
+    "palette": { "sky": 2108457, "ground": 3223863, "groundAlt": 4409443, "edge": 6579300, "glow": 16228114 },
+    "layout": ["######.#####", "#..^.......#", "#..##......#", "#..........#", "............", "#......##..#", "#...^......#", "#..#.......#", "######.#####"],
+    "node": { "id": "node-06", "x": 4, "y": 6, "label": "light the causeway" },
+    "props": [
+      { "id": "flag-06", "assetKey": "flag", "x": 2, "y": 2, "elevation": 1, "foreground": true, "blocks": false },
+      { "id": "fence-06", "assetKey": "fence-straight", "x": 8, "y": 2, "elevation": 0, "foreground": false, "blocks": true },
+      { "id": "star-06", "assetKey": "star", "x": 9, "y": 6, "elevation": 0, "foreground": false, "blocks": false }
+    ],
+    "npcs": [{ "id": "lamplighter-06", "name": "Sol", "line": "Darkness is a direction too. Notice what it makes visible.", "assetKey": "character-oopi", "x": 8, "y": 4, "elevation": 0 }]
+  },
+  {
+    "id": "wind-07",
+    "gridX": 3,
+    "gridY": 1,
+    "title": "Windmill Ridge",
+    "description": "Three raised shelves face different winds, like sails at rest.",
+    "surface": "sunset",
+    "palette": { "sky": 10580331, "ground": 5916957, "groundAlt": 7631711, "edge": 10731921, "glow": 16762710 },
+    "layout": ["######.#####", "#..^.......#", "#..^^......#", "#..........#", "............", "#......^^..#", "#..........#", "#..#.......#", "######.#####"],
+    "node": { "id": "node-07", "x": 7, "y": 5, "label": "turn the ridge" },
+    "props": [
+      { "id": "block-07", "assetKey": "block-grass", "x": 3, "y": 2, "elevation": 1, "foreground": false, "blocks": true },
+      { "id": "tree-07", "assetKey": "tree", "x": 9, "y": 2, "elevation": 1, "foreground": true, "blocks": true },
+      { "id": "key-07", "assetKey": "key", "x": 2, "y": 6, "elevation": 0, "foreground": false, "blocks": false }
+    ],
+    "npcs": []
+  },
+  {
+    "id": "wind-08",
+    "gridX": 0,
+    "gridY": 2,
+    "title": "Glass Marsh",
+    "description": "The floor reflects every color, but only one path stays dry.",
+    "surface": "rain",
+    "palette": { "sky": 2446151, "ground": 2673764, "groundAlt": 3996996, "edge": 5539828, "glow": 12368578 },
+    "layout": ["######.#####", "#..~~......#", "#..##..^...#", "#..........#", "............", "#......~~..#", "#..........#", "#..#.......#", "######.#####"],
+    "node": { "id": "node-08", "x": 4, "y": 3, "label": "find the dry note" },
+    "props": [
+      { "id": "rock-08", "assetKey": "rocks", "x": 2, "y": 1, "elevation": 0, "foreground": false, "blocks": true },
+      { "id": "flowers-08", "assetKey": "flowers", "x": 9, "y": 2, "elevation": 0, "foreground": false, "blocks": false },
+      { "id": "heart-08", "assetKey": "heart", "x": 8, "y": 6, "elevation": 0, "foreground": false, "blocks": false }
+    ],
+    "npcs": [{ "id": "ferryman-08", "name": "Reed", "line": "A reflection is not a road, but it can show you where one begins.", "assetKey": "character-oodi", "x": 8, "y": 4, "elevation": 0 }]
+  },
+  {
+    "id": "wind-09",
+    "gridX": 1,
+    "gridY": 2,
+    "title": "Hollow Orchard",
+    "description": "Round trees leave a hollow at the center where the air sings.",
+    "surface": "meadow",
+    "palette": { "sky": 3250295, "ground": 3327040, "groundAlt": 4603172, "edge": 6295706, "glow": 12969715 },
+    "layout": ["######.#####", "#..^.......#", "#..##......#", "#...^......#", "............", "#......##..#", "#..........#", "#..#.......#", "######.#####"],
+    "node": { "id": "node-09", "x": 4, "y": 3, "label": "hear the hollow" },
+    "props": [
+      { "id": "tree-09a", "assetKey": "tree", "x": 2, "y": 2, "elevation": 1, "foreground": true, "blocks": true },
+      { "id": "tree-09b", "assetKey": "tree", "x": 9, "y": 6, "elevation": 1, "foreground": true, "blocks": true },
+      { "id": "mushrooms-09", "assetKey": "mushrooms", "x": 8, "y": 2, "elevation": 0, "foreground": false, "blocks": false }
+    ],
+    "npcs": []
+  },
+  {
+    "id": "wind-10",
+    "gridX": 2,
+    "gridY": 2,
+    "title": "Copper Sluice",
+    "description": "Old channels and ramps make a puzzle out of downhill momentum.",
+    "surface": "sunset",
+    "palette": { "sky": 6900038, "ground": 6370909, "groundAlt": 8083028, "edge": 11158542, "glow": 16376286 },
+    "layout": ["######.#####", "#..^.......#", "#..^^......#", "#..........#", "............", "#...^..##..#", "#..........#", "#..#.......#", "######.#####"],
+    "node": { "id": "node-10", "x": 4, "y": 5, "label": "open the sluice" },
+    "props": [
+      { "id": "block-10", "assetKey": "block-grass-large", "x": 3, "y": 2, "elevation": 1, "foreground": false, "blocks": true },
+      { "id": "stairs-10", "assetKey": "stairs", "x": 8, "y": 6, "elevation": 1, "foreground": false, "blocks": false },
+      { "id": "chest-10", "assetKey": "chest", "x": 9, "y": 2, "elevation": 0, "foreground": false, "blocks": false }
+    ],
+    "npcs": [{ "id": "engineer-10", "name": "Bram", "line": "Water teaches the quickest route: give it somewhere to go.", "assetKey": "character-oopi", "x": 8, "y": 4, "elevation": 0 }]
+  },
+  {
+    "id": "wind-11",
+    "gridX": 3,
+    "gridY": 2,
+    "title": "Moonlit Quarry",
+    "description": "Pale stone shelves rise from a blue-black floor of tiny stars.",
+    "surface": "night",
+    "palette": { "sky": 1646637, "ground": 3742751, "groundAlt": 5124212, "edge": 7305089, "glow": 15128767 },
+    "layout": ["######.#####", "#..^.......#", "#..##..^...#", "#..........#", "............", "#......##..#", "#....^.....#", "#..#.......#", "######.#####"],
+    "node": { "id": "node-11", "x": 5, "y": 6, "label": "mine the moonlight" },
+    "props": [
+      { "id": "rocks-11", "assetKey": "rocks", "x": 2, "y": 2, "elevation": 0, "foreground": false, "blocks": true },
+      { "id": "block-11", "assetKey": "block-snow", "x": 8, "y": 2, "elevation": 1, "foreground": false, "blocks": true },
+      { "id": "star-11", "assetKey": "star", "x": 9, "y": 6, "elevation": 0, "foreground": false, "blocks": false }
+    ],
+    "npcs": []
+  },
+  {
+    "id": "wind-12",
+    "gridX": 0,
+    "gridY": 3,
+    "title": "Snow Terrace",
+    "description": "Soft white ledges make the wind visible in long drifting ribbons.",
+    "surface": "snow",
+    "palette": { "sky": 7955531, "ground": 9013647, "groundAlt": 11382189, "edge": 12765727, "glow": 16053499 },
+    "layout": ["######.#####", "#..s.......#", "#..##..s...#", "#..........#", "............", "#......##..#", "#.....s....#", "#..#.......#", "######.#####"],
+    "node": { "id": "node-12", "x": 5, "y": 6, "label": "trace the snowfall" },
+    "props": [
+      { "id": "pine-12", "assetKey": "tree-pine", "x": 2, "y": 2, "elevation": 1, "foreground": true, "blocks": true },
+      { "id": "snow-12", "assetKey": "block-snow-large", "x": 8, "y": 2, "elevation": 1, "foreground": false, "blocks": true },
+      { "id": "heart-12", "assetKey": "heart", "x": 9, "y": 6, "elevation": 0, "foreground": false, "blocks": false }
+    ],
+    "npcs": [{ "id": "snow-reader-12", "name": "Lune", "line": "Snow is a map written by air. The quietest lines matter most.", "assetKey": "character-ooli", "x": 8, "y": 4, "elevation": 0 }]
+  },
+  {
+    "id": "wind-13",
+    "gridX": 1,
+    "gridY": 3,
+    "title": "Echo Cavern",
+    "description": "Rock arches turn a tiny pulse into a deep, friendly answer.",
+    "surface": "cave",
+    "palette": { "sky": 1579040, "ground": 3226426, "groundAlt": 4666726, "edge": 7231243, "glow": 13417599 },
+    "layout": ["######.#####", "#..^.......#", "#..##..^...#", "#..........#", "............", "#...^..##..#", "#..........#", "#..#.......#", "######.#####"],
+    "node": { "id": "node-13", "x": 4, "y": 5, "label": "send an echo" },
+    "props": [
+      { "id": "gate-13", "assetKey": "gate-rock", "x": 2, "y": 2, "elevation": 1, "foreground": true, "blocks": true },
+      { "id": "stairs-13", "assetKey": "stairs", "x": 8, "y": 6, "elevation": 1, "foreground": false, "blocks": false },
+      { "id": "mushrooms-13", "assetKey": "mushrooms", "x": 9, "y": 2, "elevation": 0, "foreground": false, "blocks": false }
+    ],
+    "npcs": []
+  },
+  {
+    "id": "wind-14",
+    "gridX": 2,
+    "gridY": 3,
+    "title": "Spore Garden",
+    "description": "Mushrooms glow beneath a green canopy and mark a looping route.",
+    "surface": "meadow",
+    "palette": { "sky": 2461727, "ground": 2783297, "groundAlt": 4113972, "edge": 5881066, "glow": 15421137 },
+    "layout": ["######.#####", "#..^.......#", "#..##......#", "#...^......#", "............", "#......##..#", "#..........#", "#..#.......#", "######.#####"],
+    "node": { "id": "node-14", "x": 4, "y": 3, "label": "bloom the pulse" },
+    "props": [
+      { "id": "mushrooms-14", "assetKey": "mushrooms", "x": 2, "y": 2, "elevation": 0, "foreground": false, "blocks": true },
+      { "id": "tree-14", "assetKey": "tree", "x": 9, "y": 6, "elevation": 1, "foreground": true, "blocks": true },
+      { "id": "flowers-14", "assetKey": "flowers", "x": 8, "y": 2, "elevation": 0, "foreground": false, "blocks": false }
+    ],
+    "npcs": [{ "id": "gardener-14", "name": "Fenn", "line": "If you leave a little space, even a strange seed can find the sun.", "assetKey": "character-oobi", "x": 8, "y": 4, "elevation": 0 }]
+  },
+  {
+    "id": "wind-15",
+    "gridX": 3,
+    "gridY": 3,
+    "title": "Broken Aqueduct",
+    "description": "A fallen bridge still remembers where the water wanted to travel.",
+    "surface": "rain",
+    "palette": { "sky": 2502784, "ground": 3622453, "groundAlt": 4801858, "edge": 7170155, "glow": 13542143 },
+    "layout": ["######.#####", "#..^.......#", "#..##..^...#", "#..........#", "............", "#...^..##..#", "#..........#", "#..#.......#", "######.#####"],
+    "node": { "id": "node-15", "x": 4, "y": 5, "label": "restore the crossing" },
+    "props": [
+      { "id": "gate-15", "assetKey": "gate-rock", "x": 2, "y": 2, "elevation": 1, "foreground": true, "blocks": true },
+      { "id": "block-15", "assetKey": "block-grass", "x": 8, "y": 2, "elevation": 1, "foreground": false, "blocks": true },
+      { "id": "key-15", "assetKey": "key", "x": 9, "y": 6, "elevation": 0, "foreground": false, "blocks": false }
+    ],
+    "npcs": []
+  },
+  {
+    "id": "wind-16",
+    "gridX": 0,
+    "gridY": 4,
+    "title": "Dusk Meadow",
+    "description": "The last green room before the stonework begins, warm and open.",
+    "surface": "sunset",
+    "palette": { "sky": 11765355, "ground": 6053757, "groundAlt": 7436434, "edge": 10199111, "glow": 16442426 },
+    "layout": ["######.#####", "#..........#", "#..##..^...#", "#..........#", "............", "#......##..#", "#....^.....#", "#..#.......#", "######.#####"],
+    "node": { "id": "node-16", "x": 5, "y": 6, "label": "hold the dusk" },
+    "props": [
+      { "id": "tree-16", "assetKey": "tree", "x": 2, "y": 2, "elevation": 1, "foreground": true, "blocks": true },
+      { "id": "house-16", "assetKey": "building-sample-house-c", "x": 8, "y": 2, "elevation": 1, "foreground": true, "blocks": true },
+      { "id": "flowers-16", "assetKey": "flowers", "x": 9, "y": 6, "elevation": 0, "foreground": false, "blocks": false }
+    ],
+    "npcs": [{ "id": "traveler-16", "name": "Ora", "line": "The edge of a map is only another kind of beginning.", "assetKey": "character-oozi", "x": 8, "y": 4, "elevation": 0 }]
+  },
+  {
+    "id": "wind-17",
+    "gridX": 1,
+    "gridY": 4,
+    "title": "Basalt Lift",
+    "description": "Dark pillars rise in steps, making a vertical route from small winds.",
+    "surface": "cave",
+    "palette": { "sky": 1710360, "ground": 3946042, "groundAlt": 5253412, "edge": 7829151, "glow": 14145513 },
+    "layout": ["######.#####", "#..^.......#", "#..^^......#", "#..........#", "............", "#...^..##..#", "#..........#", "#..#.......#", "######.#####"],
+    "node": { "id": "node-17", "x": 4, "y": 5, "label": "lift the basalt" },
+    "props": [
+      { "id": "block-17", "assetKey": "block-grass-large", "x": 3, "y": 2, "elevation": 1, "foreground": false, "blocks": true },
+      { "id": "gate-17", "assetKey": "gate-rock", "x": 8, "y": 2, "elevation": 1, "foreground": true, "blocks": true },
+      { "id": "stairs-17", "assetKey": "stairs", "x": 9, "y": 6, "elevation": 1, "foreground": false, "blocks": false }
+    ],
+    "npcs": []
+  },
+  {
+    "id": "wind-18",
+    "gridX": 2,
+    "gridY": 4,
+    "title": "Crystal Vault",
+    "description": "A quiet chamber of bright facets, each one holding a different sky.",
+    "surface": "crystal",
+    "palette": { "sky": 4141392, "ground": 5756144, "groundAlt": 7911441, "edge": 10731264, "glow": 16434943 },
+    "layout": ["######.#####", "#..^.......#", "#..##..^...#", "#..........#", "............", "#......##..#", "#.....^....#", "#..#.......#", "######.#####"],
+    "node": { "id": "node-18", "x": 6, "y": 6, "label": "split the prism" },
+    "props": [
+      { "id": "snow-18", "assetKey": "block-snow-large", "x": 2, "y": 2, "elevation": 1, "foreground": false, "blocks": true },
+      { "id": "star-18", "assetKey": "star", "x": 8, "y": 2, "elevation": 0, "foreground": false, "blocks": false },
+      { "id": "chest-18", "assetKey": "chest", "x": 9, "y": 6, "elevation": 0, "foreground": false, "blocks": false }
+    ],
+    "npcs": [{ "id": "facet-18", "name": "Iri", "line": "Carry one color onward. The storm will need a memory.", "assetKey": "character-ooli", "x": 8, "y": 4, "elevation": 0 }]
+  },
+  {
+    "id": "wind-19",
+    "gridX": 3,
+    "gridY": 4,
+    "title": "Storm Core",
+    "description": "All twenty threads meet here in a room that hums with patient light.",
+    "surface": "crystal",
+    "palette": { "sky": 1443343, "ground": 3287318, "groundAlt": 5133685, "edge": 7828877, "glow": 16769416 },
+    "layout": ["######.#####", "#..^.......#", "#..##..^...#", "#..........#", "............", "#......##..#", "#....^.....#", "#..#.......#", "######.#####"],
+    "node": { "id": "node-19", "x": 6, "y": 6, "label": "weave the storm" },
+    "props": [
+      { "id": "gate-19", "assetKey": "gate-rock", "x": 2, "y": 2, "elevation": 1, "foreground": true, "blocks": true },
+      { "id": "flag-19", "assetKey": "flag", "x": 8, "y": 2, "elevation": 0, "foreground": false, "blocks": false },
+      { "id": "star-19", "assetKey": "star", "x": 9, "y": 6, "elevation": 0, "foreground": false, "blocks": false }
+    ],
+    "npcs": [{ "id": "core-19", "name": "The Core", "line": "One last pulse, then the whole sky can breathe again.", "assetKey": "character-oopi", "x": 8, "y": 4, "elevation": 0 }]
+  }
+]

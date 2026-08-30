@@ -49,27 +49,33 @@ export function clampCameraToRoom(
 }
 
 /**
- * Smooth camera follow: exponential lerp toward the target position,
- * then clamped to the room bounds. `smoothing` is in (0, 1]; 1 snaps
- * instantly, smaller values follow more slowly.
+ * Smooth camera follow with frame-rate-independent exponential
+ * smoothing: over a time step of `dtMs` the camera covers a
+ * fraction `1 - exp(-speed * dt)` of the remaining distance, so
+ * 30, 60 and 144 Hz displays converge at the same rate. `speed`
+ * is a responsiveness constant in 1/seconds (12 matches the old
+ * fixed 0.18 lerp at 60 fps). The result is clamped to the room
+ * bounds.
  */
 export function updateCamera(
   current: CameraState,
   target: Position,
   roomSize: CameraRoomSize,
   viewport: CameraViewport,
-  smoothing = 0.15,
+  dtMs: number,
+  speedPerSecond = 12,
 ): CameraState {
-  if (
-    !Number.isFinite(smoothing) ||
-    smoothing <= 0 ||
-    smoothing > 1
-  ) {
-    throw new Error('smoothing must be in (0, 1]');
+  if (!Number.isFinite(dtMs) || dtMs < 0) {
+    throw new Error('dtMs must be a non-negative finite number');
   }
 
-  const nextX = current.x + (target.x - current.x) * smoothing;
-  const nextY = current.y + (target.y - current.y) * smoothing;
+  if (!Number.isFinite(speedPerSecond) || speedPerSecond <= 0) {
+    throw new Error('speedPerSecond must be a positive finite number');
+  }
+
+  const alpha = 1 - Math.exp(-speedPerSecond * (dtMs / 1000));
+  const nextX = current.x + (target.x - current.x) * alpha;
+  const nextY = current.y + (target.y - current.y) * alpha;
 
   return clampCameraToRoom(
     { x: nextX, y: nextY },
