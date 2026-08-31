@@ -21,7 +21,13 @@ export interface OrthogonalTextureSet {
   readonly forest?: Readonly<Partial<Record<string, OrthogonalTexture>>>;
   readonly plateau?: Readonly<Partial<Record<string, OrthogonalTexture>>>;
   readonly road?: Readonly<Partial<Record<string, OrthogonalTexture>>>;
+  /** Blocking-feature art (the grey Kenney rock) keyed by tile id. */
+  readonly decorations?: Readonly<Partial<Record<string, OrthogonalTexture>>>;
 }
+
+export const ORTHO_DECORATION_TILE_IDS: readonly string[] = [
+  'kenney.mapTile.039',
+];
 
 export async function loadOrthogonalTextures(): Promise<OrthogonalTextureSet> {
   const terrainIds = [...new Set(Object.values(KENNEY_GENERATOR_TILE_IDS).flat())];
@@ -33,7 +39,7 @@ export async function loadOrthogonalTextures(): Promise<OrthogonalTextureSet> {
     ...set.side_right,
     ...set.bottom,
   ]))];
-  const packIds = [...new Set([...terrainIds, ...forestIds, ...plateauIds])];
+  const packIds = [...new Set([...terrainIds, ...forestIds, ...plateauIds, ...ORTHO_DECORATION_TILE_IDS])];
   const packEntries = await Promise.all(packIds.map(async (id) => {
     const tile = KENNEY_MAP_PACK_METADATA.tiles.find((candidate) => candidate.id === id);
     if (!tile) {
@@ -86,5 +92,10 @@ export async function loadOrthogonalTextures(): Promise<OrthogonalTextureSet> {
       if (tex) plateau[plateauId] = tex;
     }
   }
-  return { terrain, forest, plateau };
+  const decorations: Record<string, OrthogonalTexture> = {};
+  for (const decorId of ORTHO_DECORATION_TILE_IDS) {
+    const tex = packTextures[decorId];
+    if (tex) decorations[decorId] = tex;
+  }
+  return { terrain, forest, plateau, decorations };
 }
