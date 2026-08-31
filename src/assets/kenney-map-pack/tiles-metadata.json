@@ -1,0 +1,6693 @@
+{
+  "schema": 1,
+  "pack": {
+    "id": "kenney-map-pack",
+    "title": "Kenney Map Pack",
+    "source": "kenney_map-pack.zip",
+    "license": "CC0",
+    "tile_size": 64,
+    "native": {
+      "width": 896,
+      "height": 896,
+      "columns": 14,
+      "rows": 14
+    }
+  },
+  "generator_tiles": {
+    "grass": [
+      "kenney.mapTile.022",
+      "kenney.mapTile.021",
+      "kenney.mapTile.023",
+      "kenney.mapTile.006"
+    ],
+    "dirt": [
+      "kenney.mapTile.082",
+      "kenney.mapTile.081",
+      "kenney.mapTile.083"
+    ],
+    "stone": [
+      "kenney.mapTile.027",
+      "kenney.mapTile.014",
+      "kenney.mapTile.015"
+    ],
+    "snow": [
+      "kenney.mapTile.077"
+    ],
+    "sand": [
+      "kenney.mapTile.017",
+      "kenney.mapTile.087"
+    ],
+    "water": [
+      "kenney.mapTile.171",
+      "kenney.mapTile.187",
+      "kenney.mapTile.188"
+    ]
+  },
+  "forest_tiles": [
+    "kenney.mapTile.055",
+    "kenney.mapTile.115"
+  ],
+  "plateau_tiles": {
+    "stone": {
+      "fill": [
+        "kenney.mapTile.027"
+      ],
+      "top": [
+        "kenney.mapTile.011",
+        "kenney.mapTile.012",
+        "kenney.mapTile.013"
+      ],
+      "side_left": [
+        "kenney.mapTile.026"
+      ],
+      "side_right": [
+        "kenney.mapTile.028"
+      ],
+      "bottom": [
+        "kenney.mapTile.041",
+        "kenney.mapTile.042",
+        "kenney.mapTile.043"
+      ]
+    }
+  },
+  "road_tiles": {
+    "corner_rounded": [
+      "kenney.mapTile.121",
+      "kenney.mapTile.122"
+    ],
+    "corner_square": [
+      "kenney.mapTile.123",
+      "kenney.mapTile.124"
+    ],
+    "tee": [
+      "kenney.mapTile.125"
+    ],
+    "cross": [
+      "kenney.mapTile.128"
+    ],
+    "vertical": [
+      "kenney.mapTile.126"
+    ],
+    "horizontal": [
+      "kenney.mapTile.127"
+    ],
+    "end_vertical": [
+      "kenney.mapTile.129"
+    ],
+    "end_horizontal": [
+      "kenney.mapTile.130"
+    ]
+  },
+  "tiles": [
+    {
+      "id": "kenney.mapTile.001",
+      "file": "PNG/mapTile_001.png",
+      "category": "terrain",
+      "surface": "sand",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "sand"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.002",
+      "file": "PNG/mapTile_002.png",
+      "category": "terrain",
+      "surface": "sand",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "sand"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.003",
+      "file": "PNG/mapTile_003.png",
+      "category": "terrain",
+      "surface": "sand",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "sand"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.004",
+      "file": "PNG/mapTile_004.png",
+      "category": "terrain",
+      "surface": "sand",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "sand"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.005",
+      "file": "PNG/mapTile_005.png",
+      "category": "terrain",
+      "surface": "sand",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "sand"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.006",
+      "file": "PNG/mapTile_006.png",
+      "category": "terrain",
+      "surface": "grass",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "grass"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.007",
+      "file": "PNG/mapTile_007.png",
+      "category": "terrain",
+      "surface": "grass",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "grass"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.008",
+      "file": "PNG/mapTile_008.png",
+      "category": "terrain",
+      "surface": "grass",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "grass"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.009",
+      "file": "PNG/mapTile_009.png",
+      "category": "terrain",
+      "surface": "grass",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "grass"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.010",
+      "file": "PNG/mapTile_010.png",
+      "category": "terrain",
+      "surface": "grass",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "grass"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.011",
+      "file": "PNG/mapTile_011.png",
+      "category": "terrain",
+      "surface": "stone",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "stone",
+        "plateau",
+        "top"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.012",
+      "file": "PNG/mapTile_012.png",
+      "category": "terrain",
+      "surface": "stone",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "stone",
+        "plateau",
+        "top"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.013",
+      "file": "PNG/mapTile_013.png",
+      "category": "terrain",
+      "surface": "stone",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "stone",
+        "plateau",
+        "top"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.014",
+      "file": "PNG/mapTile_014.png",
+      "category": "terrain",
+      "surface": "stone",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "stone"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.015",
+      "file": "PNG/mapTile_015.png",
+      "category": "terrain",
+      "surface": "stone",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "stone"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.016",
+      "file": "PNG/mapTile_016.png",
+      "category": "terrain",
+      "surface": "sand",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "sand"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.017",
+      "file": "PNG/mapTile_017.png",
+      "category": "terrain",
+      "surface": "sand",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "sand",
+        "fill",
+        "generator"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.018",
+      "file": "PNG/mapTile_018.png",
+      "category": "terrain",
+      "surface": "sand",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "sand"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.019",
+      "file": "PNG/mapTile_019.png",
+      "category": "terrain",
+      "surface": "sand",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "sand"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.020",
+      "file": "PNG/mapTile_020.png",
+      "category": "terrain",
+      "surface": "sand",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "sand"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.021",
+      "file": "PNG/mapTile_021.png",
+      "category": "terrain",
+      "surface": "grass",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "grass"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.022",
+      "file": "PNG/mapTile_022.png",
+      "category": "terrain",
+      "surface": "grass",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "grass",
+        "fill",
+        "generator"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.023",
+      "file": "PNG/mapTile_023.png",
+      "category": "terrain",
+      "surface": "grass",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "grass"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.024",
+      "file": "PNG/mapTile_024.png",
+      "category": "terrain",
+      "surface": "grass",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "grass"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.025",
+      "file": "PNG/mapTile_025.png",
+      "category": "terrain",
+      "surface": "grass",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "grass"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.026",
+      "file": "PNG/mapTile_026.png",
+      "category": "terrain",
+      "surface": "stone",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "stone",
+        "plateau",
+        "side_left"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.027",
+      "file": "PNG/mapTile_027.png",
+      "category": "terrain",
+      "surface": "stone",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "stone",
+        "fill",
+        "generator",
+        "plateau"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.028",
+      "file": "PNG/mapTile_028.png",
+      "category": "terrain",
+      "surface": "stone",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "stone",
+        "plateau",
+        "side_right"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.029",
+      "file": "PNG/mapTile_029.png",
+      "category": "terrain",
+      "surface": "stone",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "stone"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.030",
+      "file": "PNG/mapTile_030.png",
+      "category": "terrain",
+      "surface": "stone",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "stone"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.031",
+      "file": "PNG/mapTile_031.png",
+      "category": "terrain",
+      "surface": "sand",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "sand"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.032",
+      "file": "PNG/mapTile_032.png",
+      "category": "terrain",
+      "surface": "sand",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "sand"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.033",
+      "file": "PNG/mapTile_033.png",
+      "category": "terrain",
+      "surface": "sand",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "sand"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.034",
+      "file": "PNG/mapTile_034.png",
+      "category": "decoration",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 1,
+      "tags": [
+        "map-tile",
+        "decoration"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.035",
+      "file": "PNG/mapTile_035.png",
+      "category": "decoration",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 1,
+      "tags": [
+        "map-tile",
+        "decoration"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.036",
+      "file": "PNG/mapTile_036.png",
+      "category": "terrain",
+      "surface": "grass",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "grass"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.037",
+      "file": "PNG/mapTile_037.png",
+      "category": "terrain",
+      "surface": "grass",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "grass"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.038",
+      "file": "PNG/mapTile_038.png",
+      "category": "terrain",
+      "surface": "grass",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "grass"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.039",
+      "file": "PNG/mapTile_039.png",
+      "category": "decoration",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 1,
+      "tags": [
+        "map-tile",
+        "decoration"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.040",
+      "file": "PNG/mapTile_040.png",
+      "category": "decoration",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 1,
+      "tags": [
+        "map-tile",
+        "decoration"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.041",
+      "file": "PNG/mapTile_041.png",
+      "category": "terrain",
+      "surface": "stone",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "stone",
+        "plateau",
+        "bottom"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.042",
+      "file": "PNG/mapTile_042.png",
+      "category": "terrain",
+      "surface": "stone",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "stone",
+        "plateau",
+        "bottom"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.043",
+      "file": "PNG/mapTile_043.png",
+      "category": "terrain",
+      "surface": "stone",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "stone",
+        "plateau",
+        "bottom"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.044",
+      "file": "PNG/mapTile_044.png",
+      "category": "decoration",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 1,
+      "tags": [
+        "map-tile",
+        "decoration"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.045",
+      "file": "PNG/mapTile_045.png",
+      "category": "decoration",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 1,
+      "tags": [
+        "map-tile",
+        "decoration"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.046",
+      "file": "PNG/mapTile_046.png",
+      "category": "terrain",
+      "surface": "sand",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "sand"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.047",
+      "file": "PNG/mapTile_047.png",
+      "category": "terrain",
+      "surface": "sand",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "sand"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.048",
+      "file": "PNG/mapTile_048.png",
+      "category": "terrain",
+      "surface": "sand",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "sand"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.049",
+      "file": "PNG/mapTile_049.png",
+      "category": "structure",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": true,
+      "height_class": 1,
+      "tags": [
+        "map-tile",
+        "structure"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.050",
+      "file": "PNG/mapTile_050.png",
+      "category": "structure",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": true,
+      "height_class": 1,
+      "tags": [
+        "map-tile",
+        "structure"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.051",
+      "file": "PNG/mapTile_051.png",
+      "category": "terrain",
+      "surface": "grass",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "grass"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.052",
+      "file": "PNG/mapTile_052.png",
+      "category": "terrain",
+      "surface": "grass",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "grass"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.053",
+      "file": "PNG/mapTile_053.png",
+      "category": "terrain",
+      "surface": "grass",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "grass"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.054",
+      "file": "PNG/mapTile_054.png",
+      "category": "decoration",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 1,
+      "tags": [
+        "map-tile",
+        "decoration"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.055",
+      "file": "PNG/mapTile_055.png",
+      "category": "decoration",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 1,
+      "tags": [
+        "map-tile",
+        "decoration",
+        "forest",
+        "tree"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.056",
+      "file": "PNG/mapTile_056.png",
+      "category": "terrain",
+      "surface": "stone",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "stone"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.057",
+      "file": "PNG/mapTile_057.png",
+      "category": "terrain",
+      "surface": "stone",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "stone"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.058",
+      "file": "PNG/mapTile_058.png",
+      "category": "terrain",
+      "surface": "stone",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "stone"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.059",
+      "file": "PNG/mapTile_059.png",
+      "category": "structure",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": true,
+      "height_class": 1,
+      "tags": [
+        "map-tile",
+        "structure"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.060",
+      "file": "PNG/mapTile_060.png",
+      "category": "decoration",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 1,
+      "tags": [
+        "map-tile",
+        "decoration"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.061",
+      "file": "PNG/mapTile_061.png",
+      "category": "terrain",
+      "surface": "snow",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "snow"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.062",
+      "file": "PNG/mapTile_062.png",
+      "category": "terrain",
+      "surface": "snow",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "snow"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.063",
+      "file": "PNG/mapTile_063.png",
+      "category": "terrain",
+      "surface": "snow",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "snow"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.064",
+      "file": "PNG/mapTile_064.png",
+      "category": "terrain",
+      "surface": "snow",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "snow"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.065",
+      "file": "PNG/mapTile_065.png",
+      "category": "terrain",
+      "surface": "snow",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "snow"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.066",
+      "file": "PNG/mapTile_066.png",
+      "category": "terrain",
+      "surface": "dirt",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "dirt"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.067",
+      "file": "PNG/mapTile_067.png",
+      "category": "terrain",
+      "surface": "dirt",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "dirt"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.068",
+      "file": "PNG/mapTile_068.png",
+      "category": "terrain",
+      "surface": "dirt",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "dirt"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.069",
+      "file": "PNG/mapTile_069.png",
+      "category": "terrain",
+      "surface": "dirt",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "dirt"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.070",
+      "file": "PNG/mapTile_070.png",
+      "category": "terrain",
+      "surface": "dirt",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "dirt"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.071",
+      "file": "PNG/mapTile_071.png",
+      "category": "terrain",
+      "surface": "sand",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "sand"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.072",
+      "file": "PNG/mapTile_072.png",
+      "category": "terrain",
+      "surface": "sand",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "sand"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.073",
+      "file": "PNG/mapTile_073.png",
+      "category": "terrain",
+      "surface": "sand",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "sand"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.074",
+      "file": "PNG/mapTile_074.png",
+      "category": "terrain",
+      "surface": "sand",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "sand"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.075",
+      "file": "PNG/mapTile_075.png",
+      "category": "terrain",
+      "surface": "sand",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "sand"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.076",
+      "file": "PNG/mapTile_076.png",
+      "category": "terrain",
+      "surface": "snow",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "snow"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.077",
+      "file": "PNG/mapTile_077.png",
+      "category": "terrain",
+      "surface": "snow",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "snow",
+        "fill",
+        "generator"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.078",
+      "file": "PNG/mapTile_078.png",
+      "category": "terrain",
+      "surface": "snow",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "snow"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.079",
+      "file": "PNG/mapTile_079.png",
+      "category": "terrain",
+      "surface": "snow",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "snow"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.080",
+      "file": "PNG/mapTile_080.png",
+      "category": "terrain",
+      "surface": "snow",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "snow"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.081",
+      "file": "PNG/mapTile_081.png",
+      "category": "terrain",
+      "surface": "dirt",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "dirt"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.082",
+      "file": "PNG/mapTile_082.png",
+      "category": "terrain",
+      "surface": "dirt",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "dirt",
+        "fill",
+        "generator"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.083",
+      "file": "PNG/mapTile_083.png",
+      "category": "terrain",
+      "surface": "dirt",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "dirt"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.084",
+      "file": "PNG/mapTile_084.png",
+      "category": "terrain",
+      "surface": "dirt",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "dirt"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.085",
+      "file": "PNG/mapTile_085.png",
+      "category": "terrain",
+      "surface": "dirt",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "dirt"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.086",
+      "file": "PNG/mapTile_086.png",
+      "category": "terrain",
+      "surface": "sand",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "sand"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.087",
+      "file": "PNG/mapTile_087.png",
+      "category": "terrain",
+      "surface": "sand",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "sand",
+        "fill",
+        "generator"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.088",
+      "file": "PNG/mapTile_088.png",
+      "category": "terrain",
+      "surface": "sand",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "sand"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.089",
+      "file": "PNG/mapTile_089.png",
+      "category": "terrain",
+      "surface": "sand",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "sand"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.090",
+      "file": "PNG/mapTile_090.png",
+      "category": "terrain",
+      "surface": "sand",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "sand"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.091",
+      "file": "PNG/mapTile_091.png",
+      "category": "terrain",
+      "surface": "snow",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "snow"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.092",
+      "file": "PNG/mapTile_092.png",
+      "category": "terrain",
+      "surface": "snow",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "snow"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.093",
+      "file": "PNG/mapTile_093.png",
+      "category": "terrain",
+      "surface": "snow",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "snow"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.094",
+      "file": "PNG/mapTile_094.png",
+      "category": "structure",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": true,
+      "height_class": 1,
+      "tags": [
+        "map-tile",
+        "structure"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.095",
+      "file": "PNG/mapTile_095.png",
+      "category": "structure",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": true,
+      "height_class": 1,
+      "tags": [
+        "map-tile",
+        "structure"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.096",
+      "file": "PNG/mapTile_096.png",
+      "category": "terrain",
+      "surface": "dirt",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "dirt"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.097",
+      "file": "PNG/mapTile_097.png",
+      "category": "terrain",
+      "surface": "dirt",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "dirt"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.098",
+      "file": "PNG/mapTile_098.png",
+      "category": "terrain",
+      "surface": "dirt",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "dirt"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.099",
+      "file": "PNG/mapTile_099.png",
+      "category": "structure",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": true,
+      "height_class": 1,
+      "tags": [
+        "map-tile",
+        "structure"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.100",
+      "file": "PNG/mapTile_100.png",
+      "category": "structure",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": true,
+      "height_class": 1,
+      "tags": [
+        "map-tile",
+        "structure"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.101",
+      "file": "PNG/mapTile_101.png",
+      "category": "terrain",
+      "surface": "sand",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "sand"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.102",
+      "file": "PNG/mapTile_102.png",
+      "category": "terrain",
+      "surface": "sand",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "sand"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.103",
+      "file": "PNG/mapTile_103.png",
+      "category": "terrain",
+      "surface": "sand",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "sand"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.104",
+      "file": "PNG/mapTile_104.png",
+      "category": "decoration",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 1,
+      "tags": [
+        "map-tile",
+        "decoration"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.105",
+      "file": "PNG/mapTile_105.png",
+      "category": "decoration",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 1,
+      "tags": [
+        "map-tile",
+        "decoration"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.106",
+      "file": "PNG/mapTile_106.png",
+      "category": "terrain",
+      "surface": "snow",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "snow"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.107",
+      "file": "PNG/mapTile_107.png",
+      "category": "terrain",
+      "surface": "snow",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "snow"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.108",
+      "file": "PNG/mapTile_108.png",
+      "category": "terrain",
+      "surface": "snow",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "snow"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.109",
+      "file": "PNG/mapTile_109.png",
+      "category": "decoration",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 1,
+      "tags": [
+        "map-tile",
+        "decoration"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.110",
+      "file": "PNG/mapTile_110.png",
+      "category": "decoration",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 1,
+      "tags": [
+        "map-tile",
+        "decoration"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.111",
+      "file": "PNG/mapTile_111.png",
+      "category": "terrain",
+      "surface": "dirt",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "dirt"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.112",
+      "file": "PNG/mapTile_112.png",
+      "category": "terrain",
+      "surface": "dirt",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "dirt"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.113",
+      "file": "PNG/mapTile_113.png",
+      "category": "terrain",
+      "surface": "dirt",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "dirt"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.114",
+      "file": "PNG/mapTile_114.png",
+      "category": "structure",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": true,
+      "height_class": 1,
+      "tags": [
+        "map-tile",
+        "structure"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.115",
+      "file": "PNG/mapTile_115.png",
+      "category": "decoration",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 1,
+      "tags": [
+        "map-tile",
+        "decoration",
+        "forest",
+        "tree"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.116",
+      "file": "PNG/mapTile_116.png",
+      "category": "terrain",
+      "surface": "sand",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "sand"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.117",
+      "file": "PNG/mapTile_117.png",
+      "category": "terrain",
+      "surface": "sand",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "sand"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.118",
+      "file": "PNG/mapTile_118.png",
+      "category": "terrain",
+      "surface": "sand",
+      "walkable": true,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "sand"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.119",
+      "file": "PNG/mapTile_119.png",
+      "category": "decoration",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 1,
+      "tags": [
+        "map-tile",
+        "decoration"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.120",
+      "file": "PNG/mapTile_120.png",
+      "category": "decoration",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 1,
+      "tags": [
+        "map-tile",
+        "decoration"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.121",
+      "file": "PNG/mapTile_121.png",
+      "category": "connector",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "connector",
+        "route"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.122",
+      "file": "PNG/mapTile_122.png",
+      "category": "connector",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "connector",
+        "route"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.123",
+      "file": "PNG/mapTile_123.png",
+      "category": "connector",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "connector",
+        "route"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.124",
+      "file": "PNG/mapTile_124.png",
+      "category": "connector",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "connector",
+        "route"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.125",
+      "file": "PNG/mapTile_125.png",
+      "category": "connector",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "connector",
+        "route"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.126",
+      "file": "PNG/mapTile_126.png",
+      "category": "connector",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "connector",
+        "route"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.127",
+      "file": "PNG/mapTile_127.png",
+      "category": "connector",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "connector",
+        "route"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.128",
+      "file": "PNG/mapTile_128.png",
+      "category": "connector",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "connector",
+        "route"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.129",
+      "file": "PNG/mapTile_129.png",
+      "category": "connector",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "connector",
+        "route"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.130",
+      "file": "PNG/mapTile_130.png",
+      "category": "connector",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "connector",
+        "route"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.131",
+      "file": "PNG/mapTile_131.png",
+      "category": "marker",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 1,
+      "tags": [
+        "map-tile",
+        "marker",
+        "objective"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.132",
+      "file": "PNG/mapTile_132.png",
+      "category": "marker",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 1,
+      "tags": [
+        "map-tile",
+        "marker",
+        "objective"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.133",
+      "file": "PNG/mapTile_133.png",
+      "category": "marker",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 1,
+      "tags": [
+        "map-tile",
+        "marker",
+        "objective"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.134",
+      "file": "PNG/mapTile_134.png",
+      "category": "marker",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 1,
+      "tags": [
+        "map-tile",
+        "marker",
+        "objective"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.135",
+      "file": "PNG/mapTile_135.png",
+      "category": "marker",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 1,
+      "tags": [
+        "map-tile",
+        "marker",
+        "objective"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.136",
+      "file": "PNG/mapTile_136.png",
+      "category": "character",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 1,
+      "tags": [
+        "map-tile",
+        "character"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.137",
+      "file": "PNG/mapTile_137.png",
+      "category": "character",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 1,
+      "tags": [
+        "map-tile",
+        "character"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.138",
+      "file": "PNG/mapTile_138.png",
+      "category": "connector",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "connector",
+        "route"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.139",
+      "file": "PNG/mapTile_139.png",
+      "category": "connector",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "connector",
+        "route"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.140",
+      "file": "PNG/mapTile_140.png",
+      "category": "connector",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "connector",
+        "route"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.141",
+      "file": "PNG/mapTile_141.png",
+      "category": "connector",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "connector",
+        "route"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.142",
+      "file": "PNG/mapTile_142.png",
+      "category": "connector",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "connector",
+        "route"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.143",
+      "file": "PNG/mapTile_143.png",
+      "category": "connector",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "connector",
+        "route"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.144",
+      "file": "PNG/mapTile_144.png",
+      "category": "connector",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "connector",
+        "route"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.145",
+      "file": "PNG/mapTile_145.png",
+      "category": "connector",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "connector",
+        "route"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.146",
+      "file": "PNG/mapTile_146.png",
+      "category": "connector",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "connector",
+        "route"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.147",
+      "file": "PNG/mapTile_147.png",
+      "category": "connector",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "connector",
+        "route"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.148",
+      "file": "PNG/mapTile_148.png",
+      "category": "marker",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 1,
+      "tags": [
+        "map-tile",
+        "marker",
+        "objective"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.149",
+      "file": "PNG/mapTile_149.png",
+      "category": "marker",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 1,
+      "tags": [
+        "map-tile",
+        "marker",
+        "objective"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.150",
+      "file": "PNG/mapTile_150.png",
+      "category": "marker",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 1,
+      "tags": [
+        "map-tile",
+        "marker",
+        "objective"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.151",
+      "file": "PNG/mapTile_151.png",
+      "category": "marker",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 1,
+      "tags": [
+        "map-tile",
+        "marker",
+        "objective"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.152",
+      "file": "PNG/mapTile_152.png",
+      "category": "marker",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 1,
+      "tags": [
+        "map-tile",
+        "marker",
+        "objective"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.153",
+      "file": "PNG/mapTile_153.png",
+      "category": "character",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 1,
+      "tags": [
+        "map-tile",
+        "character"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.154",
+      "file": "PNG/mapTile_154.png",
+      "category": "character",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 1,
+      "tags": [
+        "map-tile",
+        "character"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.155",
+      "file": "PNG/mapTile_155.png",
+      "category": "connector",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "connector",
+        "route"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.156",
+      "file": "PNG/mapTile_156.png",
+      "category": "connector",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "connector",
+        "route"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.157",
+      "file": "PNG/mapTile_157.png",
+      "category": "connector",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "connector",
+        "route"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.158",
+      "file": "PNG/mapTile_158.png",
+      "category": "connector",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "connector",
+        "route"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.159",
+      "file": "PNG/mapTile_159.png",
+      "category": "connector",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "connector",
+        "route"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.160",
+      "file": "PNG/mapTile_160.png",
+      "category": "connector",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "connector",
+        "route"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.161",
+      "file": "PNG/mapTile_161.png",
+      "category": "connector",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "connector",
+        "route"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.162",
+      "file": "PNG/mapTile_162.png",
+      "category": "connector",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "connector",
+        "route"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.163",
+      "file": "PNG/mapTile_163.png",
+      "category": "connector",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "connector",
+        "route"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.164",
+      "file": "PNG/mapTile_164.png",
+      "category": "connector",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "connector",
+        "route"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.165",
+      "file": "PNG/mapTile_165.png",
+      "category": "connector",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "connector",
+        "route"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.166",
+      "file": "PNG/mapTile_166.png",
+      "category": "connector",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "connector",
+        "route"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.167",
+      "file": "PNG/mapTile_167.png",
+      "category": "connector",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "connector",
+        "route"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.168",
+      "file": "PNG/mapTile_168.png",
+      "category": "marker",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 1,
+      "tags": [
+        "map-tile",
+        "marker",
+        "objective"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.169",
+      "file": "PNG/mapTile_169.png",
+      "category": "marker",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 1,
+      "tags": [
+        "map-tile",
+        "marker",
+        "objective"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.170",
+      "file": "PNG/mapTile_170.png",
+      "category": "character",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 1,
+      "tags": [
+        "map-tile",
+        "character"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.171",
+      "file": "PNG/mapTile_171.png",
+      "category": "terrain",
+      "surface": "water",
+      "walkable": false,
+      "blocks_movement": true,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "water",
+        "fill",
+        "generator"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.172",
+      "file": "PNG/mapTile_172.png",
+      "category": "connector",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "connector",
+        "route"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.173",
+      "file": "PNG/mapTile_173.png",
+      "category": "connector",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "connector",
+        "route"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.174",
+      "file": "PNG/mapTile_174.png",
+      "category": "connector",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "connector",
+        "route"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.175",
+      "file": "PNG/mapTile_175.png",
+      "category": "connector",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "connector",
+        "route"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.176",
+      "file": "PNG/mapTile_176.png",
+      "category": "connector",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "connector",
+        "route"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.177",
+      "file": "PNG/mapTile_177.png",
+      "category": "connector",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "connector",
+        "route"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.178",
+      "file": "PNG/mapTile_178.png",
+      "category": "connector",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "connector",
+        "route"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.179",
+      "file": "PNG/mapTile_179.png",
+      "category": "connector",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "connector",
+        "route"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.180",
+      "file": "PNG/mapTile_180.png",
+      "category": "connector",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "connector",
+        "route"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.181",
+      "file": "PNG/mapTile_181.png",
+      "category": "connector",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "connector",
+        "route"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.182",
+      "file": "PNG/mapTile_182.png",
+      "category": "connector",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "connector",
+        "route"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.183",
+      "file": "PNG/mapTile_183.png",
+      "category": "connector",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "connector",
+        "route"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.184",
+      "file": "PNG/mapTile_184.png",
+      "category": "connector",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "connector",
+        "route"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.185",
+      "file": "PNG/mapTile_185.png",
+      "category": "connector",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "connector",
+        "route"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.186",
+      "file": "PNG/mapTile_186.png",
+      "category": "connector",
+      "surface": "unknown",
+      "walkable": false,
+      "blocks_movement": false,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "connector",
+        "route"
+      ],
+      "confidence": 0.82,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.187",
+      "file": "PNG/mapTile_187.png",
+      "category": "terrain",
+      "surface": "water",
+      "walkable": false,
+      "blocks_movement": true,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "water",
+        "fill",
+        "generator"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    },
+    {
+      "id": "kenney.mapTile.188",
+      "file": "PNG/mapTile_188.png",
+      "category": "terrain",
+      "surface": "water",
+      "walkable": false,
+      "blocks_movement": true,
+      "height_class": 0,
+      "tags": [
+        "map-tile",
+        "terrain",
+        "water",
+        "fill",
+        "generator"
+      ],
+      "confidence": 0.95,
+      "source_rect": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "logical_footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "visual_bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 64
+      },
+      "anchor": {
+        "x": 32,
+        "y": 64
+      }
+    }
+  ]
+}

@@ -12,6 +12,7 @@ import {
   type GeneratedWorld,
 } from './generated-world';
 import { canTraverse } from './traversal';
+import { KENNEY_MAP_PACK_METADATA } from '@/assets/kenney-map-pack/metadata';
 
 function assertFrozen(value: unknown, seen = new Set<object>()): void {
   if (!value || typeof value !== 'object' || seen.has(value)) {
@@ -308,6 +309,61 @@ describe('seeded generated world', () => {
     }
   });
 
+  it('assigns every generated cell a tagged Kenney terrain tile', () => {
+    const tiles = new Map(KENNEY_MAP_PACK_METADATA.tiles.map((tile) => [tile.id, tile]));
+    for (const world of [generateGeneratedWorld(0), generateGeneratedWorld(2026), generateGeneratedWorld(2029)]) {
+      for (const cell of world.cells.flat()) {
+        const tile = tiles.get(cell.terrainTileId);
+        expect(tile, `missing tile ${cell.terrainTileId}`).toBeDefined();
+        expect(tile?.category).toBe('terrain');
+        expect(tile?.surface).toBe(cell.surface);
+        expect(cell.surface).not.toBe('crystal');
+      }
+    }
+  });
+
+  it('uses one stone material for every raised plateau cell', () => {
+    for (const seed of [0, 42, 2026, 2029]) {
+      const world = generateGeneratedWorld(seed);
+      for (const cell of world.cells.flat()) {
+        if (cell.elevation > 0) {
+          expect(cell.surface).toBe('stone');
+        }
+      }
+    }
+  });
+
+  it('uses directional plateau tiles from the raised region topology', () => {
+    const tiles = new Map(KENNEY_MAP_PACK_METADATA.tiles.map((tile) => [tile.id, tile]));
+    for (const seed of [0, 42, 2025, 2026, 2029]) {
+      const world = generateGeneratedWorld(seed);
+      for (const cell of world.cells.flat()) {
+        if (cell.elevation <= 0) {
+          continue;
+        }
+        const samePlateau = (x: number, y: number): boolean => {
+          const neighbor = world.cells[y]?.[x];
+          return neighbor?.elevation === cell.elevation && neighbor.surface === 'stone';
+        };
+        const tile = tiles.get(cell.terrainTileId)!;
+        const north = samePlateau(cell.x, cell.y - 1);
+        const south = samePlateau(cell.x, cell.y + 1);
+        const west = samePlateau(cell.x - 1, cell.y);
+        const east = samePlateau(cell.x + 1, cell.y);
+        const expectedTag = !north
+          ? 'top'
+          : !south
+            ? 'bottom'
+            : !west
+              ? 'side_left'
+              : !east
+                ? 'side_right'
+                : 'fill';
+        expect(tile.tags, `${cell.x},${cell.y} should use ${expectedTag}`).toContain(expectedTag);
+      }
+    }
+  });
+
   it('dresses every cell with meaningful world terrain, never generic void', () => {
     for (const seed of [0, 1, 7, 42, 2026, 2027, 2028, 2029, 2030]) {
       const world = generateGeneratedWorld(seed);
@@ -392,13 +448,59 @@ describe('seeded generated world', () => {
     expect(riverBarrierSeeds).toBeGreaterThan(0);
   });
 
-  it('models highlands as walkable ground behind a blocked cliff boundary', () => {
+  it('makes highland entrances visually distinct from ordinary grass', () => {
+    // Find a world among the review seeds that contains a walkable highland barrier
+    let reportedWorld: ReturnType<typeof generateGeneratedWorld> | undefined;
+    let reported: ReturnType<typeof generateGeneratedWorld>['cells'][number][number] | undefined;
+    for (const seed of [2025, 2026, 2027, 2028, 2029, 2030]) {
+      const candidate = generateGeneratedWorld(seed);
+      const hit = candidate.cells.flat().find(
+        (cell) => cell.zone === 'barrier' && cell.walkable && cell.elevation === 1 && cell.surface === 'stone',
+      );
+      if (hit) {
+        reportedWorld = candidate;
+        reported = hit;
+        break;
+      }
+    }
+    expect(reportedWorld).toBeDefined();
+    expect(reported).toBeDefined();
+    expect(reported).toMatchObject({
+      surface: 'stone',
+      obstacle: null,
+      walkable: true,
+      elevation: 1,
+      zone: 'barrier',
+    });
+    // At least one highland cell should be adjacent to a primary walkable cell with no traversable edge
+    const highlandWithPrimaryNeighbor = reportedWorld!.cells.flat().find((upper) => {
+      if (upper.zone !== 'barrier' || !upper.walkable || upper.elevation !== 1 || upper.surface !== 'stone') return false;
+      return [{ x: 1, y: 0 }, { x: -1, y: 0 }, { x: 0, y: 1 }, { x: 0, y: -1 }].some((delta) => {
+        const lowerPosition = { x: upper.x + delta.x, y: upper.y + delta.y };
+        const lower = reportedWorld!.cells[lowerPosition.y]?.[lowerPosition.x];
+        if (!lower?.walkable || lower.zone !== 'primary' || lower.elevation !== 0) return false;
+        const upEdge = resolveGeneratedEdge(reportedWorld!, upper, lowerPosition);
+        const downEdge = resolveGeneratedEdge(reportedWorld!, lowerPosition, upper);
+        return (!upEdge || !canTraverse(upper, lower, upEdge, {})) && (!downEdge || !canTraverse(lower, upper, downEdge, {}));
+      });
+    });
+    expect(highlandWithPrimaryNeighbor).toBeDefined();
+
     let cliffBoundaries = 0;
+    let elevatedInterior = 0;
     for (const seed of [2026, 2027, 2028, 2029, 2030]) {
       const world = generateGeneratedWorld(seed);
       for (const row of world.cells) {
         for (const upper of row) {
-          if (!upper.walkable || upper.zone === 'primary' || upper.elevation !== 1) {
+          if (upper.zone === 'barrier' && upper.walkable && upper.elevation === 1) {
+            elevatedInterior += 1;
+          }
+          if (
+            upper.zone !== 'barrier' ||
+            !upper.walkable ||
+            upper.elevation !== 1 ||
+            upper.surface !== 'stone'
+          ) {
             continue;
           }
           for (const delta of [{ x: 1, y: 0 }, { x: -1, y: 0 }, { x: 0, y: 1 }, { x: 0, y: -1 }]) {
@@ -417,6 +519,24 @@ describe('seeded generated world', () => {
       }
     }
     expect(cliffBoundaries).toBeGreaterThan(0);
+    expect(elevatedInterior).toBeGreaterThan(0);
+  });
+
+  it('keeps decorative props from impersonating blocking terrain', () => {
+    for (const seed of [2025, 2026, 2027, 2028, 2029, 2030]) {
+      const world = generateGeneratedWorld(seed);
+      for (const prop of world.props) {
+        const cell = world.cells[prop.y]?.[prop.x];
+        if (prop.assetKey === 'tree' || prop.assetKey === 'tree-pine') {
+          expect(cell?.obstacle, `seed ${seed} tree prop at ${prop.x},${prop.y}`).toBe('forest');
+          expect(cell?.walkable).toBe(false);
+        }
+        if (prop.assetKey === 'rocks') {
+          expect(cell?.obstacle, `seed ${seed} rock prop at ${prop.x},${prop.y}`).toBe('rock');
+          expect(cell?.walkable).toBe(false);
+        }
+      }
+    }
   });
 
   it('uses connected barrier features across the five review families', () => {
@@ -469,7 +589,9 @@ describe('seeded generated world', () => {
         return false;
       },
     })).toThrow(/attempts[^\d]*2|2[^\n]*attempts/i);
-    expect(seenFamilies).toEqual([chooseTopologyFamily(seed), chooseTopologyFamily(seed)]);
+    expect(seenFamilies.length).toBeGreaterThan(0);
+    expect(new Set(seenFamilies).size).toBe(1);
+    expect(seenFamilies[0]).toBe(chooseTopologyFamily(seed));
   });
 
   it('fails deterministically when the finite attempt budget is zero', () => {

@@ -38,6 +38,7 @@ import { projectGeneratedMinimap } from '@/generated-minimap';
 import {
   formatBlockedMovement,
   formatGeneratedInspection,
+  formatGeneratedWorldDescription,
   isGeneratedDebugMode,
   parseGeneratedView,
   type GeneratedViewMode,
@@ -50,6 +51,9 @@ if (!root) {
 }
 
 const DEFAULT_SEED = 2026;
+const PLAYTEST_FEEDBACK_STORAGE_KEY = 'generated-playtest-feedback-v1';
+const PLAYTEST_TAGS = ['interesting', 'boring', 'discovered', 'saved'] as const;
+type PlaytestTag = (typeof PLAYTEST_TAGS)[number];
 const DEBUG_MODE = isGeneratedDebugMode(window.location.search);
 const VIEW_MODE: GeneratedViewMode = parseGeneratedView(window.location.search);
 
@@ -60,6 +64,8 @@ function readSeed(): number {
     ? parsed
     : DEFAULT_SEED;
 }
+
+
 
 const shell = document.createElement('main');
 shell.className = 'adventure-shell';
@@ -115,6 +121,12 @@ controls.innerHTML = `
   <span><kbd>R</kbd> reset</span>
   <span><kbd>N</kbd> new seed</span>
   <span><kbd>[ ]</kbd> zoom</span>
+  <div class="playtest-feedback" aria-label="Playtest feedback">
+    <button class="feedback-button" data-feedback="interesting" type="button">👍 interesting</button>
+    <button class="feedback-button" data-feedback="boring" type="button">👎 boring</button>
+    <button class="feedback-button" data-feedback="discovered" type="button">💡 discovered something</button>
+    <button class="feedback-button" data-feedback="saved" type="button">⭐ save seed</button>
+  </div>
 `;
 
 stage.append(canvasRoot, sidePanel);
@@ -127,6 +139,9 @@ const roomDescription = sidePanel.querySelector<HTMLParagraphElement>('#room-des
 const roomStatus = sidePanel.querySelector<HTMLParagraphElement>('#room-status')!;
 const seedTag = sidePanel.querySelector<HTMLSpanElement>('#seed-tag');
 const minimap = sidePanel.querySelector<HTMLDivElement>('#minimap');
+const feedbackButtons = Array.from(
+  controls.querySelectorAll<HTMLButtonElement>('[data-feedback]'),
+);
 
 if (!title || !roomTitle || !roomDescription || !roomStatus) {
   throw new Error('Generated playground UI failed to initialize');
@@ -145,6 +160,102 @@ const statusText = document.createElement('p');
 statusText.id = 'game-status';
 shell.append(statusText);
 let feedback: string | null = null;
+let playtestTags = new Set<PlaytestTag>();
+
+function isPlaytestTag(value: unknown): value is PlaytestTag {
+  return typeof value === 'string' && PLAYTEST_TAGS.includes(value as PlaytestTag);
+}
+
+function loadPlaytestAnnotations(): Record<string, PlaytestTag[]> {
+  try {
+    const serialized = localStorage.getItem(PLAYTEST_FEEDBACK_STORAGE_KEY);
+    if (!serialized) {
+      return {};
+    }
+    const parsed: unknown = JSON.parse(serialized);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return {};
+    }
+    const annotations: Record<string, PlaytestTag[]> = {};
+    for (const [storedSeed, storedTags] of Object.entries(parsed)) {
+      if (!Array.isArray(storedTags)) {
+        continue;
+      }
+      const tags = storedTags.filter(isPlaytestTag);
+      if (tags.length > 0) {
+        annotations[storedSeed] = tags;
+      }
+    }
+    return annotations;
+  } catch {
+    return {};
+  }
+}
+
+function loadPlaytestTags(seedToLoad: number): Set<PlaytestTag> {
+  return new Set(loadPlaytestAnnotations()[String(seedToLoad)] ?? []);
+}
+
+function savePlaytestTags(seedToSave: number, tags: ReadonlySet<PlaytestTag>): void {
+  try {
+    const annotations = loadPlaytestAnnotations();
+    if (tags.size === 0) {
+      delete annotations[String(seedToSave)];
+    } else {
+      annotations[String(seedToSave)] = [...tags];
+    }
+    localStorage.setItem(
+      PLAYTEST_FEEDBACK_STORAGE_KEY,
+      JSON.stringify(annotations),
+    );
+  } catch {
+    // Local storage is optional; tagging should never interrupt play.
+  }
+}
+
+function renderPlaytestFeedback(): void {
+  for (const button of feedbackButtons) {
+    const tag = button.dataset.feedback;
+    if (!isPlaytestTag(tag)) {
+      continue;
+    }
+    const active = playtestTags.has(tag);
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-pressed', String(active));
+    if (tag === 'saved') {
+      button.textContent = active ? '⭐ saved' : '⭐ save seed';
+    }
+  }
+}
+
+function togglePlaytestTag(tag: PlaytestTag): void {
+  if (tag === 'saved') {
+    playtestTags.add(tag);
+  } else if (playtestTags.has(tag)) {
+    playtestTags.delete(tag);
+  } else {
+    if (tag === 'interesting' || tag === 'boring') {
+      playtestTags.delete(tag === 'interesting' ? 'boring' : 'interesting');
+    }
+    playtestTags.add(tag);
+  }
+  savePlaytestTags(seed, playtestTags);
+  feedback = tag === 'saved'
+    ? `SEED ${seed} SAVED`
+    : `${tag.toUpperCase()} · SEED ${seed}`;
+  render();
+}
+
+playtestTags = loadPlaytestTags(seed);
+for (const button of feedbackButtons) {
+  button.addEventListener('click', () => {
+    const tag = button.dataset.feedback;
+    if (isPlaytestTag(tag)) {
+      togglePlaytestTag(tag);
+    }
+  });
+}
+renderPlaytestFeedback();
 
 function createWorldView(): IsoRoomView {
   const regions = new Map(world.regions.map((region) => [region.id, region]));
@@ -172,6 +283,7 @@ function createWorldView(): IsoRoomView {
         elevation: cell.elevation,
         terrainType: cell.terrainType,
         surface: cell.surface,
+        terrainTileId: cell.terrainTileId,
         obstacle: cell.obstacle,
         biome: region?.biome ?? 'meadow',
         environment: region?.environment ?? world.environment,
@@ -193,6 +305,7 @@ function createWorldView(): IsoRoomView {
       from: { ...edge.from },
       to: { ...edge.to },
     })),
+
     start: { x: world.start.x, y: world.start.y, label: 'start' },
     goal: { x: world.goal.x, y: world.goal.y, label: 'goal' },
     environment: world.environment,
@@ -251,6 +364,9 @@ function renderMinimap(): void {
     columns: 20,
     rows: 20,
   });
+  const position = playerPosition(state);
+  const activeX = Math.max(0, Math.min(19, Math.floor(position.x * 20 / world.width)));
+  const activeY = Math.max(0, Math.min(19, Math.floor(position.y * 20 / world.height)));
   for (const mapTile of map.tiles) {
     const tile = document.createElement('span');
     tile.className = `map-cell ${mapTile.walkable ? 'open' : 'blocked'}`;
@@ -266,18 +382,30 @@ function renderMinimap(): void {
     if (mapTile.disrupted) {
       tile.classList.add('disrupted');
     }
+    if (mapTile.x === activeX && mapTile.y === activeY) {
+      tile.classList.add('active');
+    }
     minimap.append(tile);
   }
 }
 
 function render(): void {
+  renderPlaytestFeedback();
   const position = playerPosition(state);
   const reached = generatedGoalReached(playground, state);
   title.innerHTML = `地形实验场 <span>· Seed ${world.seed}</span>`;
   const currentCell = world.cells[position.y]?.[position.x];
   const currentRegion = world.regions.find((region) => region.id === currentCell?.regionId);
   roomTitle.textContent = 'Generated Field';
-  roomDescription.textContent = `40×40 field · ${currentRegion?.biome ?? 'meadow'} · ${currentRegion?.environment?.weather ?? world.environment.weather} · ${currentRegion?.environment?.lighting ?? world.environment.lighting}`;
+  roomDescription.textContent = formatGeneratedWorldDescription({
+    width: world.width,
+    height: world.height,
+    biome: currentRegion?.biome ?? 'meadow',
+    weather: currentRegion?.environment?.weather ?? world.environment.weather,
+    lighting: currentRegion?.environment?.lighting ?? world.environment.lighting,
+    topologyFamily: world.topologyFamily,
+    disruptionCellCount: world.perturbation.disruption.footprint.length,
+  });
   roomStatus.textContent = reached
     ? 'GOAL REACHED'
     : `POSITION ${position.x},${position.y}`;
@@ -286,6 +414,7 @@ function render(): void {
   }
   statusText.textContent = feedback ?? (reached ? 'GOAL REACHED' : `POSITION ${position.x},${position.y}`);
   renderer.render(buildView());
+  renderMinimap();
 }
 
 function currentCameraTarget(): { x: number; y: number } {
@@ -362,6 +491,7 @@ function createNewSeed(): void {
   world = generateGeneratedWorld(seed);
   playground = createGeneratedPlayground(world);
   state = playground.initialState;
+  playtestTags = loadPlaytestTags(seed);
   camera = currentCameraTarget();
   feedback = 'NEW FIELD GENERATED';
   renderMinimap();

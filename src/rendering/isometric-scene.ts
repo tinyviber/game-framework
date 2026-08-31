@@ -58,6 +58,8 @@ export interface IsoCellView {
   readonly terrainType: string;
   /** Authoritative ground material; terrainType remains a legacy alias. */
   readonly surface?: string;
+  /** Optional asset id for the orthogonal terrain renderer. */
+  readonly terrainTileId?: string;
   /** Blocking feature on top of the surface ('forest' | 'rock'); iso/ortho. */
   readonly obstacle?: 'forest' | 'rock' | null;
   readonly biome: string;
@@ -137,6 +139,10 @@ export interface IsoRoomView {
   readonly node: IsoNodeView;
   readonly exits: readonly IsoExitView[];
   readonly connectors?: readonly IsoConnectorView[];
+  /** Optional playable route rendered as a slim road in the orthogonal view. */
+  readonly roadPath?: readonly IsoPoint[];
+  /** Seeded visual variant for Kenney road corners. */
+  readonly roadStyle?: 'rounded' | 'square';
   readonly start?: IsoMarkerView;
   readonly goal?: IsoMarkerView;
   readonly environment: IsoEnvironmentView;

@@ -23,6 +23,17 @@
 `src/rendering/tile-textures.ts` 中的帧坐标已按当前下载图集核对。若图集被删除、替换为
 其他版本或损坏，`loadTileTextures` 返回 `null`，游戏自动回退为色块渲染。
 
+## Kenney · Map Pack
+
+已解压 `kenney_map-pack.zip`，正交视图的地表现在使用其中的 64×64 `mapTile` 资源。
+188 个地图块的类别、地表、可行走性、碰撞和标签记录在：
+
+- `public/assets/kenney-map-pack/PNG/`
+- `src/assets/kenney-map-pack/tiles-metadata.json`
+
+包内许可证保存在 `public/assets/kenney-map-pack/License.txt`。本包为 CC0；感谢 Kenney
+（<https://www.kenney.nl>）。
+
 ## Kenney · Mark texture selection
 
 新 adventure 体验使用 `/assets/mark` 中筛选出的 64×64 透明 3D 预览图：

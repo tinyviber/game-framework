@@ -316,6 +316,42 @@ h1 span {
   letter-spacing: 0.04em;
 }
 
+.playtest-feedback {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.feedback-button {
+  padding: 6px 8px;
+  border: 1px solid rgba(172, 219, 176, 0.24);
+  border-radius: 7px;
+  color: #a9c7ae;
+  background: rgba(17, 42, 34, 0.82);
+  cursor: pointer;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 9px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  transition: border-color 160ms ease, background 160ms ease, color 160ms ease, transform 160ms ease;
+}
+
+.feedback-button:hover {
+  border-color: rgba(217, 251, 142, 0.62);
+  color: #eff8d4;
+  background: rgba(45, 91, 61, 0.9);
+  transform: translateY(-1px);
+}
+
+.feedback-button.active {
+  border-color: #d9fb8e;
+  color: #071412;
+  background: #b8e590;
+  box-shadow: 0 0 14px rgba(185, 240, 140, 0.22);
+}
+
 kbd {
   padding: 4px 6px;
   border: 1px solid rgba(172, 219, 176, 0.28);
@@ -381,5 +417,10 @@ kbd {
 
   .controls-bar {
     line-height: 2.5;
+  }
+
+  .playtest-feedback {
+    width: 100%;
+    margin-left: 0;
   }
 }

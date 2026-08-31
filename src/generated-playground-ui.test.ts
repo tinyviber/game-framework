@@ -2,11 +2,38 @@ import { describe, expect, it } from 'vitest';
 import {
   formatBlockedMovement,
   formatGeneratedInspection,
+  formatGeneratedWorldDescription,
   isGeneratedDebugMode,
   parseGeneratedView,
 } from './generated-playground-ui';
 
 describe('generated playground UI contract', () => {
+  it('turns world structure into a compact field note', () => {
+    expect(formatGeneratedWorldDescription({
+      width: 40,
+      height: 40,
+      biome: 'wetland',
+      weather: 'rainy',
+      lighting: 'dusk',
+      topologyFamily: 'two-region',
+      disruptionCellCount: 3,
+    })).toBe(
+      '40×40 wetland · rainy · dusk · Two regions meet at a pair of crossings · 3-cell elevation anomaly',
+    );
+  });
+
+  it('keeps the field note useful for an experimental topology', () => {
+    expect(formatGeneratedWorldDescription({
+      width: 8,
+      height: 6,
+      biome: 'crystal',
+      weather: 'clear',
+      lighting: 'night',
+      topologyFamily: 'experimental',
+      disruptionCellCount: 0,
+    })).toContain('A new path is waiting to be mapped');
+  });
+
   it('parses only the explicit orthogonal view and keeps iso as the default', () => {
     expect(parseGeneratedView('')).toBe('iso');
     expect(parseGeneratedView('?seed=2026&view=iso')).toBe('iso');

@@ -12,12 +12,15 @@ import type {
   IsoPropView,
 } from './isometric-scene';
 import type { WorldScene } from './world-scene';
-import {
-  orthogonalRegionForRole,
-  type OrthogonalRenderRole,
-} from '@/assets/orthogonal/semantic-mapping';
 import type { OrthogonalTextureSet } from './orthogonal-textures';
 import type { MarkTextureSet } from './isometric-scene';
+import {
+  KENNEY_GENERATOR_TILE_IDS,
+  KENNEY_PLATEAU_TILE_IDS,
+} from '@/assets/kenney-map-pack/metadata';
+import {
+  kenneyForestTileFor,
+} from '@/assets/kenney-map-pack/kenney-resolver';
 
 export const ORTHO_TILE_SIZE = 32;
 export const ORTHO_ELEVATION_STEP = 14;
@@ -104,10 +107,24 @@ function drawShadow(graphics: Graphics, point: OrthogonalPoint, alpha = 0.18): v
   ).fill({ color: 0x05080d, alpha });
 }
 
+const PLATEAU_BOTTOM_FILL_FOR_SURFACE: Record<string, string> = {
+  grass: 'kenney.mapTile.022',
+  dirt: 'kenney.mapTile.082',
+  stone: 'kenney.mapTile.027',
+  sand: 'kenney.mapTile.017',
+  water: 'kenney.mapTile.171',
+  snow: 'kenney.mapTile.077',
+};
+
+function fillTileIdForSurface(surface: string): string | undefined {
+  return PLATEAU_BOTTOM_FILL_FOR_SURFACE[surface] ?? KENNEY_GENERATOR_TILE_IDS[surface as keyof typeof KENNEY_GENERATOR_TILE_IDS]?.[0];
+}
+
 function drawGroundCell(
   graphics: Graphics,
   cell: IsoCellView,
   palette: IsoRoomView['palette'],
+  hasElevatedTexture: boolean,
 ): void {
   const top = cellTopLeft(cell);
   const base = cellBaseTopLeft(cell);
@@ -120,16 +137,16 @@ function drawGroundCell(
     // world; only the height transition constrains traversal.
     graphics
       .rect(top.x, top.y + ORTHO_TILE_SIZE - 2, ORTHO_TILE_SIZE, sideHeight + 2)
-      .fill(surface === 'cliff' ? palette.edge : Math.max(0, palette.edge - 0x0b0b0b));
+      .fill(hasElevatedTexture || surface === 'cliff' ? palette.edge : Math.max(0, palette.edge - 0x0b0b0b));
     graphics
       .rect(top.x, base.y + ORTHO_TILE_SIZE - 3, ORTHO_TILE_SIZE, 3)
-      .fill(Math.max(0, palette.edge - 0x171717));
+      .fill(hasElevatedTexture ? palette.edge : Math.max(0, palette.edge - 0x171717));
   }
 
   // The ground tile is always real world terrain - non-walkable cells are
   // water, forest or rock features, never a generic void marker.
   graphics.rect(top.x, top.y, ORTHO_TILE_SIZE, ORTHO_TILE_SIZE).fill(color);
-  if (surface === 'cliff' || cell.elevation > 0) {
+  if (!hasElevatedTexture && (surface === 'cliff' || cell.elevation > 0)) {
     graphics
       .moveTo(top.x + 2, top.y + ORTHO_TILE_SIZE - 3)
       .lineTo(top.x + ORTHO_TILE_SIZE - 2, top.y + ORTHO_TILE_SIZE - 3)
@@ -184,26 +201,51 @@ function drawRockFeature(
     .stroke({ width: 1, color: 0xffffff, alpha: 0.16 });
 }
 
-function drawRegionSprite(
+function drawTerrainTile(
   textures: OrthogonalTextureSet,
-  role: OrthogonalRenderRole,
   container: Container,
-  origin: OrthogonalPoint,
-  scale: number,
-  zIndex: number,
+  cell: IsoCellView,
 ): boolean {
-  const entry = textures[role];
+  const tileId = cell.terrainTileId;
+  const entry = tileId
+    ? textures.plateau?.[tileId] ?? textures.terrain?.[tileId]
+    : undefined;
   if (!entry) {
     return false;
   }
-  const region = orthogonalRegionForRole(role);
-  const [, , sourceWidth, sourceHeight] = region.source_rect;
+  const point = cellTopLeft(cell);
   const sprite = new Sprite(entry.texture);
-  sprite.anchor.set(region.anchor.x / sourceWidth, region.anchor.y / sourceHeight);
-  sprite.scale.set(scale);
-  sprite.position.set(origin.x, origin.y);
-  sprite.zIndex = zIndex;
-  sprite.label = `${role}:${entry.regionId}`;
+  sprite.position.set(point.x, point.y);
+  sprite.width = ORTHO_TILE_SIZE;
+  sprite.height = ORTHO_TILE_SIZE;
+  sprite.zIndex = orthogonalSortKey(cell.x, cell.y);
+  sprite.label = `terrain:${entry.regionId}`;
+  container.addChild(sprite);
+  return true;
+}
+
+function forestTileIdForCell(x: number, y: number): string {
+  return kenneyForestTileFor(x, y);
+}
+
+function drawForestSprite(
+  textures: OrthogonalTextureSet,
+  container: Container,
+  cell: Pick<IsoCellView, 'x' | 'y' | 'elevation'>,
+): boolean {
+  const tileId = forestTileIdForCell(cell.x, cell.y);
+  const entry = textures.forest?.[tileId];
+  if (!entry) {
+    return false;
+  }
+  const point = cellTopLeft(cell);
+  const sprite = new Sprite(entry.texture);
+  sprite.anchor.set(0.5, 1);
+  sprite.position.set(point.x + ORTHO_TILE_SIZE / 2, point.y + ORTHO_TILE_SIZE);
+  sprite.width = ORTHO_TILE_SIZE;
+  sprite.height = ORTHO_TILE_SIZE;
+  sprite.zIndex = orthogonalSortKey(cell.x, cell.y);
+  sprite.label = `forest:${entry.regionId}`;
   container.addChild(sprite);
   return true;
 }
@@ -286,6 +328,8 @@ function drawPath(
   }
 }
 
+
+
 function drawDebugOverlay(graphics: Graphics, room: IsoRoomView): void {
   const overlay = room.debugOverlay;
   if (!overlay) {
@@ -345,18 +389,10 @@ function drawProp(
   palette: IsoRoomView['palette'],
 ): void {
   const point = projectOrthogonalCell(prop.x, prop.y, prop.elevation);
-  const foot = { x: point.x + ORTHO_TILE_SIZE / 2, y: point.y + ORTHO_TILE_SIZE };
   drawShadow(propGraphics, point, prop.foreground ? 0.22 : 0.14);
-  const role = prop.assetKey === 'tree' || prop.assetKey === 'tree-pine' ? 'tree' : null;
-  const didDraw = role
-    ? drawRegionSprite(
-      textures,
-      role,
-      prop.foreground ? foreground : props,
-      foot,
-      ORTHO_TILE_SIZE / 16,
-      orthogonalSortKey(prop.x, prop.y),
-    )
+  const isTree = prop.assetKey === 'tree' || prop.assetKey === 'tree-pine';
+  const didDraw = isTree
+    ? drawForestSprite(textures, prop.foreground ? foreground : props, prop)
     : false;
   if (!didDraw) {
     drawFallbackProp(propGraphics, prop, point, palette);
@@ -385,6 +421,7 @@ export function createOrthogonalScene(
   props.sortableChildren = true;
   entities.sortableChildren = true;
   foreground.sortableChildren = true;
+  terrainSprites.sortableChildren = true;
   scene.layers.ground.addChild(terrainGraphics, terrain);
   scene.layers.terrain.addChild(terrainSprites);
   scene.layers.objects.addChild(props, propGraphics);
@@ -411,44 +448,52 @@ export function createOrthogonalScene(
         for (const cell of row) {
           const point = cellTopLeft(cell);
           drawShadow(terrainGraphics, point, cell.walkable ? 0.1 : 0.2);
-          drawGroundCell(terrainGraphics, cell, room.palette);
+          const surface = cell.surface ?? cell.terrainType;
+          const hasPlateauTexture = cell.elevation > 0 && Boolean(KENNEY_PLATEAU_TILE_IDS[surface as keyof typeof KENNEY_PLATEAU_TILE_IDS]);
+          drawGroundCell(
+            terrainGraphics,
+            cell,
+            room.palette,
+            hasPlateauTexture,
+          );
+          // Plateau bottom row has transparent pixels at its lower edge
+          // (041-043). Without a backing, the sky / dark wall shows through
+          // as the black strip in screenshot 2. Back it with the full fill
+          // tile of the cell directly below, so the transparent lip reveals
+          // neighbouring ground instead of black.
+          if (hasPlateauTexture) {
+            const south = room.cells[cell.y + 1]?.[cell.x];
+            const sameSouth = south?.elevation === cell.elevation && (south?.surface ?? south?.terrainType) === surface;
+            if (!sameSouth && south) {
+              const southSurface = (south.surface ?? south.terrainType) as string;
+              const fillId = fillTileIdForSurface(southSurface);
+              if (fillId) {
+                const entry = orthogonalTextures.terrain?.[fillId] ?? orthogonalTextures.plateau?.[fillId];
+                if (entry) {
+                  const bg = new Sprite(entry.texture);
+                  bg.position.set(point.x, point.y);
+                  bg.width = ORTHO_TILE_SIZE;
+                  bg.height = ORTHO_TILE_SIZE;
+                  bg.zIndex = orthogonalSortKey(cell.x, cell.y) - 0.5;
+                  bg.label = `plateau-bg:${fillId}`;
+                  terrainSprites.addChild(bg);
+                } else {
+                  // Fallback: solid colour of the southern ground
+                  const bgColor = colorForTerrain(southSurface, south.biome, south.environment, room.palette);
+                  terrainGraphics.rect(point.x, point.y, ORTHO_TILE_SIZE, ORTHO_TILE_SIZE).fill(bgColor);
+                }
+              }
+            }
+          }
+          drawTerrainTile(orthogonalTextures, terrainSprites, cell);
           if (cell.obstacle === 'rock') {
             drawRockFeature(terrainGraphics, cell, room.palette);
           }
           if (cell.obstacle === 'forest') {
-            // Tree metadata is bottom-center anchored. Place that foot at
-            // the cell's bottom-center rather than at its top-left corner.
-            const foot = {
-              x: point.x + ORTHO_TILE_SIZE / 2,
-              y: point.y + ORTHO_TILE_SIZE,
-            };
-            const drewTrees = drawRegionSprite(
-              orthogonalTextures,
-              'tree',
-              terrainSprites,
-              foot,
-              ORTHO_TILE_SIZE / 16,
-              orthogonalSortKey(cell.x, cell.y),
-            );
+            const drewTrees = drawForestSprite(orthogonalTextures, terrainSprites, cell);
             if (!drewTrees) {
               drawForestFallback(terrainGraphics, cell, room.palette);
             }
-          }
-          const surface = cell.surface ?? cell.terrainType;
-          const spriteRole = surface === 'water'
-            ? 'water'
-            : !cell.obstacle && (surface === 'grass' || surface === 'dirt')
-              ? surface
-              : null;
-          if (spriteRole) {
-            drawRegionSprite(
-              orthogonalTextures,
-              spriteRole,
-              terrainSprites,
-              point,
-              ORTHO_TILE_SIZE / 16,
-              orthogonalSortKey(cell.x, cell.y),
-            );
           }
         }
       }
