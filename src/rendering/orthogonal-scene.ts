@@ -120,6 +120,59 @@ function fillTileIdForSurface(surface: string): string | undefined {
   return PLATEAU_BOTTOM_FILL_FOR_SURFACE[surface] ?? KENNEY_GENERATOR_TILE_IDS[surface as keyof typeof KENNEY_GENERATOR_TILE_IDS]?.[0];
 }
 
+function isTraversableTo(
+  from: IsoCellView,
+  to: IsoCellView | undefined,
+  room: IsoRoomView,
+): boolean {
+  if (!to || !to.walkable) return false;
+  if (to.elevation !== from.elevation) {
+    const hasConnector = room.connectors?.some(
+      (c) =>
+        (c.from.x === from.x && c.from.y === from.y && c.to.x === to.x && c.to.y === to.y) ||
+        (c.from.x === to.x && c.from.y === to.y && c.to.x === from.x && c.to.y === from.y),
+    );
+    if (!hasConnector) return false;
+  }
+  // obstacle already reflected in walkable==false; water => walkable false
+  return true;
+}
+
+function drawBlockedEdges(
+  graphics: Graphics,
+  cell: IsoCellView,
+  room: IsoRoomView,
+  palette: IsoRoomView['palette'],
+): void {
+  if (!cell.walkable) return;
+  const top = cellTopLeft(cell);
+  const dirs: Array<{ dx: number; dy: number; edge: 'west' | 'east' | 'north' | 'south' }> = [
+    { dx: -1, dy: 0, edge: 'west' },
+    { dx: 1, dy: 0, edge: 'east' },
+    { dx: 0, dy: -1, edge: 'north' },
+    { dx: 0, dy: 1, edge: 'south' },
+  ];
+  for (const { dx, dy, edge } of dirs) {
+    const neighbor = room.cells[cell.y + dy]?.[cell.x + dx];
+    if (isTraversableTo(cell, neighbor, room)) continue;
+    // Draw a wall-like edge on the blocked side so a smooth fill does not
+    // look traversable. This matches the user's request to use a visibly
+    // edged tile for cells bordering highland / rock / water.
+    const wallColor = palette.edge;
+    const thickness = 4;
+    if (edge === 'west') {
+      graphics.rect(top.x, top.y, thickness, ORTHO_TILE_SIZE).fill(wallColor);
+      graphics.rect(top.x + thickness, top.y, 1, ORTHO_TILE_SIZE).fill({ color: 0xffffff, alpha: 0.12 });
+    } else if (edge === 'east') {
+      graphics.rect(top.x + ORTHO_TILE_SIZE - thickness, top.y, thickness, ORTHO_TILE_SIZE).fill(wallColor);
+    } else if (edge === 'north') {
+      graphics.rect(top.x, top.y, ORTHO_TILE_SIZE, thickness).fill(wallColor);
+    } else if (edge === 'south') {
+      graphics.rect(top.x, top.y + ORTHO_TILE_SIZE - thickness, ORTHO_TILE_SIZE, thickness).fill(wallColor);
+    }
+  }
+}
+
 function drawGroundCell(
   graphics: Graphics,
   cell: IsoCellView,
@@ -508,6 +561,11 @@ export function createOrthogonalScene(
             }
           }
           drawTerrainTile(orthogonalTextures, terrainSprites, cell);
+          // Flat blocked edges: if neighbour is not traversable, draw a wall
+          // edge on top of the smooth fill so the player understands why
+          // movement is blocked. Uses propGraphics so it renders above the
+          // terrain sprite (which would otherwise hide a ground-layer rect).
+          drawBlockedEdges(propGraphics, cell, room, room.palette);
           if (cell.obstacle === 'rock') {
             drawRockFeature(terrainGraphics, cell, room.palette);
           }
