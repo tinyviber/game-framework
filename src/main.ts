@@ -34,6 +34,10 @@ import {
   type OrthogonalTextureSet,
 } from '@/rendering/orthogonal-textures';
 import { createPixiHost } from '@/rendering/pixi-host';
+import {
+  createDemoInventoryView,
+  createInventoryUi,
+} from '@/rendering/inventory-ui';
 import { projectGeneratedMinimap } from '@/generated-minimap';
 import {
   formatBlockedMovement,
@@ -121,6 +125,7 @@ controls.innerHTML = `
   <span><kbd>R</kbd> reset</span>
   <span><kbd>N</kbd> new seed</span>
   <span><kbd>[ ]</kbd> zoom</span>
+  <span><kbd>I</kbd> inventory</span>
   <div class="playtest-feedback" aria-label="Playtest feedback">
     <button class="feedback-button" data-feedback="interesting" type="button">👍 interesting</button>
     <button class="feedback-button" data-feedback="boring" type="button">👎 boring</button>
@@ -517,6 +522,8 @@ void (async () => {
     renderer = VIEW_MODE === 'ortho'
       ? createOrthogonalScene(host.scene, textures, orthogonalTextures)
       : createIsometricScene(host.scene, textures);
+    const inventoryUi = createInventoryUi(host.ui);
+    inventoryUi.render(createDemoInventoryView(textures));
     renderMinimap();
     render();
     renderer.setCamera(camera.x, camera.y, zoom);
@@ -533,6 +540,18 @@ void (async () => {
 
     const handleKeyDown = (event: KeyboardEvent): void => {
       const key = event.key.toLowerCase();
+      if (key === 'i' || key === 'b') {
+        event.preventDefault();
+        inventoryUi.toggle();
+        return;
+      }
+      if (inventoryUi.isOpen()) {
+        if (key === 'escape') {
+          event.preventDefault();
+          inventoryUi.setOpen(false);
+        }
+        return;
+      }
       if (key === 'e' || key === ' ') {
         event.preventDefault();
         inspectTerrain();
