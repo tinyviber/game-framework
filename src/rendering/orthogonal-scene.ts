@@ -120,59 +120,6 @@ function fillTileIdForSurface(surface: string): string | undefined {
   return PLATEAU_BOTTOM_FILL_FOR_SURFACE[surface] ?? KENNEY_GENERATOR_TILE_IDS[surface as keyof typeof KENNEY_GENERATOR_TILE_IDS]?.[0];
 }
 
-function isTraversableTo(
-  from: IsoCellView,
-  to: IsoCellView | undefined,
-  room: IsoRoomView,
-): boolean {
-  if (!to || !to.walkable) return false;
-  if (to.elevation !== from.elevation) {
-    const hasConnector = room.connectors?.some(
-      (c) =>
-        (c.from.x === from.x && c.from.y === from.y && c.to.x === to.x && c.to.y === to.y) ||
-        (c.from.x === to.x && c.from.y === to.y && c.to.x === from.x && c.to.y === from.y),
-    );
-    if (!hasConnector) return false;
-  }
-  // obstacle already reflected in walkable==false; water => walkable false
-  return true;
-}
-
-function drawBlockedEdges(
-  graphics: Graphics,
-  cell: IsoCellView,
-  room: IsoRoomView,
-  palette: IsoRoomView['palette'],
-): void {
-  if (!cell.walkable) return;
-  const top = cellTopLeft(cell);
-  const dirs: Array<{ dx: number; dy: number; edge: 'west' | 'east' | 'north' | 'south' }> = [
-    { dx: -1, dy: 0, edge: 'west' },
-    { dx: 1, dy: 0, edge: 'east' },
-    { dx: 0, dy: -1, edge: 'north' },
-    { dx: 0, dy: 1, edge: 'south' },
-  ];
-  for (const { dx, dy, edge } of dirs) {
-    const neighbor = room.cells[cell.y + dy]?.[cell.x + dx];
-    if (isTraversableTo(cell, neighbor, room)) continue;
-    // Draw a wall-like edge on the blocked side so a smooth fill does not
-    // look traversable. This matches the user's request to use a visibly
-    // edged tile for cells bordering highland / rock / water.
-    const wallColor = palette.edge;
-    const thickness = 4;
-    if (edge === 'west') {
-      graphics.rect(top.x, top.y, thickness, ORTHO_TILE_SIZE).fill(wallColor);
-      graphics.rect(top.x + thickness, top.y, 1, ORTHO_TILE_SIZE).fill({ color: 0xffffff, alpha: 0.12 });
-    } else if (edge === 'east') {
-      graphics.rect(top.x + ORTHO_TILE_SIZE - thickness, top.y, thickness, ORTHO_TILE_SIZE).fill(wallColor);
-    } else if (edge === 'north') {
-      graphics.rect(top.x, top.y, ORTHO_TILE_SIZE, thickness).fill(wallColor);
-    } else if (edge === 'south') {
-      graphics.rect(top.x, top.y + ORTHO_TILE_SIZE - thickness, ORTHO_TILE_SIZE, thickness).fill(wallColor);
-    }
-  }
-}
-
 function drawGroundCell(
   graphics: Graphics,
   cell: IsoCellView,
@@ -560,12 +507,77 @@ export function createOrthogonalScene(
               }
             }
           }
-          drawTerrainTile(orthogonalTextures, terrainSprites, cell);
-          // Flat blocked edges: if neighbour is not traversable, draw a wall
-          // edge on top of the smooth fill so the player understands why
-          // movement is blocked. Uses propGraphics so it renders above the
-          // terrain sprite (which would otherwise hide a ground-layer rect).
-          drawBlockedEdges(propGraphics, cell, room, room.palette);
+          // For walkable flats bordering blocked terrain (highland, rock,
+          // water, forest), use the split-edge tile instead of a smooth fill
+          // so the blocked side is visible. This is the correct way to show
+          // "why you can't go left" – the tile itself is the division, not an
+          // artificially drawn black border.
+          const isFlatWalkable = cell.walkable && cell.elevation === 0 && !hasPlateauTexture;
+          let edgeTileDrawn = false;
+          if (isFlatWalkable) {
+            const hasConnector = (a: IsoCellView, b: IsoCellView | undefined) => {
+              if (!b) return false;
+              return !!room.connectors?.some(
+                (c) =>
+                  (c.from.x === a.x && c.from.y === a.y && c.to.x === b.x && c.to.y === b.y) ||
+                  (c.from.x === b.x && c.from.y === b.y && c.to.x === a.x && c.to.y === a.y),
+              );
+            };
+            const isBlocked = (nbr: IsoCellView | undefined) => {
+              if (!nbr) return true;
+              if (!nbr.walkable) return true;
+              if (nbr.elevation !== cell.elevation && !hasConnector(cell, nbr)) return true;
+              return false;
+            };
+            const west = room.cells[cell.y]?.[cell.x - 1];
+            const east = room.cells[cell.y]?.[cell.x + 1];
+            const north = room.cells[cell.y - 1]?.[cell.x];
+            const south = room.cells[cell.y + 1]?.[cell.x];
+            const westBlocked = isBlocked(west);
+            const eastBlocked = isBlocked(east);
+            const northBlocked = isBlocked(north);
+            const southBlocked = isBlocked(south);
+            // Only use edge tile when exactly one side is blocked to avoid
+            // corner ambiguity; otherwise keep fill to avoid re-introducing
+            // transparent-corner seams in interior patches.
+            const blockedCount = (westBlocked ? 1 : 0) + (eastBlocked ? 1 : 0) + (northBlocked ? 1 : 0) + (southBlocked ? 1 : 0);
+            if (blockedCount === 1) {
+              let edgeId: string | undefined;
+              const surface = cell.surface ?? cell.terrainType;
+              if (westBlocked) {
+                if (surface === 'grass') edgeId = 'kenney.mapTile.021';
+                else if (surface === 'dirt') edgeId = 'kenney.mapTile.081';
+                else if (surface === 'stone') edgeId = 'kenney.mapTile.026';
+                else if (surface === 'sand') edgeId = 'kenney.mapTile.006';
+              } else if (eastBlocked) {
+                if (surface === 'grass') edgeId = 'kenney.mapTile.023';
+                else if (surface === 'dirt') edgeId = 'kenney.mapTile.083';
+                else if (surface === 'stone') edgeId = 'kenney.mapTile.028';
+              } else if (northBlocked) {
+                if (surface === 'grass') edgeId = 'kenney.mapTile.006';
+                else if (surface === 'stone') edgeId = 'kenney.mapTile.011';
+              } else if (southBlocked) {
+                if (surface === 'stone') edgeId = 'kenney.mapTile.041';
+              }
+              if (edgeId) {
+                const entry = orthogonalTextures.terrain?.[edgeId] ?? orthogonalTextures.plateau?.[edgeId];
+                if (entry) {
+                  const point2 = cellTopLeft(cell);
+                  const s = new Sprite(entry.texture);
+                  s.position.set(point2.x, point2.y);
+                  s.width = ORTHO_TILE_SIZE;
+                  s.height = ORTHO_TILE_SIZE;
+                  s.zIndex = orthogonalSortKey(cell.x, cell.y);
+                  s.label = `terrain-edge:${edgeId}`;
+                  terrainSprites.addChild(s);
+                  edgeTileDrawn = true;
+                }
+              }
+            }
+          }
+          if (!edgeTileDrawn) {
+            drawTerrainTile(orthogonalTextures, terrainSprites, cell);
+          }
           if (cell.obstacle === 'rock') {
             drawRockFeature(terrainGraphics, cell, room.palette);
           }
