@@ -148,23 +148,25 @@ function cellCenter(position: Position): { x: number; y: number } {
 function drawOverlay(): void {
   overlay.clear();
 
-  // Frost patch: white-blue ice that thins as it ages; cracked when about to melt.
+  // Frost patch: opaque pale ice that reads clearly against the river.
   for (const [key, life] of Object.entries(frost.frozen)) {
     const [x, y] = key.split(',').map(Number);
     const center = cellCenter({ x, y });
     const fragile = life <= 1;
-    const alpha = fragile ? 0.55 : 0.78;
-    overlay.rect(center.x - 16, center.y - 16, 32, 32).fill({ color: 0xbfe9ff, alpha });
+    const alpha = fragile ? 0.85 : 0.95;
+    overlay.rect(center.x - 16, center.y - 16, 32, 32).fill({ color: 0xf2faff, alpha });
     overlay.rect(center.x - 16, center.y - 16, 32, 32).stroke({
-      color: fragile ? 0x8fb4cc : 0xdff3ff,
-      width: fragile ? 2 : 1.5,
-      alpha: 0.95,
+      color: fragile ? 0x556b82 : 0x7aa6c8,
+      width: fragile ? 2.5 : 2,
+      alpha: 1,
     });
     if (fragile) {
       overlay.moveTo(center.x - 12, center.y - 10).lineTo(center.x + 12, center.y + 10)
-        .stroke({ color: 0x8fb4cc, width: 2, alpha: 0.9 });
+        .stroke({ color: 0x556b82, width: 2.5, alpha: 1 });
       overlay.moveTo(center.x + 12, center.y - 10).lineTo(center.x - 12, center.y + 10)
-        .stroke({ color: 0x8fb4cc, width: 2, alpha: 0.9 });
+        .stroke({ color: 0x556b82, width: 2.5, alpha: 1 });
+    } else {
+      overlay.circle(center.x, center.y, 4).fill({ color: 0xffffff, alpha: 0.9 });
     }
   }
 
