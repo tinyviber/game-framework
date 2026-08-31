@@ -525,6 +525,12 @@ export function createOrthogonalScene(
             };
             const isBlocked = (nbr: IsoCellView | undefined) => {
               if (!nbr) return true;
+              // Same surface + same elevation = same region, keep smooth
+              // even if neighbour is a rock/forest obstacle on same ground
+              // (e.g. stone walkable vs stone+rock). Don't force a split.
+              const nbrSurface = nbr.surface ?? nbr.terrainType;
+              const curSurface = cell.surface ?? cell.terrainType;
+              if (nbrSurface === curSurface && nbr.elevation === cell.elevation) return false;
               if (!nbr.walkable) return true;
               if (nbr.elevation !== cell.elevation && !hasConnector(cell, nbr)) return true;
               return false;
