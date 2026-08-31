@@ -460,7 +460,10 @@ export function createOrthogonalScene(
           // (041-043). Without a backing, the sky / dark wall shows through
           // as the black strip in screenshot 2. Back it with the full fill
           // tile of the cell directly below, so the transparent lip reveals
-          // neighbouring ground instead of black.
+          // neighbouring ground instead of black. Also overwrite the dark
+          // cliff wall gap (14px between plateau bottom and ground) with the
+          // same southern ground, otherwise the wall appears as a solid
+          // black block below the plateau (screenshot 1 & 2).
           if (hasPlateauTexture) {
             const south = room.cells[cell.y + 1]?.[cell.x];
             const sameSouth = south?.elevation === cell.elevation && (south?.surface ?? south?.terrainType) === surface;
@@ -478,10 +481,29 @@ export function createOrthogonalScene(
                   bg.label = `plateau-bg:${fillId}`;
                   terrainSprites.addChild(bg);
                 } else {
-                  // Fallback: solid colour of the southern ground
                   const bgColor = colorForTerrain(southSurface, south.biome, south.environment, room.palette);
                   terrainGraphics.rect(point.x, point.y, ORTHO_TILE_SIZE, ORTHO_TILE_SIZE).fill(bgColor);
                 }
+              }
+              // Overwrite the dark cliff wall gap with southern ground so
+              // the strip below the orange lip is not a black block.
+              const gapY = point.y + ORTHO_TILE_SIZE;
+              const gapHeight = ORTHO_ELEVATION_STEP;
+              const bgColor = colorForTerrain(southSurface, south.biome, south.environment, room.palette);
+              // Fill gap with solid southern colour; texture would be squashed
+              // (14px vs 32px) and add little, colour is sufficient to hide black.
+              terrainGraphics.rect(point.x, gapY, ORTHO_TILE_SIZE, gapHeight).fill(bgColor);
+              // If a texture is available, also layer a cropped sprite over the gap
+              // for visual consistency with the surrounding ground.
+              const gapEntry = fillId ? (orthogonalTextures.terrain?.[fillId] ?? orthogonalTextures.plateau?.[fillId]) : undefined;
+              if (gapEntry) {
+                const gapSprite = new Sprite(gapEntry.texture);
+                gapSprite.position.set(point.x, gapY);
+                gapSprite.width = ORTHO_TILE_SIZE;
+                gapSprite.height = gapHeight;
+                gapSprite.zIndex = orthogonalSortKey(cell.x, cell.y) - 0.4;
+                gapSprite.label = `plateau-gap:${fillId}`;
+                terrainSprites.addChild(gapSprite);
               }
             }
           }
