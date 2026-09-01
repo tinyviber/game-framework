@@ -19,8 +19,7 @@ const KENNEY_FILL_FOR_SURFACE: Record<KenneyGeneratedSurface, string> = {
 } as Record<KenneyGeneratedSurface, string>;
 
 export function kenneyTerrainTileFor(surface: KenneyGeneratedSurface, x: number, y: number): string {
-  // See src/world/generated-world/index.ts:terrainTileFor for the seam
-  // explanation. All uniform interiors must use the opaque fill tile; the
+  // All uniform interiors must use the opaque fill tile; the
   // transparent corner variants are only safe when composited as a second
   // layer, which the single-layer orthogonal renderer does not do.
   const fill = KENNEY_FILL_FOR_SURFACE[surface];

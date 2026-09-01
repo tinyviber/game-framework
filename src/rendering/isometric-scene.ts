@@ -80,6 +80,21 @@ export interface IsoPropView {
   readonly blocks: boolean;
 }
 
+export interface IsoObjectView {
+  readonly id: string;
+  readonly kind: string;
+  readonly x: number;
+  readonly y: number;
+  readonly active?: boolean;
+}
+
+export interface IsoFrostCellView {
+  readonly x: number;
+  readonly y: number;
+  /** 0..1, used only to make aging ice readable. */
+  readonly lifeRatio: number;
+}
+
 export interface IsoNpcView {
   readonly id: string;
   readonly name: string;
@@ -133,6 +148,7 @@ export interface IsoRoomView {
   readonly height: number;
   readonly cells: readonly (readonly IsoCellView[])[];
   readonly props: readonly IsoPropView[];
+  readonly objects?: readonly IsoObjectView[];
   readonly npcs: readonly IsoNpcView[];
   readonly node?: IsoNodeView;
   readonly exits: readonly IsoExitView[];
@@ -160,6 +176,7 @@ export interface IsoSceneView {
   readonly room: IsoWorldView;
   readonly player: { readonly x: number; readonly y: number; readonly elevation: number };
   readonly windMarks: Readonly<Record<string, boolean>>;
+  readonly frost?: readonly IsoFrostCellView[];
   readonly goalReached?: boolean;
 }
 
@@ -492,6 +509,66 @@ function drawMarker(
   });
 }
 
+function drawFrostCell(
+  graphics: Graphics,
+  room: IsoRoomView,
+  cell: IsoFrostCellView,
+): void {
+  const elevation = room.cells[cell.y]?.[cell.x]?.elevation ?? 0;
+  const point = projectIsoCell(cell.x, cell.y, elevation);
+  const ratio = Math.max(0, Math.min(1, cell.lifeRatio));
+  diamond(graphics, point, ISO_TILE_WIDTH * 0.88, ISO_TILE_HEIGHT * 0.8);
+  graphics.fill({ color: 0xbdeeff, alpha: 0.28 + ratio * 0.3 });
+  graphics.stroke({ width: ratio < 0.45 ? 2 : 1, color: 0xf4ffff, alpha: 0.82 });
+  if (ratio < 0.45) {
+    graphics
+      .moveTo(point.x - 14, point.y - 2)
+      .lineTo(point.x - 3, point.y + 3)
+      .lineTo(point.x + 5, point.y - 5)
+      .moveTo(point.x + 8, point.y + 1)
+      .lineTo(point.x + 15, point.y - 4);
+  }
+}
+
+function drawAuthoredObject(
+  graphics: Graphics,
+  room: IsoRoomView,
+  object: IsoObjectView,
+): void {
+  if (object.kind === 'relic' && object.active === false) {
+    return;
+  }
+  const elevation = room.cells[object.y]?.[object.x]?.elevation ?? 0;
+  const point = projectIsoCell(object.x, object.y, elevation);
+  graphics.ellipse(point.x, point.y + 7, 18, 7).fill({ color: 0x05080d, alpha: 0.24 });
+  if (object.kind === 'frost-vessel') {
+    graphics
+      .ellipse(point.x, point.y - 5, 14, 8)
+      .fill({ color: 0x416a7b, alpha: 0.96 })
+      .stroke({ width: 2, color: 0xbdeeff, alpha: 0.9 });
+    graphics
+      .roundRect(point.x - 9, point.y - 16, 18, 12, 4)
+      .fill(0x35515d)
+      .stroke({ width: 1, color: 0xbdeeff, alpha: 0.72 });
+    graphics.circle(point.x, point.y - 18, object.active ? 7 : 4).fill({
+      color: 0xbdeeff,
+      alpha: object.active ? 0.86 : 0.56,
+    });
+    return;
+  }
+  if (object.kind === 'relic') {
+    graphics
+      .moveTo(point.x, point.y - 28)
+      .lineTo(point.x + 8, point.y - 15)
+      .lineTo(point.x, point.y - 7)
+      .lineTo(point.x - 8, point.y - 15)
+      .closePath()
+      .fill(0xf2c66d)
+      .stroke({ width: 2, color: 0xfff0b0, alpha: 0.95 });
+    graphics.circle(point.x, point.y - 17, 13).stroke({ width: 2, color: 0xf2c66d, alpha: 0.42 });
+  }
+}
+
 function drawDebugOverlay(
   graphics: Graphics,
   room: IsoRoomView,
@@ -599,6 +676,10 @@ export function createIsometricScene(
         }
       }
 
+      for (const cell of view.frost ?? []) {
+        drawFrostCell(terrainGraphics, room, cell);
+      }
+
       drawExitMarkers(propGraphics, room);
       drawConnectorMarkers(propGraphics, room);
       if (room.start) {
@@ -618,6 +699,10 @@ export function createIsometricScene(
           0.62,
           isoSortKey(room.node.x, room.node.y) + 5,
         );
+      }
+
+      for (const object of room.objects ?? []) {
+        drawAuthoredObject(propGraphics, room, object);
       }
 
       for (const prop of room.props) {
