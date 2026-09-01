@@ -158,7 +158,7 @@ export interface IsoWorldView extends IsoRoomView {}
 
 export interface IsoSceneView {
   readonly room: IsoWorldView;
-  readonly player: { readonly x: number; readonly y: number; readonly elevation: number };
+  readonly player?: { readonly x: number; readonly y: number; readonly elevation: number };
   readonly windMarks: Readonly<Record<string, boolean>>;
   readonly goalReached?: boolean;
 }
@@ -645,23 +645,25 @@ export function createIsometricScene(
         }
       }
 
-      const playerPoint = projectIsoCell(
-        view.player.x,
-        view.player.y,
-        view.player.elevation,
-      );
-      drawShadow(entityGraphics, playerPoint, 0.3);
-      const didDrawPlayer = makeSprite(
-        textures,
-        'character-oobi',
-        entities,
-        playerPoint,
-        1.08,
-        isoSortKey(view.player.x, view.player.y) + 50,
-      );
-      if (!didDrawPlayer) {
-        entityGraphics.circle(playerPoint.x, playerPoint.y - 24, 13).fill(room.palette.glow);
-        entityGraphics.circle(playerPoint.x, playerPoint.y - 27, 5).fill(0xffffff);
+      if (view.player) {
+        const playerPoint = projectIsoCell(
+          view.player.x,
+          view.player.y,
+          view.player.elevation,
+        );
+        drawShadow(entityGraphics, playerPoint, 0.3);
+        const didDrawPlayer = makeSprite(
+          textures,
+          'character-oobi',
+          entities,
+          playerPoint,
+          1.08,
+          isoSortKey(view.player.x, view.player.y) + 50,
+        );
+        if (!didDrawPlayer) {
+          entityGraphics.circle(playerPoint.x, playerPoint.y - 24, 13).fill(room.palette.glow);
+          entityGraphics.circle(playerPoint.x, playerPoint.y - 27, 5).fill(0xffffff);
+        }
       }
     },
 

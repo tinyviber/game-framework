@@ -31,6 +31,10 @@ input {
   padding: 28px clamp(16px, 4vw, 64px) 36px;
 }
 
+#app.capture-app {
+  padding: 0;
+}
+
 .adventure-shell {
   width: min(1320px, 100%);
   margin: 0 auto;
@@ -382,6 +386,29 @@ kbd {
   margin: 13px 4px 0;
   color: #5e806e;
   font-size: 9px;
+}
+
+.capture-shell {
+  width: 100%;
+  min-height: 100svh;
+}
+
+.capture-stage {
+  width: 100%;
+  min-height: 100svh;
+}
+
+.capture-canvas-root {
+  width: 100%;
+  min-height: 100svh;
+  overflow: hidden;
+  background: #b9c6bd;
+}
+
+.capture-canvas-root canvas {
+  display: block;
+  width: 100%;
+  height: auto;
 }
 
 @media (max-width: 900px) {

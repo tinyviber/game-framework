@@ -41,6 +41,12 @@ import {
   type MarkTextureSet,
 } from '@/rendering/isometric-scene';
 import {
+  CAPTURE_VIEWPORT,
+  createCaptureSceneView,
+  createIsometricCaptureScene,
+  fitCaptureCamera,
+} from '@/rendering/isometric-capture-scene';
+import {
   createOrthogonalScene,
   ORTHO_TILE_SIZE,
   projectOrthogonalCell,
@@ -65,6 +71,10 @@ import {
   parseGeneratedView,
   type GeneratedViewMode,
 } from '@/generated-playground-ui';
+import {
+  findAuthoredCaptureRoom,
+  parseAuthoredCaptureRequest,
+} from '@/capture-mode';
 
 const root = document.querySelector<HTMLDivElement>('#app');
 
@@ -76,11 +86,15 @@ const DEFAULT_SEED = 2026;
 const PLAYTEST_FEEDBACK_STORAGE_KEY = 'generated-playtest-feedback-v1';
 const PLAYTEST_TAGS = ['interesting', 'boring', 'discovered', 'saved'] as const;
 type PlaytestTag = (typeof PLAYTEST_TAGS)[number];
-const IS_GENERATED_MODE = new URLSearchParams(window.location.search).get('world') === 'generated';
+const SEARCH_PARAMS = new URLSearchParams(window.location.search);
+const IS_GENERATED_MODE = SEARCH_PARAMS.get('world') === 'generated';
+const AUTHORED_CAPTURE_REQUEST = parseAuthoredCaptureRequest(window.location.search);
+const CAPTURE_MODE = AUTHORED_CAPTURE_REQUEST.enabled;
+root.classList.toggle('capture-app', CAPTURE_MODE);
 const DEBUG_MODE = IS_GENERATED_MODE && isGeneratedDebugMode(window.location.search);
 const VIEW_MODE: GeneratedViewMode = IS_GENERATED_MODE
   ? parseGeneratedView(window.location.search)
-  : new URLSearchParams(window.location.search).get('view') === 'iso' ? 'iso' : 'ortho';
+  : SEARCH_PARAMS.get('view') === 'iso' ? 'iso' : 'ortho';
 const AUTHORED_PALETTE = {
   sky: 0x1d2931,
   ground: 0x4f805a,
@@ -100,7 +114,7 @@ function readSeed(): number {
 
 
 const shell = document.createElement('main');
-shell.className = 'adventure-shell';
+shell.className = CAPTURE_MODE ? 'capture-shell' : 'adventure-shell';
 
 const header = document.createElement('header');
 header.className = 'game-header';
@@ -116,9 +130,9 @@ header.innerHTML = `
 `;
 
 const stage = document.createElement('section');
-stage.className = 'stage-shell';
+stage.className = CAPTURE_MODE ? 'capture-stage' : 'stage-shell';
 const canvasRoot = document.createElement('div');
-canvasRoot.className = 'canvas-root';
+canvasRoot.className = CAPTURE_MODE ? 'capture-canvas-root' : 'canvas-root';
 
 const sidePanel = document.createElement('aside');
 sidePanel.className = 'side-panel';
@@ -162,8 +176,15 @@ controls.innerHTML = `
   </div>` : ''}
 `;
 
-stage.append(canvasRoot, sidePanel);
-shell.append(header, stage, controls);
+stage.append(canvasRoot);
+if (!CAPTURE_MODE) {
+  stage.append(sidePanel);
+}
+if (CAPTURE_MODE) {
+  shell.append(stage);
+} else {
+  shell.append(header, stage, controls);
+}
 root.replaceChildren(shell);
 
 const title = header.querySelector<HTMLHeadingElement>('h1')!;
@@ -176,7 +197,7 @@ const feedbackButtons = Array.from(
   controls.querySelectorAll<HTMLButtonElement>('[data-feedback]'),
 );
 
-if (!title || !roomTitle || !roomDescription || !roomStatus) {
+if (!CAPTURE_MODE && (!title || !roomTitle || !roomDescription || !roomStatus)) {
   throw new Error('Generated playground UI failed to initialize');
 }
 
@@ -185,17 +206,33 @@ let world: GeneratedWorld | null = IS_GENERATED_MODE ? generateGeneratedWorld(se
 let playground: GeneratedPlayground | null = world ? createGeneratedPlayground(world) : null;
 const authoredWorld: AuthoredWorld | null = IS_GENERATED_MODE ? null : MAIN_WORLD;
 const authoredGame: AuthoredGame | null = authoredWorld ? createAuthoredGame(authoredWorld) : null;
-let authoredState: AuthoredPlayState | null = authoredGame ? createAuthoredPlayState(authoredGame) : null;
+const authoredCaptureRoom = CAPTURE_MODE && authoredWorld
+  ? findAuthoredCaptureRoom(authoredWorld.rooms, AUTHORED_CAPTURE_REQUEST.roomId)
+  : undefined;
+if (CAPTURE_MODE && AUTHORED_CAPTURE_REQUEST.roomId && !authoredCaptureRoom) {
+  console.warn(`Unknown authored capture room "${AUTHORED_CAPTURE_REQUEST.roomId}"; using the start room.`);
+}
+let authoredState: AuthoredPlayState | null = authoredGame
+  ? createAuthoredPlayState(
+    authoredGame,
+    authoredCaptureRoom?.id ?? authoredGame.world.startRoomId,
+    authoredCaptureRoom?.spawn ?? authoredGame.world.startPosition,
+  )
+  : null;
 let state: LocalWorldState = playground?.initialState ?? authoredState!.localState;
 let renderer: IsometricSceneRenderer | OrthogonalSceneRenderer;
-let zoom = VIEW_MODE === 'ortho' ? 0.72 : 0.34;
 const initialPosition = world?.start ?? authoredWorld!.startPosition;
-let camera = VIEW_MODE === 'ortho'
+const initialRoomView = CAPTURE_MODE ? createAuthoredWorldView(authoredState!) : null;
+const captureCamera = initialRoomView ? fitCaptureCamera(initialRoomView) : null;
+let zoom = captureCamera?.zoom ?? (VIEW_MODE === 'ortho' ? 0.72 : 0.34);
+let camera = captureCamera ?? (VIEW_MODE === 'ortho'
   ? projectOrthogonalCell(initialPosition.x, initialPosition.y, 0)
-  : projectIsoCell(initialPosition.x, initialPosition.y, 0);
+  : projectIsoCell(initialPosition.x, initialPosition.y, 0));
 const statusText = document.createElement('p');
 statusText.id = 'game-status';
-shell.append(statusText);
+if (!CAPTURE_MODE) {
+  shell.append(statusText);
+}
 let feedback: string | null = null;
 let playtestTags = new Set<PlaytestTag>();
 
@@ -418,10 +455,14 @@ function createWorldView(): IsoRoomView {
 }
 
 function buildView(): IsoSceneView {
+  const room = createWorldView();
+  if (CAPTURE_MODE) {
+    return createCaptureSceneView(room);
+  }
+
   const position = IS_GENERATED_MODE
     ? playerPosition(state)
     : authoredPlayerPosition(authoredState!);
-  const room = createWorldView();
   const cell = room.cells[position.y]?.[position.x];
   return {
     room,
@@ -479,6 +520,11 @@ function renderMinimap(): void {
 }
 
 function render(): void {
+  if (CAPTURE_MODE) {
+    renderer.render(buildView());
+    return;
+  }
+
   renderPlaytestFeedback();
   const position = IS_GENERATED_MODE
     ? playerPosition(state)
@@ -519,6 +565,10 @@ function render(): void {
 }
 
 function currentCameraTarget(): { x: number; y: number } {
+  if (CAPTURE_MODE) {
+    return { x: camera.x, y: camera.y };
+  }
+
   const position = IS_GENERATED_MODE
     ? playerPosition(state)
     : authoredPlayerPosition(authoredState!);
@@ -645,92 +695,103 @@ function setZoom(nextZoom: number): void {
 void (async () => {
   try {
     const host = await createPixiHost(canvasRoot, {
-      width: 960,
-      height: 600,
-      backgroundColor: IS_GENERATED_MODE ? world!.palette.sky : AUTHORED_PALETTE.sky,
+      width: CAPTURE_MODE ? CAPTURE_VIEWPORT.width : 960,
+      height: CAPTURE_MODE ? CAPTURE_VIEWPORT.height : 600,
+      backgroundColor: CAPTURE_MODE
+        ? 0xb9c6bd
+        : IS_GENERATED_MODE ? world!.palette.sky : AUTHORED_PALETTE.sky,
     });
-    const textures: MarkTextureSet = await loadMarkTextures();
+    const textures: MarkTextureSet = CAPTURE_MODE ? {} : await loadMarkTextures();
     const orthogonalTextures: OrthogonalTextureSet = VIEW_MODE === 'ortho'
       ? await loadOrthogonalTextures()
       : {};
-    renderer = VIEW_MODE === 'ortho'
-      ? createOrthogonalScene(host.scene, textures, orthogonalTextures)
-      : createIsometricScene(host.scene, textures);
-    const inventoryUi = createInventoryUi(host.ui);
-    inventoryUi.render(createDemoInventoryView(textures));
+    renderer = CAPTURE_MODE
+      ? createIsometricCaptureScene(host.scene)
+      : VIEW_MODE === 'ortho'
+        ? createOrthogonalScene(host.scene, textures, orthogonalTextures)
+        : createIsometricScene(host.scene, textures);
+    const inventoryUi = CAPTURE_MODE ? null : createInventoryUi(host.ui);
+    if (inventoryUi) {
+      inventoryUi.render(createDemoInventoryView(textures));
+    }
     renderMinimap();
     render();
     renderer.setCamera(camera.x, camera.y, zoom);
 
-    host.app.ticker.add(() => {
-      const target = currentCameraTarget();
-      const amount = Math.min(1, host.app.ticker.deltaMS / 150);
-      camera = {
-        x: camera.x + (target.x - camera.x) * amount,
-        y: camera.y + (target.y - camera.y) * amount,
-      };
-      renderer.setCamera(camera.x, camera.y, zoom);
-    });
+    let handleKeyDown: ((event: KeyboardEvent) => void) | undefined;
+    if (!CAPTURE_MODE && inventoryUi) {
+      host.app.ticker.add(() => {
+        const target = currentCameraTarget();
+        const amount = Math.min(1, host.app.ticker.deltaMS / 150);
+        camera = {
+          x: camera.x + (target.x - camera.x) * amount,
+          y: camera.y + (target.y - camera.y) * amount,
+        };
+        renderer.setCamera(camera.x, camera.y, zoom);
+      });
 
-    const handleKeyDown = (event: KeyboardEvent): void => {
-      const key = event.key.toLowerCase();
-      if (key === 'i' || key === 'b') {
-        event.preventDefault();
-        inventoryUi.toggle();
-        return;
-      }
-      if (inventoryUi.isOpen()) {
-        if (key === 'escape') {
+      handleKeyDown = (event: KeyboardEvent): void => {
+        const key = event.key.toLowerCase();
+        if (key === 'i' || key === 'b') {
           event.preventDefault();
-          inventoryUi.setOpen(false);
+          inventoryUi.toggle();
+          return;
         }
-        return;
-      }
-      if (key === 'e' || key === ' ') {
-        event.preventDefault();
-        inspectTerrain();
-        return;
-      }
-      if (key === 'r') {
-        event.preventDefault();
-        resetWorld();
-        return;
-      }
-      if (key === 'n') {
-        event.preventDefault();
-        createNewSeed();
-        return;
-      }
-      if (key === '[') {
-        event.preventDefault();
-        setZoom(zoom - 0.04);
-        return;
-      }
-      if (key === ']') {
-        event.preventDefault();
-        setZoom(zoom + 0.04);
-        return;
-      }
+        if (inventoryUi.isOpen()) {
+          if (key === 'escape') {
+            event.preventDefault();
+            inventoryUi.setOpen(false);
+          }
+          return;
+        }
+        if (key === 'e' || key === ' ') {
+          event.preventDefault();
+          inspectTerrain();
+          return;
+        }
+        if (key === 'r') {
+          event.preventDefault();
+          resetWorld();
+          return;
+        }
+        if (key === 'n') {
+          event.preventDefault();
+          createNewSeed();
+          return;
+        }
+        if (key === '[') {
+          event.preventDefault();
+          setZoom(zoom - 0.04);
+          return;
+        }
+        if (key === ']') {
+          event.preventDefault();
+          setZoom(zoom + 0.04);
+          return;
+        }
 
-      const direction: GeneratedDirection | null =
-        key === 'w' || key === 'arrowup'
-          ? 'up'
-          : key === 's' || key === 'arrowdown'
-            ? 'down'
-            : key === 'a' || key === 'arrowleft'
-              ? 'left'
-              : key === 'd' || key === 'arrowright'
-                ? 'right'
-                : null;
-      if (direction) {
-        event.preventDefault();
-        tryMove(direction);
-      }
-    };
+        const direction: GeneratedDirection | null =
+          key === 'w' || key === 'arrowup'
+            ? 'up'
+            : key === 's' || key === 'arrowdown'
+              ? 'down'
+              : key === 'a' || key === 'arrowleft'
+                ? 'left'
+                : key === 'd' || key === 'arrowright'
+                  ? 'right'
+                  : null;
+        if (direction) {
+          event.preventDefault();
+          tryMove(direction);
+        }
+      };
 
-    window.addEventListener('keydown', handleKeyDown);
+      window.addEventListener('keydown', handleKeyDown);
+    }
     import.meta.hot?.dispose(() => {
-      window.removeEventListener('keydown', handleKeyDown);
+      if (handleKeyDown) {
+        window.removeEventListener('keydown', handleKeyDown);
+      }
       host.destroy();
     });
   } catch (error) {

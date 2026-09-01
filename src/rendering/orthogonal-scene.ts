@@ -761,19 +761,21 @@ export function createOrthogonalScene(
         }
       }
 
-      const playerPoint = projectOrthogonalCell(view.player.x, view.player.y, view.player.elevation);
-      entityGraphics.ellipse(playerPoint.x + 16, playerPoint.y + 30, 13, 5).fill({ color: 0x05080d, alpha: 0.3 });
-      const playerTexture = textures['character-oobi'];
-      if (playerTexture) {
-        const playerSprite = new Sprite(playerTexture);
-        playerSprite.anchor.set(0.5, 1);
-        playerSprite.position.set(playerPoint.x + 16, playerPoint.y + 32);
-        playerSprite.scale.set(0.9);
-        playerSprite.zIndex = orthogonalSortKey(view.player.x, view.player.y) + 1000;
-        entities.addChild(playerSprite);
-      } else {
-        entityGraphics.circle(playerPoint.x + 16, playerPoint.y + 9, 12).fill(room.palette.glow);
-        entityGraphics.circle(playerPoint.x + 16, playerPoint.y + 5, 5).fill(0xffffff);
+      if (view.player) {
+        const playerPoint = projectOrthogonalCell(view.player.x, view.player.y, view.player.elevation);
+        entityGraphics.ellipse(playerPoint.x + 16, playerPoint.y + 30, 13, 5).fill({ color: 0x05080d, alpha: 0.3 });
+        const playerTexture = textures['character-oobi'];
+        if (playerTexture) {
+          const playerSprite = new Sprite(playerTexture);
+          playerSprite.anchor.set(0.5, 1);
+          playerSprite.position.set(playerPoint.x + 16, playerPoint.y + 32);
+          playerSprite.scale.set(0.9);
+          playerSprite.zIndex = orthogonalSortKey(view.player.x, view.player.y) + 1000;
+          entities.addChild(playerSprite);
+        } else {
+          entityGraphics.circle(playerPoint.x + 16, playerPoint.y + 9, 12).fill(room.palette.glow);
+          entityGraphics.circle(playerPoint.x + 16, playerPoint.y + 5, 5).fill(0xffffff);
+        }
       }
     },
 
