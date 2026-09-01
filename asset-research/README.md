@@ -19,7 +19,6 @@ asset-research/scripts/
 asset-research/cc0/
 src/assets/orthogonal/atlas-metadata.json
 src/assets/orthogonal/metadata.ts
-src/assets/orthogonal/semantic-mapping.ts
 ```
 
 Ignored local workspace:

@@ -47,7 +47,7 @@ PlayerAction (src/main.ts)
   → chapter operation (src/chapters/chapter-N)
   → applyScopedOperation (src/world/operation)   # scope + atomic commit
   → LocalWorldState (deep-frozen)
-  → view projection (chapters/*/world-view)
+  → view projection (chapter view adapters)
   → Chapter6Renderer (chapters/chapter-6) → Pixi
 ```
 
@@ -99,7 +99,7 @@ npm test -- src/world/hub-playthrough.test.ts
 ## Repository layout
 
 ```text
-src/data/         showcase adventure catalog plus legacy room JSON/dialogue
+src/data/         showcase adventure catalog plus legacy room JSON
 src/world/        pure state primitives: types, local-world, operation,
                   closure, topology, transition, checkpoint, spatial,
                   traversal, generated-world, and the legacy tile runtime
