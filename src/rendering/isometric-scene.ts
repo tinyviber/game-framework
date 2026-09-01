@@ -134,7 +134,7 @@ export interface IsoRoomView {
   readonly cells: readonly (readonly IsoCellView[])[];
   readonly props: readonly IsoPropView[];
   readonly npcs: readonly IsoNpcView[];
-  readonly node: IsoNodeView;
+  readonly node?: IsoNodeView;
   readonly exits: readonly IsoExitView[];
   readonly connectors?: readonly IsoConnectorView[];
   /** Optional playable route rendered as a slim road in the orthogonal view. */
@@ -419,10 +419,11 @@ function drawFallbackProp(
 function drawNode(
   graphics: Graphics,
   room: IsoRoomView,
+  node: IsoNodeView,
   marked: boolean,
 ): void {
-  const cell = room.cells[room.node.y]?.[room.node.x];
-  const point = projectIsoCell(room.node.x, room.node.y, cell?.elevation ?? 0);
+  const cell = room.cells[node.y]?.[node.x];
+  const point = projectIsoCell(node.x, node.y, cell?.elevation ?? 0);
   const color = marked ? room.palette.glow : 0xa9b7c6;
 
   graphics.ellipse(point.x, point.y + 7, 18, 7).fill({ color: 0x05080d, alpha: 0.22 });
@@ -607,15 +608,17 @@ export function createIsometricScene(
         drawMarker(propGraphics, room, room.goal, room.palette.glow, view.goalReached === true);
       }
       drawDebugOverlay(propGraphics, room);
-      drawNode(propGraphics, room, view.windMarks[room.id] === true);
-      makeSprite(
-        textures,
-        view.windMarks[room.id] === true ? 'star' : 'heart',
-        props,
-        projectIsoCell(room.node.x, room.node.y, room.cells[room.node.y]?.[room.node.x]?.elevation ?? 0),
-        0.62,
-        isoSortKey(room.node.x, room.node.y) + 5,
-      );
+      if (room.node) {
+        drawNode(propGraphics, room, room.node, view.windMarks[room.id] === true);
+        makeSprite(
+          textures,
+          view.windMarks[room.id] === true ? 'star' : 'heart',
+          props,
+          projectIsoCell(room.node.x, room.node.y, room.cells[room.node.y]?.[room.node.x]?.elevation ?? 0),
+          0.62,
+          isoSortKey(room.node.x, room.node.y) + 5,
+        );
+      }
 
       for (const prop of room.props) {
         const point = projectIsoCell(prop.x, prop.y, prop.elevation);

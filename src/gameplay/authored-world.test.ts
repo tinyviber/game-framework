@@ -52,6 +52,9 @@ describe('authored connected world gameplay', () => {
     for (let index = 0; index < 6; index += 1) {
       state = move(state, 'right');
     }
+    expect(state.currentRoomId).toBe('village-square');
+    expect(authoredPlayerPosition(state)).toEqual({ x: 12, y: 5 });
+    state = move(state, 'right');
     expect(state.currentRoomId).toBe('east-road');
     expect(authoredPlayerPosition(state)).toEqual({ x: 0, y: 4 });
 
@@ -65,9 +68,13 @@ describe('authored connected world gameplay', () => {
     for (let index = 0; index < 6; index += 1) {
       state = move(state, 'right');
     }
+    state = move(state, 'right');
     for (let index = 0; index < 16; index += 1) {
       state = move(state, 'right');
     }
+    expect(state.currentRoomId).toBe('east-road');
+    expect(authoredPlayerPosition(state)).toEqual({ x: 16, y: 4 });
+    state = move(state, 'right');
     expect(state.currentRoomId).toBe('ruins-entrance');
     expect(authoredPlayerPosition(state)).toEqual({ x: 0, y: 3 });
 
@@ -81,6 +88,9 @@ describe('authored connected world gameplay', () => {
     for (let index = 0; index < 5; index += 1) {
       state = move(state, 'up');
     }
+    expect(state.currentRoomId).toBe('village-square');
+    expect(authoredPlayerPosition(state)).toEqual({ x: 6, y: 0 });
+    state = move(state, 'up');
     expect(state.currentRoomId).toBe('elder-house');
     expect(authoredPlayerPosition(state)).toEqual({ x: 6, y: 10 });
 

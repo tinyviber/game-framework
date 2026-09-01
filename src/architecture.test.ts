@@ -94,6 +94,19 @@ const rules: readonly Rule[] = [
     },
   },
   {
+    label: 'src/content must stay semantic and presentation-free',
+    matches: (path) => path.startsWith('content/'),
+    violation: (path, imported) => {
+      const target = resolveSourceImport(path, imported);
+      return (
+        imported === 'pixi.js' ||
+        target.startsWith('assets/') ||
+        target.startsWith('rendering/') ||
+        target.startsWith('gameplay/')
+      );
+    },
+  },
+  {
     label: 'src/rendering must not depend on world or gameplay state',
     matches: (path) => path.startsWith('rendering/'),
     violation: (path, imported) => {

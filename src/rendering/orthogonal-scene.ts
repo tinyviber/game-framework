@@ -467,6 +467,9 @@ function drawDebugOverlay(graphics: Graphics, room: IsoRoomView): void {
 }
 
 function drawNode(graphics: Graphics, room: IsoRoomView, marked: boolean): void {
+  if (!room.node) {
+    return;
+  }
   const cell = room.cells[room.node.y]?.[room.node.x];
   const point = cell ? cellTopLeft(cell) : projectOrthogonalCell(room.node.x, room.node.y);
   const centerX = point.x + ORTHO_TILE_SIZE / 2;
@@ -475,6 +478,21 @@ function drawNode(graphics: Graphics, room: IsoRoomView, marked: boolean): void 
   graphics.circle(centerX, centerY, marked ? 10 : 7).fill({ color, alpha: marked ? 0.25 : 0.13 });
   graphics.circle(centerX, centerY, marked ? 5 : 4).fill(color);
   graphics.circle(centerX, centerY, marked ? 9 : 7).stroke({ width: 2, color, alpha: 0.82 });
+}
+
+function drawExitMarkers(graphics: Graphics, room: IsoRoomView): void {
+  for (const exit of room.exits) {
+    const cell = room.cells[exit.y]?.[exit.x];
+    const point = cell ? cellTopLeft(cell) : projectOrthogonalCell(exit.x, exit.y);
+    const centerX = point.x + ORTHO_TILE_SIZE / 2;
+    const centerY = point.y + ORTHO_TILE_SIZE / 2;
+    const offsetX = exit.direction === 'right' ? 10 : exit.direction === 'left' ? -10 : 0;
+    const offsetY = exit.direction === 'down' ? 10 : exit.direction === 'up' ? -10 : 0;
+    graphics
+      .moveTo(centerX, centerY)
+      .lineTo(centerX + offsetX, centerY + offsetY)
+      .stroke({ width: 3, color: room.palette.glow, alpha: 0.92 });
+  }
 }
 
 function drawProp(
@@ -712,6 +730,7 @@ export function createOrthogonalScene(
         }
       }
 
+      drawExitMarkers(propGraphics, room);
       drawConnectorMarkers(propGraphics, room);
       if (room.start) {
         drawMarker(propGraphics, room, room.start, 0x8de2c6, false);

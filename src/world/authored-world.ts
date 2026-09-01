@@ -18,6 +18,10 @@ export type AuthoredSurface =
 
 export type AuthoredObstacle = 'forest' | 'rock' | 'building' | null;
 
+const AUTHORED_DIRECTIONS = ['up', 'down', 'left', 'right'] as const;
+const AUTHORED_SURFACES = ['grass', 'dirt', 'stone', 'sand', 'snow', 'water'] as const;
+const AUTHORED_OBSTACLES = ['forest', 'rock', 'building', null] as const;
+
 export interface AuthoredCell {
   readonly surface: AuthoredSurface;
   readonly elevation: number;
@@ -73,6 +77,10 @@ function isPosition(value: unknown): value is Position {
     && isInteger((value as Position).y);
 }
 
+function isAuthoredDirection(value: unknown): value is AuthoredDirection {
+  return AUTHORED_DIRECTIONS.includes(value as AuthoredDirection);
+}
+
 function isInside(room: AuthoredRoom, position: Position): boolean {
   return position.x >= 0 && position.x < room.width
     && position.y >= 0 && position.y < room.height;
@@ -84,11 +92,29 @@ function isAuthoredCell(value: unknown): value is AuthoredCell {
   }
   const cell = value as Record<string, unknown>;
   return (
-    ['grass', 'dirt', 'stone', 'sand', 'snow', 'water'].includes(cell.surface as string)
+    AUTHORED_SURFACES.includes(cell.surface as AuthoredSurface)
     && isInteger(cell.elevation)
     && cell.elevation >= 0
-    && ['forest', 'rock', 'building', null].includes(cell.obstacle as string | null)
+    && AUTHORED_OBSTACLES.includes(cell.obstacle as AuthoredObstacle)
     && typeof cell.walkable === 'boolean'
+  );
+}
+
+function isAuthoredExitShape(value: unknown): value is AuthoredExit {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+  const exit = value as Record<string, unknown>;
+  return (
+    typeof exit.id === 'string'
+    && exit.id.length > 0
+    && isAuthoredDirection(exit.direction)
+    && isPosition(exit.position)
+    && typeof exit.targetRoomId === 'string'
+    && exit.targetRoomId.length > 0
+    && isPosition(exit.targetEntry)
+    && (exit.reciprocalExitId === undefined
+      || (typeof exit.reciprocalExitId === 'string' && exit.reciprocalExitId.length > 0))
   );
 }
 
@@ -96,8 +122,10 @@ function cellAtUnchecked(
   room: AuthoredRoom,
   position: Position,
 ): AuthoredSemanticCell | undefined {
-  const symbol = room.grid[position.y]?.[position.x];
-  const cell = typeof symbol === 'string' ? room.legend[symbol] : undefined;
+  const symbol = Array.isArray(room.grid)
+    ? room.grid[position.y]?.[position.x]
+    : undefined;
+  const cell = typeof symbol === 'string' ? room.legend?.[symbol] : undefined;
   if (!isAuthoredCell(cell)) {
     return undefined;
   }
@@ -145,6 +173,20 @@ function opposite(direction: AuthoredDirection): AuthoredDirection {
 
 function samePosition(a: Position, b: Position): boolean {
   return a.x === b.x && a.y === b.y;
+}
+
+function isBoundaryExit(
+  room: AuthoredRoom,
+  position: Position,
+  direction: AuthoredDirection,
+): boolean {
+  return direction === 'up'
+    ? position.y === 0
+    : direction === 'down'
+      ? position.y === room.height - 1
+      : direction === 'left'
+        ? position.x === 0
+        : position.x === room.width - 1;
 }
 
 export function validateAuthoredWorld(
@@ -196,7 +238,40 @@ export function validateAuthoredWorld(
       errors.push(`spawn on non-walkable cell: ${roomId}`);
     }
 
-    for (const exit of Array.isArray(room.exits) ? room.exits : []) {
+    if (!Array.isArray(room.exits)) {
+      errors.push(`exits must be an array: ${roomId}`);
+      continue;
+    }
+
+    for (const [exitIndex, rawExit] of room.exits.entries()) {
+      const candidate = rawExit && typeof rawExit === 'object'
+        ? rawExit as unknown as Record<string, unknown>
+        : null;
+      const exitId = typeof candidate?.id === 'string' ? candidate.id : '';
+      if (!exitId) {
+        errors.push(`invalid exit id: ${roomId}:${exitIndex}`);
+      }
+      if (!isAuthoredDirection(candidate?.direction)) {
+        errors.push(`invalid exit direction: ${roomId}:${exitId || exitIndex}`);
+      }
+      if (!isPosition(candidate?.position)) {
+        errors.push(`exit position is invalid: ${roomId}:${exitId || exitIndex}`);
+      }
+      if (typeof candidate?.targetRoomId !== 'string' || candidate.targetRoomId.length === 0) {
+        errors.push(`invalid target room id: ${roomId}:${exitId || exitIndex}`);
+      }
+      if (!isPosition(candidate?.targetEntry)) {
+        errors.push(`target entry is invalid: ${roomId}:${exitId || exitIndex}`);
+      }
+      if (candidate?.reciprocalExitId !== undefined
+        && (typeof candidate.reciprocalExitId !== 'string' || candidate.reciprocalExitId.length === 0)) {
+        errors.push(`invalid reciprocal exit id: ${roomId}:${exitId || exitIndex}`);
+      }
+      if (!isAuthoredExitShape(rawExit)) {
+        continue;
+      }
+
+      const exit = rawExit;
       if (exitsById.has(exit.id)) {
         errors.push(`duplicate exit id: ${exit.id}`);
       } else {
@@ -205,10 +280,11 @@ export function validateAuthoredWorld(
 
       if (!isPosition(exit.position) || !isInside(room, exit.position)) {
         errors.push(`exit outside bounds: ${roomId}:${exit.id}`);
+      } else if (!isBoundaryExit(room, exit.position, exit.direction)) {
+        errors.push(`exit not on matching boundary: ${roomId}:${exit.id}`);
       } else if (cellAtUnchecked(room, exit.position)?.walkable !== true) {
         errors.push(`exit on non-walkable cell: ${roomId}:${exit.id}`);
       }
-
     }
   }
 

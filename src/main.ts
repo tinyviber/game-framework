@@ -316,12 +316,6 @@ function createAuthoredWorldView(playState: AuthoredPlayState): IsoRoomView {
     }))),
     props: [],
     npcs: [],
-    node: {
-      id: `${room.id}-landmark`,
-      x: room.spawn.x,
-      y: room.spawn.y,
-      label: 'place to explore',
-    },
     exits: room.exits.map((exit) => ({
       id: exit.id,
       direction: exit.direction,
@@ -528,8 +522,9 @@ function currentCameraTarget(): { x: number; y: number } {
   const position = IS_GENERATED_MODE
     ? playerPosition(state)
     : authoredPlayerPosition(authoredState!);
-  const room = createWorldView();
-  const cell = room.cells[position.y]?.[position.x];
+  const cell = IS_GENERATED_MODE
+    ? generatedCellAt(world!, position)
+    : authoredCellAt(authoredCurrentRoom(authoredState!), position);
   if (VIEW_MODE === 'ortho') {
     const point = projectOrthogonalCell(position.x, position.y, cell?.elevation ?? 0);
     return {

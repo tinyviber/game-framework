@@ -203,10 +203,6 @@ export function detectAuthoredExit(
   );
 }
 
-function samePosition(a: Position, b: Position): boolean {
-  return a.x === b.x && a.y === b.y;
-}
-
 function transitionThroughExit(
   state: AuthoredPlayState,
   exit: AuthoredExit,
@@ -239,13 +235,6 @@ export function moveAuthoredPlayer(
   const position = authoredPlayerPosition(state);
   const delta = DELTAS[direction];
   const target = { x: position.x + delta.x, y: position.y + delta.y };
-  const enteringExit = room.exits.find((exit) =>
-    exit.direction === direction && samePosition(exit.position, target),
-  );
-  if (enteringExit) {
-    return transitionThroughExit(state, enteringExit);
-  }
-
   const leavingExit = detectAuthoredExit(room, position, direction);
   const bounds = boundsFor(room);
   if (!movementIsLegal(bounds, target)) {

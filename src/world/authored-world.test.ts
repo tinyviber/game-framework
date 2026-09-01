@@ -136,4 +136,47 @@ describe('authored world validation', () => {
     expect(errors.some((error) => error.includes('duplicate exit id'))).toBe(true);
     expect(errors.some((error) => error.includes('malformed row width'))).toBe(true);
   });
+
+  it('rejects malformed exits and exits that are not boundary edges', () => {
+    const world = validWorld();
+    const malformed = {
+      ...world,
+      rooms: world.rooms.map((room, index) => index === 0
+        ? { ...room, exits: null }
+        : room),
+    } as unknown as AuthoredWorld;
+    expect(validateAuthoredWorld(malformed).some((error) => error.includes('exits must be an array'))).toBe(true);
+
+    const invalidExit = {
+      ...world,
+      rooms: world.rooms.map((room, index) => index === 0
+        ? {
+            ...room,
+            exits: [{
+              ...room.exits[0]!,
+              id: '',
+              direction: 'diagonal' as never,
+              position: { x: 1, y: 1 },
+            }],
+          }
+        : room),
+    } as unknown as AuthoredWorld;
+    const errors = validateAuthoredWorld(invalidExit);
+    expect(errors.some((error) => error.includes('invalid exit id'))).toBe(true);
+    expect(errors.some((error) => error.includes('invalid exit direction'))).toBe(true);
+
+    const interiorExit = {
+      ...world,
+      rooms: world.rooms.map((room, index) => index === 0
+        ? {
+            ...room,
+            exits: [{
+              ...room.exits[0]!,
+              position: { x: 1, y: 1 },
+            }],
+          }
+        : room),
+    };
+    expect(validateAuthoredWorld(interiorExit).some((error) => error.includes('exit not on matching boundary'))).toBe(true);
+  });
 });

@@ -258,37 +258,6 @@ function createRandom(seed: number, attempt: number): RandomSource {
   };
 }
 
-/**
- * Ensure plateau top edge is visually distinct from adjacent walkable ground.
- * Grey stone plateau top (011-013) adjacent to grey stone walkable is hard to
- * distinguish, as shown in the screenshot. Force the north neighbor of any
- * top-edge plateau cell to be non-stone (grass) if it is walkable.
- */
-function ensurePlateauContrast(cells: MutableCell[][]): void {
-  for (const row of cells) {
-    for (const cell of row) {
-      if (cell.elevation <= 0 || cell.surface !== 'stone') continue;
-      const north = cells[cell.y - 1]?.[cell.x];
-      // plateau top edge = no same-plateau neighbor north
-      const isTop = !north || north.elevation !== cell.elevation || north.surface !== cell.surface;
-      if (!isTop) continue;
-      const walkableNorth = cells[cell.y - 1]?.[cell.x];
-      if (walkableNorth && walkableNorth.walkable && walkableNorth.surface === 'stone' && walkableNorth.elevation === 0) {
-        walkableNorth.surface = 'grass';
-        walkableNorth.terrainType = 'grass';
-      }
-      // Also check diagonal north-west/north-east for 45° adjacency to avoid grey halo
-      for (const dx of [-1, 1] as const) {
-        const diag = cells[cell.y - 1]?.[cell.x + dx];
-        if (diag && diag.walkable && diag.surface === 'stone' && diag.elevation === 0) {
-          diag.surface = 'grass';
-          diag.terrainType = 'grass';
-        }
-      }
-    }
-  }
-}
-
 function inside(x: number, y: number): boolean {
   return (
     x >= 0 &&
@@ -709,7 +678,6 @@ function buildBaselineGeometry(
     random,
   );
   addGuaranteedDeadEnd(geometry.cells, random);
-  ensurePlateauContrast(geometry.cells);
   const props: GeneratedProp[] = [
     {
       id: 'generated-stairs',
@@ -1799,7 +1767,6 @@ function buildCandidate(
       cell.surface = 'stone';
     }
   }
-  ensurePlateauContrast(finalCells);
   const frozenFinalCells = freezeCells(finalCells);
   const blockedEdges: GeneratedEdge[] = [];
   const blockedEdgeKeys = new Set<string>();
@@ -1842,7 +1809,6 @@ function buildCandidate(
   // predicates and perturbation metrics describe the primary skeleton, so
   // disconnected background terrain can never influence classification.
   const dressed = dressWorld(frozenFinalCells, baseline.regions, random);
-  ensurePlateauContrast(dressed);
   const dressedCells = freezeCells(dressed);
   const dressedEdges = [
     ...buildEdges(dressedCells, baseline.connectors),
