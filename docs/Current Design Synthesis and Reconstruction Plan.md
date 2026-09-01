@@ -372,7 +372,6 @@ src/main.ts + src/rendering/*
 | `src/world/transition.ts` | RoomCatalog、entry 校验、A→B→A 重建 |
 | `src/chapters/chapter-4/gate-yard.ts` | 主角、机关、门、障碍物和出口的具体规则 |
 | `src/chapters/chapter-9/npc-closure.ts` | closure-owned NPC 与局部交互规则 |
-| `src/chapters/chapter-4/world-view.ts` | 当前 Local World → Chapter 4 view model |
 | `src/chapters/chapter-6/pixi-view.ts` | view model → Pixi display objects |
 | `src/rendering/world-scene.ts` | WorldRoot、render layers 与 camera transform（无全局注册表，生命周期由 host 拥有） |
 | `src/rendering/layout.ts` | CELL_SIZE / ORIGIN_X / WORLD_Y / VIEWPORT 等布局常量的唯一来源 |

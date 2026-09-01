@@ -28,3 +28,7 @@ dist-ssr
 /asset-research/downloads/
 /asset-research/extracted/
 /asset-research/contact-sheets/
+
+# Local agent/session artifacts and browser smoke screenshots.
+.workbuddy/
+/night-screenshots/
