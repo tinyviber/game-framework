@@ -15,6 +15,7 @@ import type { WorldScene } from './world-scene';
 import type { OrthogonalTextureSet } from './orthogonal-textures';
 import { ORTHO_DECORATION_TILE_IDS } from './orthogonal-textures';
 import type { MarkTextureSet } from './isometric-scene';
+import { terrainTileIdForCell } from './terrain-presentation';
 import {
   KENNEY_GENERATOR_TILE_IDS,
   KENNEY_PLATEAU_TILE_IDS,
@@ -278,12 +279,29 @@ function drawRockFeature(
     .stroke({ width: 1, color: 0xffffff, alpha: 0.16 });
 }
 
+function drawBuildingFeature(
+  graphics: Graphics,
+  cell: IsoCellView,
+  palette: IsoRoomView['palette'],
+): void {
+  const point = cellTopLeft(cell);
+  graphics
+    .rect(point.x + 3, point.y + 7, ORTHO_TILE_SIZE - 6, ORTHO_TILE_SIZE - 7)
+    .fill(palette.edge)
+    .moveTo(point.x + 2, point.y + 8)
+    .lineTo(point.x + ORTHO_TILE_SIZE / 2, point.y + 1)
+    .lineTo(point.x + ORTHO_TILE_SIZE - 2, point.y + 8)
+    .closePath()
+    .fill(Math.max(0, palette.edge - 0x16100c));
+}
+
 function drawTerrainTile(
   textures: OrthogonalTextureSet,
   container: Container,
+  cells: readonly (readonly IsoCellView[])[],
   cell: IsoCellView,
 ): boolean {
-  const tileId = cell.terrainTileId;
+  const tileId = terrainTileIdForCell(cells, cell);
   const entry = tileId
     ? textures.plateau?.[tileId] ?? textures.terrain?.[tileId]
     : undefined;
@@ -674,13 +692,16 @@ export function createOrthogonalScene(
               }
             }
           }
-          drawTerrainTile(orthogonalTextures, terrainSprites, cell);
+          drawTerrainTile(orthogonalTextures, terrainSprites, room.cells, cell);
           if (cell.obstacle === 'rock') {
             // Rocks sit in the props layer so the Kenney rock sprite (or the
             // neutral vector fallback) stays visible above the terrain
             // sprites; a smooth same-surface rock cell is still readable as
             // blocking because of this feature.
             drawRockFeature(orthogonalTextures, props, propGraphics, cell);
+          }
+          if (cell.obstacle === 'building') {
+            drawBuildingFeature(propGraphics, cell, room.palette);
           }
           if (cell.obstacle === 'forest') {
             const drewTrees = drawForestSprite(orthogonalTextures, terrainSprites, cell);

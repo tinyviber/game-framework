@@ -58,10 +58,8 @@ export interface IsoCellView {
   readonly terrainType: string;
   /** Authoritative ground material; terrainType remains a legacy alias. */
   readonly surface?: string;
-  /** Optional asset id for the orthogonal terrain renderer. */
-  readonly terrainTileId?: string;
-  /** Blocking feature on top of the surface ('forest' | 'rock'); iso/ortho. */
-  readonly obstacle?: 'forest' | 'rock' | null;
+  /** Blocking feature on top of the surface; iso/ortho. */
+  readonly obstacle?: 'forest' | 'rock' | 'building' | null;
   readonly biome: string;
   readonly environment: IsoEnvironmentView;
   readonly walkable: boolean;
@@ -369,13 +367,21 @@ function drawObstacle(
     return;
   }
   const point = projectIsoCell(cell.x, cell.y, cell.elevation);
-  const assetKey = cell.obstacle === 'forest' ? 'tree' : 'rocks';
+  const assetKey = cell.obstacle === 'forest'
+    ? 'tree'
+    : cell.obstacle === 'building'
+      ? 'building-sample-house-a'
+      : 'rocks';
   const didDraw = makeSprite(
     textures,
     assetKey,
     props,
     point,
-    cell.obstacle === 'forest' ? 0.82 : 0.72,
+    cell.obstacle === 'forest'
+      ? 0.82
+      : cell.obstacle === 'building'
+        ? 1.05
+        : 0.72,
     isoSortKey(cell.x, cell.y) + 2,
   );
   if (didDraw) {
@@ -383,6 +389,16 @@ function drawObstacle(
   }
   if (cell.obstacle === 'forest') {
     drawForestObstacleFallback(graphics, point, palette);
+  } else if (cell.obstacle === 'building') {
+    drawFallbackProp(graphics, {
+      id: `building-${cell.x}-${cell.y}`,
+      assetKey: 'building-sample-house-a',
+      x: cell.x,
+      y: cell.y,
+      elevation: cell.elevation,
+      foreground: false,
+      blocks: true,
+    }, point, palette);
   } else {
     drawRockObstacleFallback(graphics, point, palette);
   }

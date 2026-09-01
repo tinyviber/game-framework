@@ -12,7 +12,6 @@ import {
   type GeneratedWorld,
 } from './generated-world';
 import { canTraverse } from './traversal';
-import { KENNEY_MAP_PACK_METADATA } from '@/assets/kenney-map-pack/metadata';
 
 function assertFrozen(value: unknown, seen = new Set<object>()): void {
   if (!value || typeof value !== 'object' || seen.has(value)) {
@@ -309,16 +308,10 @@ describe('seeded generated world', () => {
     }
   });
 
-  it('assigns every generated cell a tagged Kenney terrain tile', () => {
-    const tiles = new Map(KENNEY_MAP_PACK_METADATA.tiles.map((tile) => [tile.id, tile]));
-    for (const world of [generateGeneratedWorld(0), generateGeneratedWorld(2026), generateGeneratedWorld(2029)]) {
-      for (const cell of world.cells.flat()) {
-        const tile = tiles.get(cell.terrainTileId);
-        expect(tile, `missing tile ${cell.terrainTileId}`).toBeDefined();
-        expect(tile?.category).toBe('terrain');
-        expect(tile?.surface).toBe(cell.surface);
-        expect(cell.surface).not.toBe('crystal');
-      }
+  it('stores semantic terrain without concrete presentation asset ids', () => {
+    const world = generateGeneratedWorld(2026);
+    for (const cell of world.cells.flat()) {
+      expect(['grass', 'dirt', 'stone', 'sand', 'snow', 'water']).toContain(cell.surface);
     }
   });
 
@@ -329,37 +322,6 @@ describe('seeded generated world', () => {
         if (cell.elevation > 0) {
           expect(cell.surface).toBe('stone');
         }
-      }
-    }
-  });
-
-  it('uses directional plateau tiles from the raised region topology', () => {
-    const tiles = new Map(KENNEY_MAP_PACK_METADATA.tiles.map((tile) => [tile.id, tile]));
-    for (const seed of [0, 42, 2025, 2026, 2029]) {
-      const world = generateGeneratedWorld(seed);
-      for (const cell of world.cells.flat()) {
-        if (cell.elevation <= 0) {
-          continue;
-        }
-        const samePlateau = (x: number, y: number): boolean => {
-          const neighbor = world.cells[y]?.[x];
-          return neighbor?.elevation === cell.elevation && neighbor.surface === 'stone';
-        };
-        const tile = tiles.get(cell.terrainTileId)!;
-        const north = samePlateau(cell.x, cell.y - 1);
-        const south = samePlateau(cell.x, cell.y + 1);
-        const west = samePlateau(cell.x - 1, cell.y);
-        const east = samePlateau(cell.x + 1, cell.y);
-        const expectedTag = !north
-          ? 'top'
-          : !south
-            ? 'bottom'
-            : !west
-              ? 'side_left'
-              : !east
-                ? 'side_right'
-                : 'fill';
-        expect(tile.tags, `${cell.x},${cell.y} should use ${expectedTag}`).toContain(expectedTag);
       }
     }
   });
@@ -527,14 +489,10 @@ describe('seeded generated world', () => {
       const world = generateGeneratedWorld(seed);
       for (const prop of world.props) {
         const cell = world.cells[prop.y]?.[prop.x];
-        if (prop.assetKey === 'tree' || prop.assetKey === 'tree-pine') {
-          expect(cell?.obstacle, `seed ${seed} tree prop at ${prop.x},${prop.y}`).toBe('forest');
-          expect(cell?.walkable).toBe(false);
-        }
-        if (prop.assetKey === 'rocks') {
-          expect(cell?.obstacle, `seed ${seed} rock prop at ${prop.x},${prop.y}`).toBe('rock');
-          expect(cell?.walkable).toBe(false);
-        }
+        expect(['stairs', 'decoration', 'landmark']).toContain(prop.kind);
+        expect(prop.blocks).toBe(false);
+        expect(cell?.walkable, `seed ${seed} prop at ${prop.x},${prop.y}`).toBe(true);
+        expect(cell?.obstacle, `seed ${seed} prop at ${prop.x},${prop.y}`).toBe(null);
       }
     }
   });

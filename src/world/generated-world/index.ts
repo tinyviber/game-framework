@@ -6,11 +6,6 @@ import {
   type GeneratedEdge,
   type TraversalCell,
 } from '../traversal';
-import {
-  KENNEY_GENERATOR_TILE_IDS,
-  KENNEY_PLATEAU_TILE_IDS,
-  type KenneyGeneratedSurface,
-} from '@/assets/kenney-map-pack/metadata';
 
 export const GENERATED_WORLD_WIDTH = 40;
 export const GENERATED_WORLD_HEIGHT = 40;
@@ -31,7 +26,13 @@ export const GENERATED_TOPOLOGY_FAMILIES: readonly GeneratedTopologyFamily[] = [
   'two-region',
 ];
 
-export type GeneratedSurface = KenneyGeneratedSurface;
+export type GeneratedSurface =
+  | 'sand'
+  | 'grass'
+  | 'stone'
+  | 'snow'
+  | 'dirt'
+  | 'water';
 
 /**
  * Legacy terrain label retained for existing consumers. New code should read
@@ -87,8 +88,6 @@ export interface GeneratedCell extends TraversalCell {
   /** Derived from `surface`; legacy `cliff` is retained for the disruption marker. */
   readonly terrainType: GeneratedTerrainType;
   readonly surface: GeneratedSurface;
-  /** The labeled Kenney map tile used to render this cell's ground. */
-  readonly terrainTileId: string;
   readonly obstacle: GeneratedObstacle;
   readonly zone: GeneratedZone;
   readonly regionId: string;
@@ -96,7 +95,7 @@ export interface GeneratedCell extends TraversalCell {
 
 export interface GeneratedProp {
   readonly id: string;
-  readonly assetKey: string;
+  readonly kind: 'stairs' | 'decoration' | 'landmark';
   readonly x: number;
   readonly y: number;
   readonly elevation: number;
@@ -178,7 +177,6 @@ interface MutableCell {
   elevation: number;
   terrainType: GeneratedTerrainType;
   surface: GeneratedSurface;
-  terrainTileId: string;
   obstacle: GeneratedObstacle;
   zone: GeneratedZone;
   regionId: string;
@@ -260,86 +258,6 @@ function createRandom(seed: number, attempt: number): RandomSource {
   };
 }
 
-const FILL_TILE_FOR_SURFACE: Record<GeneratedSurface, string> = {
-  grass: 'kenney.mapTile.022',
-  dirt: 'kenney.mapTile.082',
-  stone: 'kenney.mapTile.027',
-  sand: 'kenney.mapTile.017',
-  water: 'kenney.mapTile.171',
-  snow: 'kenney.mapTile.077',
-};
-
-function terrainTileFor(surface: GeneratedSurface, x: number, y: number): string {
-  // Interior of a uniform patch must use the opaque fill tile. The Kenney
-  // generator set contains edge variants with transparent corners (021/023
-  // for grass, 081/083 for dirt, 014/015 for stone). Picking them randomly
-  // inside a large grass/dirt field creates the dark seam visible in the
-  // screenshot: two neighbours both expose transparent corners at their shared
-  // edge and the sky/edge colour shows through. Only sand/water have fully
-  // opaque variants, so keep the hash variation there.
-  const fill = FILL_TILE_FOR_SURFACE[surface];
-  if (fill) {
-    if (surface === 'sand' || surface === 'water') {
-      const tileIds = KENNEY_GENERATOR_TILE_IDS[surface];
-      const index = Math.abs((x * 31 + y * 17) % tileIds.length);
-      return tileIds[index]!;
-    }
-    return fill;
-  }
-  const tileIds = KENNEY_GENERATOR_TILE_IDS[surface];
-  const index = Math.abs((x * 31 + y * 17) % tileIds.length);
-  return tileIds[index]!;
-}
-
-function plateauTileFor(cells: readonly (readonly MutableCell[])[], cell: MutableCell): string | undefined {
-  if (cell.elevation <= 0) {
-    return undefined;
-  }
-  const tileSet = KENNEY_PLATEAU_TILE_IDS[cell.surface];
-  if (!tileSet) {
-    return undefined;
-  }
-  const samePlateau = (x: number, y: number): boolean => {
-    const neighbor = cells[y]?.[x];
-    return neighbor?.elevation === cell.elevation && neighbor.surface === cell.surface;
-  };
-  const north = samePlateau(cell.x, cell.y - 1);
-  const south = samePlateau(cell.x, cell.y + 1);
-  const west = samePlateau(cell.x - 1, cell.y);
-  const east = samePlateau(cell.x + 1, cell.y);
-  const horizontalIndex = !west && east
-    ? 0
-    : !east && west
-      ? 2
-      : 1;
-
-  // Kenney's plateau pieces are directional. A top/bottom row needs the
-  // rounded horizontal cap, while the middle rows need the dedicated left
-  // and right wall pieces. Only the uninterrupted middle of the region uses
-  // the plain stone fill.
-  if (!north) {
-    return tileSet.top[Math.min(horizontalIndex, tileSet.top.length - 1)];
-  }
-  if (!south) {
-    return tileSet.bottom[Math.min(horizontalIndex, tileSet.bottom.length - 1)];
-  }
-  if (!west) {
-    return tileSet.side_left[0];
-  }
-  if (!east) {
-    return tileSet.side_right[0];
-  }
-  return tileSet.fill[0];
-}
-
-function assignTerrainTileIds(cells: MutableCell[][]): void {
-  for (const row of cells) {
-    for (const cell of row) {
-      cell.terrainTileId = plateauTileFor(cells, cell) ?? terrainTileFor(cell.surface, cell.x, cell.y);
-    }
-  }
-}
-
 /**
  * Ensure plateau top edge is visually distinct from adjacent walkable ground.
  * Grey stone plateau top (011-013) adjacent to grey stone walkable is hard to
@@ -358,7 +276,6 @@ function ensurePlateauContrast(cells: MutableCell[][]): void {
       if (walkableNorth && walkableNorth.walkable && walkableNorth.surface === 'stone' && walkableNorth.elevation === 0) {
         walkableNorth.surface = 'grass';
         walkableNorth.terrainType = 'grass';
-        walkableNorth.terrainTileId = terrainTileFor('grass', walkableNorth.x, walkableNorth.y);
       }
       // Also check diagonal north-west/north-east for 45° adjacency to avoid grey halo
       for (const dx of [-1, 1] as const) {
@@ -366,7 +283,6 @@ function ensurePlateauContrast(cells: MutableCell[][]): void {
         if (diag && diag.walkable && diag.surface === 'stone' && diag.elevation === 0) {
           diag.surface = 'grass';
           diag.terrainType = 'grass';
-          diag.terrainTileId = terrainTileFor('grass', diag.x, diag.y);
         }
       }
     }
@@ -403,7 +319,6 @@ function carve(
   cell.elevation = elevation;
   cell.terrainType = terrainType;
   cell.surface = terrainType;
-  cell.terrainTileId = terrainTileFor(terrainType, x, y);
   cell.obstacle = null;
   cell.zone = 'primary';
 }
@@ -562,7 +477,6 @@ function createFamilyCells(
         elevation: 0,
         terrainType: 'cliff' as GeneratedTerrainType,
         surface: 'grass' as GeneratedSurface,
-        terrainTileId: terrainTileFor('grass', x, y),
         obstacle: null,
         // Skeleton cells start as undressed world ground; the dressing pass
         // assigns 'barrier'/'background' semantics around the carved mask.
@@ -795,12 +709,11 @@ function buildBaselineGeometry(
     random,
   );
   addGuaranteedDeadEnd(geometry.cells, random);
-  assignTerrainTileIds(geometry.cells);
   ensurePlateauContrast(geometry.cells);
   const props: GeneratedProp[] = [
     {
       id: 'generated-stairs',
-      assetKey: 'stairs',
+      kind: 'stairs',
       x: stairTop.x,
       y: stairTop.y,
       elevation: 1,
@@ -809,7 +722,7 @@ function buildBaselineGeometry(
     },
     {
       id: 'generated-decoration',
-      assetKey: random.next() < 0.5 ? 'flowers' : 'mushrooms',
+      kind: 'decoration',
       x: geometry.branch.x,
       y: geometry.branch.y,
       elevation: 0,
@@ -818,7 +731,7 @@ function buildBaselineGeometry(
     },
     {
       id: 'generated-landmark',
-      assetKey: random.next() < 0.5 ? 'flowers' : 'mushrooms',
+      kind: 'landmark',
       x: geometry.landmark.x,
       y: geometry.landmark.y,
       elevation: 0,
@@ -849,7 +762,6 @@ function cloneCells(cells: readonly (readonly GeneratedCell[])[]): MutableCell[]
       elevation: cell.elevation,
       terrainType: cell.terrainType,
       surface: cell.surface,
-      terrainTileId: cell.terrainTileId,
       obstacle: cell.obstacle,
       zone: cell.zone,
       regionId: cell.regionId,
@@ -866,7 +778,6 @@ function freezeCells(cells: readonly (readonly MutableCell[])[]): readonly (read
       elevation: cell.elevation,
       terrainType: cell.terrainType,
       surface: cell.surface,
-      terrainTileId: cell.terrainTileId,
       obstacle: cell.obstacle,
       zone: cell.zone,
       regionId: cell.regionId,
@@ -1562,7 +1473,6 @@ function dressWorld(
     const cell = cellAt(index);
     cell.surface = surface;
     cell.terrainType = surface;
-    cell.terrainTileId = terrainTileFor(surface, cell.x, cell.y);
   };
 
   // ── Stage 4: background patch — Voronoi blobs give every non-primary cell a coherent biome surface ──
@@ -1889,7 +1799,6 @@ function buildCandidate(
       cell.surface = 'stone';
     }
   }
-  assignTerrainTileIds(finalCells);
   ensurePlateauContrast(finalCells);
   const frozenFinalCells = freezeCells(finalCells);
   const blockedEdges: GeneratedEdge[] = [];
@@ -1933,7 +1842,6 @@ function buildCandidate(
   // predicates and perturbation metrics describe the primary skeleton, so
   // disconnected background terrain can never influence classification.
   const dressed = dressWorld(frozenFinalCells, baseline.regions, random);
-  assignTerrainTileIds(dressed);
   ensurePlateauContrast(dressed);
   const dressedCells = freezeCells(dressed);
   const dressedEdges = [
