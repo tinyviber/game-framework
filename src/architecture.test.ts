@@ -42,6 +42,23 @@ function importedModules(filePath: string): string[] {
   ].map((match) => match[1] as string);
 }
 
+function resolveSourceImport(
+  relativePath: string,
+  imported: string,
+): string {
+  if (imported.startsWith('@/')) {
+    return imported.slice(2);
+  }
+
+  if (imported.startsWith('.')) {
+    return posix.normalize(
+      posix.join(posix.dirname(relativePath), imported),
+    );
+  }
+
+  return imported;
+}
+
 interface Rule {
   readonly label: string;
   readonly matches: (relativePath: string) => boolean;
@@ -53,18 +70,38 @@ interface Rule {
 
 const rules: readonly Rule[] = [
   {
-    label: 'src/world must stay presentation-free',
+    label: 'src/world must stay presentation- and gameplay-free',
     matches: (path) => path.startsWith('world/'),
-    violation: (_path, imported) =>
-      imported === 'pixi.js' ||
-      imported.startsWith('@/rendering') ||
-      imported.startsWith('../rendering'),
+    violation: (path, imported) => {
+      const target = resolveSourceImport(path, imported);
+      return (
+        imported === 'pixi.js' ||
+        target.startsWith('rendering/') ||
+        target.startsWith('gameplay/')
+      );
+    },
   },
   {
-    label: 'src/rendering must not depend on gameplay state',
+    label: 'src/gameplay must stay presentation-free',
+    matches: (path) => path.startsWith('gameplay/'),
+    violation: (path, imported) => {
+      const target = resolveSourceImport(path, imported);
+      return (
+        imported === 'pixi.js' ||
+        target.startsWith('rendering/')
+      );
+    },
+  },
+  {
+    label: 'src/rendering must not depend on world or gameplay state',
     matches: (path) => path.startsWith('rendering/'),
-    violation: (_path, imported) =>
-      imported.startsWith('@/world'),
+    violation: (path, imported) => {
+      const target = resolveSourceImport(path, imported);
+      return (
+        target.startsWith('world/') ||
+        target.startsWith('gameplay/')
+      );
+    },
   },
   {
     label: 'no universal event bus anywhere in src (AGENTS.md)',
