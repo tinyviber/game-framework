@@ -54,16 +54,17 @@ raw brainstorm
 ## Layout and dependency direction
 
 ```text
-src/world/*        pure world primitives; no presentation imports
-src/gameplay/*     current product-specific gameplay adapters; may import src/world
-src/rendering/*    presentation infrastructure; may import pixi.js only, never src/world
-src/main.ts        browser wiring; the only module that connects DOM, world operations and the Pixi host
+src/world/*        pure world primitives; no gameplay or presentation imports
+src/gameplay/*     current product-specific gameplay adapters; may import src/world, never rendering/Pixi
+src/rendering/*    presentation infrastructure; may import pixi.js, never src/world or src/gameplay
+src/main.ts        browser wiring; the only module that connects DOM, gameplay and rendering
 ```
 
 Enforced by `src/architecture.test.ts`:
 
-- `src/world/**` must not import `pixi.js` or `@/rendering`.
-- `src/rendering/**` must not import `@/world` (pixi.js is allowed there).
+- `src/world/**` must not import `pixi.js`, `src/rendering`, or `src/gameplay`.
+- `src/gameplay/**` may import world primitives but must not import `pixi.js` or `src/rendering`.
+- `src/rendering/**` must not import `src/world` or `src/gameplay`; it consumes presentation DTOs/data only.
 - `src/gameplay/**` owns concrete product behavior; it must not become a
   universal mechanic runtime, manager layer, or compatibility façade.
 
