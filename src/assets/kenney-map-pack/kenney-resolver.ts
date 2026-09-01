@@ -7,8 +7,7 @@ import {
 
 /**
  * Canonical Kenney resolver — the only place that knows concrete `mapTile_XXX`
- * ids. `src/world` and `src/rendering` should depend on this module, not the
- * reverse.
+ * ids. Semantic world data stays independent of this presentation mapping.
  */
 const KENNEY_FILL_FOR_SURFACE: Record<KenneyGeneratedSurface, string> = {
   grass: 'kenney.mapTile.022',
@@ -39,22 +38,21 @@ export function kenneyTerrainTileFor(surface: KenneyGeneratedSurface, x: number,
 }
 
 export function kenneyPlateauTileFor(
-  cells: readonly (readonly { elevation: number; surface: KenneyGeneratedSurface; x: number; y: number }[])[],
-  cell: { elevation: number; surface: KenneyGeneratedSurface; x: number; y: number },
+  cells: readonly (readonly { elevation: number; surface?: string; x: number; y: number }[])[],
+  cell: { elevation: number; surface?: string; x: number; y: number },
 ): string | undefined {
   if (cell.elevation <= 0) return undefined;
-  const tileSet = KENNEY_PLATEAU_TILE_IDS[cell.surface as KenneyGeneratedSurface];
+  const surface = cell.surface;
+  if (!surface) return undefined;
+  const tileSet = KENNEY_PLATEAU_TILE_IDS[surface as KenneyGeneratedSurface];
   if (!tileSet) return undefined;
 
   // --- Phase 4: domain-aware contour ---
-  // Build elevation+surface domain id map once per call-site cache is done by
-  // the caller via `assignTerrainTileIds`. Here we do per-cell BFS memoised
-  // via a shared visited set created outside (see dressing). For the simple
-  // per-cell path we fall back to neighbour probe but treat map border as
-  // outside the domain (so north at y==0 is open).
+  // Contours are derived from neighbouring semantic cells. Map borders are
+  // treated as outside the domain, so north at y==0 is open.
   const samePlateau = (x: number, y: number): boolean => {
     const n = cells[y]?.[x];
-    return n?.elevation === cell.elevation && n.surface === cell.surface;
+    return n?.elevation === cell.elevation && n.surface === surface;
   };
   const north = samePlateau(cell.x, cell.y - 1);
   const south = samePlateau(cell.x, cell.y + 1);

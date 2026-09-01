@@ -15,7 +15,22 @@ view model and rendered with PixiJS.
 
 ## Architecture at a glance
 
-The currently playable game is a **seed-based 2.5D generated playground**
+The default playable game is a small **authored connected world** shown with
+the current Kenney rough visualization:
+
+```text
+authored semantic rooms (src/content/main-world)
+  → gameplay/authored-world                     # active LocalWorld only
+  → IsoSceneView (src/rendering)                 # one-way presentation DTO
+  → Pixi orthogonal scene
+```
+
+The hidden semantic grid is authoritative for bounds, walkability, terrain,
+elevation, obstacles, and traversal. Visual assets never define collision or
+room transitions. A different visual mapping can replace Kenney without
+changing authored movement data.
+
+The generated playground remains available at `?world=generated` and is
 built from the selected Kenney previews in `textures_mark`:
 
 ```text
@@ -36,10 +51,11 @@ normal field study. The renderer uses the committed 64×64 PNG previews as
 terrain props and characters, then adds elevation, shadows, foot-point sorting
 and a foreground occlusion layer for the 3D reading.
 
-The generated playground is the current product path. Its product-specific
-adapter lives in `src/gameplay/generated-playground.ts` and deliberately
-reuses `tryInitializeLocalWorld` and `applyScopedOperation` without introducing
-a session manager, global event bus, or background room simulation.
+The authored world contains Village Square, Elder House, East Road, and Ruins
+Entrance. The product-specific adapters live in
+`src/gameplay/authored-world.ts` and `src/gameplay/generated-playground.ts`;
+both deliberately reuse the surviving local-world primitives without a
+session manager, global event bus, or background room simulation.
 
 See `docs/design/` for the durable product constitution and `AGENTS.md` for
 the mechanically enforced dependency and invariant rules.
@@ -48,7 +64,7 @@ the mechanically enforced dependency and invariant rules.
 
 ```sh
 npm install
-npm run dev      # browser: the seed-based generated playground
+npm run dev      # browser: the authored connected world
 npm test         # vitest (node environment)
 npm run build    # tsc + vite build
 ```
@@ -62,12 +78,12 @@ npm test -- src/world/generated-world.test.ts
 ## Repository layout
 
 ```text
-src/world/        pure state primitives: types, local-world, operation,
-                  closure, topology, transition, spatial, traversal, and the
-                  generated-world implementation
-src/gameplay/     current product-specific gameplay adapters
-src/rendering/    Pixi host, world scene layers, and the generated-world
-                  isometric/orthogonal renderers
+src/world/        semantic state/movement primitives, generated-world, and
+                  authored-world validation/model
+src/content/      data-oriented authored main-world rooms
+src/gameplay/     current product-specific authored/generated adapters
+src/rendering/    semantic-room presentation mapping, Pixi host, world scene
+                  layers, and the isometric/orthogonal renderers
 src/main.ts       browser wiring: the only module connecting DOM,
                   world operations and the Pixi host
 docs/             canonical design notes and focused reclamation records

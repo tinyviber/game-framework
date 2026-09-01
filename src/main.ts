@@ -5,6 +5,11 @@ import {
   resolveGeneratedEdge,
   type GeneratedWorld,
 } from '@/world/generated-world';
+import {
+  authoredCellAt,
+  authoredCells,
+  type AuthoredWorld,
+} from '@/world/authored-world';
 import { canTraverse } from '@/world/traversal';
 import {
   createGeneratedPlayground,
@@ -14,6 +19,18 @@ import {
   type GeneratedDirection,
   type GeneratedPlayground,
 } from '@/gameplay/generated-playground';
+import {
+  authoredCurrentRoom,
+  authoredPlayerPosition,
+  createAuthoredGame,
+  createAuthoredPlayState,
+  moveAuthoredPlayer,
+  resetAuthoredPlayState,
+  type AuthoredGame,
+  type AuthoredPlayState,
+} from '@/gameplay/authored-world';
+import { MAIN_WORLD } from '@/content/main-world';
+import type { LocalWorldState } from '@/world/types';
 import {
   createIsometricScene,
   projectIsoCell,
@@ -29,6 +46,7 @@ import {
   projectOrthogonalCell,
   type OrthogonalSceneRenderer,
 } from '@/rendering/orthogonal-scene';
+import { kenneyPropAssetKeyFor } from '@/rendering/terrain-presentation';
 import {
   loadOrthogonalTextures,
   type OrthogonalTextureSet,
@@ -58,8 +76,18 @@ const DEFAULT_SEED = 2026;
 const PLAYTEST_FEEDBACK_STORAGE_KEY = 'generated-playtest-feedback-v1';
 const PLAYTEST_TAGS = ['interesting', 'boring', 'discovered', 'saved'] as const;
 type PlaytestTag = (typeof PLAYTEST_TAGS)[number];
-const DEBUG_MODE = isGeneratedDebugMode(window.location.search);
-const VIEW_MODE: GeneratedViewMode = parseGeneratedView(window.location.search);
+const IS_GENERATED_MODE = new URLSearchParams(window.location.search).get('world') === 'generated';
+const DEBUG_MODE = IS_GENERATED_MODE && isGeneratedDebugMode(window.location.search);
+const VIEW_MODE: GeneratedViewMode = IS_GENERATED_MODE
+  ? parseGeneratedView(window.location.search)
+  : new URLSearchParams(window.location.search).get('view') === 'iso' ? 'iso' : 'ortho';
+const AUTHORED_PALETTE = {
+  sky: 0x1d2931,
+  ground: 0x4f805a,
+  groundAlt: 0x648e62,
+  edge: 0x3a4e42,
+  glow: 0xf2c66d,
+} as const;
 
 function readSeed(): number {
   const value = new URLSearchParams(window.location.search).get('seed');
@@ -80,8 +108,8 @@ header.innerHTML = `
   <div class="brand-lockup">
     <span class="brand-mark">✦</span>
     <div>
-      <p class="eyebrow">SEED → GEOGRAPHY → PLAY</p>
-      <h1>地形实验场 <span>· Generated Playground</span></h1>
+      <p class="eyebrow">${IS_GENERATED_MODE ? 'SEED → GEOGRAPHY → PLAY' : 'WORLD → WALK → DISCOVER'}</p>
+      <h1>${IS_GENERATED_MODE ? '地形实验场' : 'The Main World'}</h1>
     </div>
   </div>
   <span class="world-mode-label">${DEBUG_MODE ? 'DEBUG · ' : ''}${VIEW_MODE === 'ortho' ? 'ORTHO 3/4' : 'ISO VIEW'}</span>
@@ -109,8 +137,8 @@ const debugMapMarkup = DEBUG_MODE
   : '';
 sidePanel.innerHTML = `
   <div class="panel-section location-section">
-    <p class="section-label">GENERATED WORLD</p>
-    <h2 id="room-title">Generated Field</h2>
+    <p class="section-label">${IS_GENERATED_MODE ? 'GENERATED WORLD' : 'MAIN WORLD'}</p>
+    <h2 id="room-title">${IS_GENERATED_MODE ? 'Generated Field' : 'Village Square'}</h2>
     <p id="room-description" class="room-description"></p>
     <p id="room-status" class="room-status"></p>
   </div>
@@ -121,17 +149,17 @@ const controls = document.createElement('footer');
 controls.className = 'controls-bar';
 controls.innerHTML = `
   <span><kbd>W A S D</kbd> / <kbd>← ↑ ↓ →</kbd> move</span>
-  <span><kbd>E</kbd> inspect terrain</span>
+  <span><kbd>E</kbd> inspect ${IS_GENERATED_MODE ? 'terrain' : 'room'}</span>
   <span><kbd>R</kbd> reset</span>
-  <span><kbd>N</kbd> new seed</span>
+  ${IS_GENERATED_MODE ? '<span><kbd>N</kbd> new seed</span>' : ''}
   <span><kbd>[ ]</kbd> zoom</span>
   <span><kbd>I</kbd> inventory</span>
-  <div class="playtest-feedback" aria-label="Playtest feedback">
+  ${IS_GENERATED_MODE ? `<div class="playtest-feedback" aria-label="Playtest feedback">
     <button class="feedback-button" data-feedback="interesting" type="button">👍 interesting</button>
     <button class="feedback-button" data-feedback="boring" type="button">👎 boring</button>
     <button class="feedback-button" data-feedback="discovered" type="button">💡 discovered something</button>
     <button class="feedback-button" data-feedback="saved" type="button">⭐ save seed</button>
-  </div>
+  </div>` : ''}
 `;
 
 stage.append(canvasRoot, sidePanel);
@@ -153,14 +181,18 @@ if (!title || !roomTitle || !roomDescription || !roomStatus) {
 }
 
 let seed = readSeed();
-let world: GeneratedWorld = generateGeneratedWorld(seed);
-let playground: GeneratedPlayground = createGeneratedPlayground(world);
-let state = playground.initialState;
+let world: GeneratedWorld | null = IS_GENERATED_MODE ? generateGeneratedWorld(seed) : null;
+let playground: GeneratedPlayground | null = world ? createGeneratedPlayground(world) : null;
+const authoredWorld: AuthoredWorld | null = IS_GENERATED_MODE ? null : MAIN_WORLD;
+const authoredGame: AuthoredGame | null = authoredWorld ? createAuthoredGame(authoredWorld) : null;
+let authoredState: AuthoredPlayState | null = authoredGame ? createAuthoredPlayState(authoredGame) : null;
+let state: LocalWorldState = playground?.initialState ?? authoredState!.localState;
 let renderer: IsometricSceneRenderer | OrthogonalSceneRenderer;
 let zoom = VIEW_MODE === 'ortho' ? 0.72 : 0.34;
+const initialPosition = world?.start ?? authoredWorld!.startPosition;
 let camera = VIEW_MODE === 'ortho'
-  ? projectOrthogonalCell(world.start.x, world.start.y, 0)
-  : projectIsoCell(world.start.x, world.start.y, 0);
+  ? projectOrthogonalCell(initialPosition.x, initialPosition.y, 0)
+  : projectIsoCell(initialPosition.x, initialPosition.y, 0);
 const statusText = document.createElement('p');
 statusText.id = 'game-status';
 shell.append(statusText);
@@ -262,9 +294,48 @@ for (const button of feedbackButtons) {
 }
 renderPlaytestFeedback();
 
+function createAuthoredWorldView(playState: AuthoredPlayState): IsoRoomView {
+  const room = authoredCurrentRoom(playState);
+  const cells = authoredCells(room);
+  return {
+    id: room.id,
+    title: room.title,
+    description: room.description,
+    width: room.width,
+    height: room.height,
+    cells: cells.map((row) => row.map((cell) => ({
+      x: cell.x,
+      y: cell.y,
+      elevation: cell.elevation,
+      terrainType: cell.surface,
+      surface: cell.surface,
+      obstacle: cell.obstacle,
+      biome: room.id === 'elder-house' ? 'interior' : 'meadow',
+      environment: { weather: 'clear', lighting: 'day' },
+      walkable: cell.walkable,
+    }))),
+    props: [],
+    npcs: [],
+    exits: room.exits.map((exit) => ({
+      id: exit.id,
+      direction: exit.direction,
+      x: exit.position.x,
+      y: exit.position.y,
+    })),
+    connectors: [],
+    environment: { weather: 'clear', lighting: 'day' },
+    palette: AUTHORED_PALETTE,
+  };
+}
+
 function createWorldView(): IsoRoomView {
-  const regions = new Map(world.regions.map((region) => [region.id, region]));
-  const connectorEdges = world.edges.filter((edge) => {
+  if (!IS_GENERATED_MODE) {
+    return createAuthoredWorldView(authoredState!);
+  }
+
+  const generatedWorld = world!;
+  const regions = new Map(generatedWorld.regions.map((region) => [region.id, region]));
+  const connectorEdges = generatedWorld.edges.filter((edge) => {
     if (edge.kind !== 'stairs' && edge.kind !== 'ramp') {
       return false;
     }
@@ -275,12 +346,12 @@ function createWorldView(): IsoRoomView {
   });
 
   const view: IsoRoomView = {
-    id: `generated-${world.seed}`,
+    id: `generated-${generatedWorld.seed}`,
     title: 'Generated Field',
     description: 'A seed-built field of distinct terrain regions.',
-    width: world.width,
-    height: world.height,
-    cells: world.cells.map((row) => row.map((cell) => {
+    width: generatedWorld.width,
+    height: generatedWorld.height,
+    cells: generatedWorld.cells.map((row) => row.map((cell) => {
       const region = regions.get(cell.regionId);
       return {
         x: cell.x,
@@ -288,19 +359,26 @@ function createWorldView(): IsoRoomView {
         elevation: cell.elevation,
         terrainType: cell.terrainType,
         surface: cell.surface,
-        terrainTileId: cell.terrainTileId,
         obstacle: cell.obstacle,
         biome: region?.biome ?? 'meadow',
-        environment: region?.environment ?? world.environment,
+        environment: region?.environment ?? generatedWorld.environment,
         walkable: cell.walkable,
       };
     })),
-    props: world.props,
+    props: generatedWorld.props.map((prop) => ({
+      id: prop.id,
+      assetKey: kenneyPropAssetKeyFor(prop),
+      x: prop.x,
+      y: prop.y,
+      elevation: prop.elevation,
+      foreground: prop.foreground,
+      blocks: prop.blocks,
+    })),
     npcs: [],
     node: {
       id: 'generated-goal-node',
-      x: world.goal.x,
-      y: world.goal.y,
+      x: generatedWorld.goal.x,
+      y: generatedWorld.goal.y,
       label: 'reach the goal',
     },
     exits: [],
@@ -311,10 +389,10 @@ function createWorldView(): IsoRoomView {
       to: { ...edge.to },
     })),
 
-    start: { x: world.start.x, y: world.start.y, label: 'start' },
-    goal: { x: world.goal.x, y: world.goal.y, label: 'goal' },
-    environment: world.environment,
-    palette: world.palette,
+    start: { x: generatedWorld.start.x, y: generatedWorld.start.y, label: 'start' },
+    goal: { x: generatedWorld.goal.x, y: generatedWorld.goal.y, label: 'goal' },
+    environment: generatedWorld.environment,
+    palette: generatedWorld.palette,
   };
 
   if (DEBUG_MODE) {
@@ -322,16 +400,16 @@ function createWorldView(): IsoRoomView {
       ...view,
       debugOverlay: {
         showBlocked: true,
-        baselinePath: world.baselinePath,
-        finalPath: world.finalPath,
-        disruptionFootprint: world.perturbation.disruption.footprint,
+        baselinePath: generatedWorld.baselinePath,
+        finalPath: generatedWorld.finalPath,
+        disruptionFootprint: generatedWorld.perturbation.disruption.footprint,
         diagnostics: {
-          family: world.topologyFamily,
-          attempts: world.generationAttempts,
-          baselineLength: world.perturbation.baselineShortestPathLength,
-          finalLength: world.perturbation.finalShortestPathLength,
-          wallCount: world.finalTopology.wallCount,
-          cycleRank: world.finalTopology.cycleRank,
+          family: generatedWorld.topologyFamily,
+          attempts: generatedWorld.generationAttempts,
+          baselineLength: generatedWorld.perturbation.baselineShortestPathLength,
+          finalLength: generatedWorld.perturbation.finalShortestPathLength,
+          wallCount: generatedWorld.finalTopology.wallCount,
+          cycleRank: generatedWorld.finalTopology.cycleRank,
         },
       },
     };
@@ -340,38 +418,44 @@ function createWorldView(): IsoRoomView {
 }
 
 function buildView(): IsoSceneView {
-  const position = playerPosition(state);
-  const cell = world.cells[position.y]?.[position.x];
+  const position = IS_GENERATED_MODE
+    ? playerPosition(state)
+    : authoredPlayerPosition(authoredState!);
+  const room = createWorldView();
+  const cell = room.cells[position.y]?.[position.x];
   return {
-    room: createWorldView(),
+    room,
     player: {
       x: position.x,
       y: position.y,
       elevation: cell?.elevation ?? 0,
     },
     windMarks: {},
-    goalReached: generatedGoalReached(playground, state),
+    goalReached: IS_GENERATED_MODE
+      ? generatedGoalReached(playground!, state)
+      : undefined,
   };
 }
 
 function renderMinimap(): void {
-  if (!DEBUG_MODE || !minimap) {
+  if (!IS_GENERATED_MODE || !DEBUG_MODE || !minimap) {
     return;
   }
+  const generatedWorld = world!;
   minimap.replaceChildren();
   const map = projectGeneratedMinimap({
-    cells: world.cells,
-    sourceWidth: world.width,
-    sourceHeight: world.height,
-    start: world.start,
-    goal: world.goal,
-    disruption: DEBUG_MODE ? world.perturbation.disruption.footprint : [],
+    cells: generatedWorld.cells,
+    sourceWidth: generatedWorld.width,
+    sourceHeight: generatedWorld.height,
+    start: generatedWorld.start,
+    goal: generatedWorld.goal,
+    disruption: generatedWorld.perturbation.disruption.footprint,
     columns: 20,
     rows: 20,
   });
   const position = playerPosition(state);
-  const activeX = Math.max(0, Math.min(19, Math.floor(position.x * 20 / world.width)));
-  const activeY = Math.max(0, Math.min(19, Math.floor(position.y * 20 / world.height)));
+  const activeX = Math.max(0, Math.min(19, Math.floor(position.x * 20 / generatedWorld.width)));
+  const activeY = Math.max(0, Math.min(19, Math.floor(position.y * 20 / generatedWorld.height)));
   for (const mapTile of map.tiles) {
     const tile = document.createElement('span');
     tile.className = `map-cell ${mapTile.walkable ? 'open' : 'blocked'}`;
@@ -396,35 +480,51 @@ function renderMinimap(): void {
 
 function render(): void {
   renderPlaytestFeedback();
-  const position = playerPosition(state);
-  const reached = generatedGoalReached(playground, state);
-  title.innerHTML = `地形实验场 <span>· Seed ${world.seed}</span>`;
-  const currentCell = world.cells[position.y]?.[position.x];
-  const currentRegion = world.regions.find((region) => region.id === currentCell?.regionId);
-  roomTitle.textContent = 'Generated Field';
-  roomDescription.textContent = formatGeneratedWorldDescription({
-    width: world.width,
-    height: world.height,
-    biome: currentRegion?.biome ?? 'meadow',
-    weather: currentRegion?.environment?.weather ?? world.environment.weather,
-    lighting: currentRegion?.environment?.lighting ?? world.environment.lighting,
-    topologyFamily: world.topologyFamily,
-    disruptionCellCount: world.perturbation.disruption.footprint.length,
-  });
-  roomStatus.textContent = reached
-    ? 'GOAL REACHED'
-    : `POSITION ${position.x},${position.y}`;
-  if (seedTag) {
-    seedTag.textContent = `SEED ${world.seed}`;
+  const position = IS_GENERATED_MODE
+    ? playerPosition(state)
+    : authoredPlayerPosition(authoredState!);
+  if (IS_GENERATED_MODE) {
+    const generatedWorld = world!;
+    const reached = generatedGoalReached(playground!, state);
+    title.innerHTML = `地形实验场 <span>· Seed ${generatedWorld.seed}</span>`;
+    const currentCell = generatedWorld.cells[position.y]?.[position.x];
+    const currentRegion = generatedWorld.regions.find((region) => region.id === currentCell?.regionId);
+    roomTitle.textContent = 'Generated Field';
+    roomDescription.textContent = formatGeneratedWorldDescription({
+      width: generatedWorld.width,
+      height: generatedWorld.height,
+      biome: currentRegion?.biome ?? 'meadow',
+      weather: currentRegion?.environment?.weather ?? generatedWorld.environment.weather,
+      lighting: currentRegion?.environment?.lighting ?? generatedWorld.environment.lighting,
+      topologyFamily: generatedWorld.topologyFamily,
+      disruptionCellCount: generatedWorld.perturbation.disruption.footprint.length,
+    });
+    roomStatus.textContent = reached
+      ? 'GOAL REACHED'
+      : `POSITION ${position.x},${position.y}`;
+    if (seedTag) {
+      seedTag.textContent = `SEED ${generatedWorld.seed}`;
+    }
+    statusText.textContent = feedback ?? (reached ? 'GOAL REACHED' : `POSITION ${position.x},${position.y}`);
+  } else {
+    const room = authoredCurrentRoom(authoredState!);
+    title.textContent = `The Main World · ${room.title}`;
+    roomTitle.textContent = room.title;
+    roomDescription.textContent = room.description;
+    roomStatus.textContent = `POSITION ${position.x},${position.y}`;
+    statusText.textContent = feedback ?? `POSITION ${position.x},${position.y}`;
   }
-  statusText.textContent = feedback ?? (reached ? 'GOAL REACHED' : `POSITION ${position.x},${position.y}`);
   renderer.render(buildView());
   renderMinimap();
 }
 
 function currentCameraTarget(): { x: number; y: number } {
-  const position = playerPosition(state);
-  const cell = world.cells[position.y]?.[position.x];
+  const position = IS_GENERATED_MODE
+    ? playerPosition(state)
+    : authoredPlayerPosition(authoredState!);
+  const cell = IS_GENERATED_MODE
+    ? generatedCellAt(world!, position)
+    : authoredCellAt(authoredCurrentRoom(authoredState!), position);
   if (VIEW_MODE === 'ortho') {
     const point = projectOrthogonalCell(position.x, position.y, cell?.elevation ?? 0);
     return {
@@ -436,19 +536,44 @@ function currentCameraTarget(): { x: number; y: number } {
 }
 
 function tryMove(direction: GeneratedDirection): void {
-  const result = moveGeneratedPlayer(playground, state, direction);
-  state = result.state;
-  feedback = result.accepted ? null : formatBlockedMovement();
+  if (IS_GENERATED_MODE) {
+    const result = moveGeneratedPlayer(playground!, state, direction);
+    state = result.state;
+    feedback = result.accepted ? null : formatBlockedMovement();
+    render();
+    return;
+  }
+
+  const result = moveAuthoredPlayer(authoredState!, direction);
+  if (result.accepted) {
+    authoredState = result.state;
+    state = result.state.localState;
+    feedback = null;
+  } else {
+    feedback = formatBlockedMovement();
+  }
   render();
 }
 
 function inspectTerrain(): void {
+  if (!IS_GENERATED_MODE) {
+    const position = authoredPlayerPosition(authoredState!);
+    const room = authoredCurrentRoom(authoredState!);
+    const cell = authoredCellAt(room, position);
+    if (cell) {
+      feedback = `CELL ${position.x},${position.y} · SURFACE ${cell.surface} · ELEVATION ${cell.elevation}`;
+      render();
+    }
+    return;
+  }
+
   const position = playerPosition(state);
-  const cell = generatedCellAt(world, position);
+  const generatedWorld = world!;
+  const cell = generatedCellAt(generatedWorld, position);
   if (!cell) {
     return;
   }
-  const region = world.regions.find((candidate) => candidate.id === cell.regionId);
+  const region = generatedWorld.regions.find((candidate) => candidate.id === cell.regionId);
   const directions: Array<[GeneratedDirection, { x: number; y: number }]> = [
     ['up', { x: 0, y: -1 }],
     ['down', { x: 0, y: 1 }],
@@ -460,16 +585,16 @@ function inspectTerrain(): void {
     y: position.y,
     terrainType: cell.terrainType,
     biome: region?.biome ?? 'unknown',
-    weather: region?.environment?.weather ?? world.environment.weather,
-    lighting: region?.environment?.lighting ?? world.environment.lighting,
+    weather: region?.environment?.weather ?? generatedWorld.environment.weather,
+    lighting: region?.environment?.lighting ?? generatedWorld.environment.lighting,
     elevation: cell.elevation,
   };
   if (DEBUG_MODE) {
     const traversableDirections = directions
       .filter(([, delta]) => {
         const target = { x: position.x + delta.x, y: position.y + delta.y };
-        const targetCell = generatedCellAt(world, target);
-        const edge = resolveGeneratedEdge(world, position, target);
+        const targetCell = generatedCellAt(generatedWorld, target);
+        const edge = resolveGeneratedEdge(generatedWorld, position, target);
         return Boolean(targetCell && edge && canTraverse(cell, targetCell, edge, {}));
       })
       .map(([direction]) => direction);
@@ -485,16 +610,25 @@ function inspectTerrain(): void {
 }
 
 function resetWorld(): void {
-  state = playground.initialState;
+  if (IS_GENERATED_MODE) {
+    state = playground!.initialState;
+  } else {
+    authoredState = resetAuthoredPlayState(authoredGame!);
+    state = authoredState.localState;
+  }
   camera = currentCameraTarget();
   feedback = 'RUN RESET';
   render();
 }
 
 function createNewSeed(): void {
+  if (!IS_GENERATED_MODE) {
+    return;
+  }
   seed += 1;
-  world = generateGeneratedWorld(seed);
-  playground = createGeneratedPlayground(world);
+  const generatedWorld = generateGeneratedWorld(seed);
+  world = generatedWorld;
+  playground = createGeneratedPlayground(generatedWorld);
   state = playground.initialState;
   playtestTags = loadPlaytestTags(seed);
   camera = currentCameraTarget();
@@ -513,7 +647,7 @@ void (async () => {
     const host = await createPixiHost(canvasRoot, {
       width: 960,
       height: 600,
-      backgroundColor: world.palette.sky,
+      backgroundColor: IS_GENERATED_MODE ? world!.palette.sky : AUTHORED_PALETTE.sky,
     });
     const textures: MarkTextureSet = await loadMarkTextures();
     const orthogonalTextures: OrthogonalTextureSet = VIEW_MODE === 'ortho'
@@ -601,7 +735,7 @@ void (async () => {
     });
   } catch (error) {
     console.error(error);
-    root.textContent = 'Failed to create generated playground';
+    root.textContent = 'Failed to create world';
   }
 })();
 

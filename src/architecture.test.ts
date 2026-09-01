@@ -70,12 +70,13 @@ interface Rule {
 
 const rules: readonly Rule[] = [
   {
-    label: 'src/world must stay presentation- and gameplay-free',
+    label: 'src/world must stay semantic and presentation-free',
     matches: (path) => path.startsWith('world/'),
     violation: (path, imported) => {
       const target = resolveSourceImport(path, imported);
       return (
         imported === 'pixi.js' ||
+        target.startsWith('assets/') ||
         target.startsWith('rendering/') ||
         target.startsWith('gameplay/')
       );
@@ -89,6 +90,19 @@ const rules: readonly Rule[] = [
       return (
         imported === 'pixi.js' ||
         target.startsWith('rendering/')
+      );
+    },
+  },
+  {
+    label: 'src/content must stay semantic and presentation-free',
+    matches: (path) => path.startsWith('content/'),
+    violation: (path, imported) => {
+      const target = resolveSourceImport(path, imported);
+      return (
+        imported === 'pixi.js' ||
+        target.startsWith('assets/') ||
+        target.startsWith('rendering/') ||
+        target.startsWith('gameplay/')
       );
     },
   },
