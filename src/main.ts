@@ -13,7 +13,7 @@ import {
   playerPosition,
   type GeneratedDirection,
   type GeneratedPlayground,
-} from '@/chapters/chapter-13/generated-playground';
+} from '@/gameplay/generated-playground';
 import {
   createIsometricScene,
   projectIsoCell,

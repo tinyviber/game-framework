@@ -1,1 +1,0 @@
-export const bootstrapStatus = 'bootstrap-ready' as const;

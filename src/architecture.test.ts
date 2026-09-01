@@ -42,6 +42,23 @@ function importedModules(filePath: string): string[] {
   ].map((match) => match[1] as string);
 }
 
+function resolveSourceImport(
+  relativePath: string,
+  imported: string,
+): string {
+  if (imported.startsWith('@/')) {
+    return imported.slice(2);
+  }
+
+  if (imported.startsWith('.')) {
+    return posix.normalize(
+      posix.join(posix.dirname(relativePath), imported),
+    );
+  }
+
+  return imported;
+}
+
 interface Rule {
   readonly label: string;
   readonly matches: (relativePath: string) => boolean;
@@ -51,74 +68,45 @@ interface Rule {
   ) => boolean;
 }
 
-function isChapterNumber(
-  relativePath: string,
-): number | null {
-  const match = /^chapters\/chapter-(\d+)\//.exec(relativePath);
-
-  return match ? Number(match[1]) : null;
-}
-
 const rules: readonly Rule[] = [
   {
-    label: 'src/world must stay presentation-free and upper-layer-free',
+    label: 'src/world must stay presentation- and gameplay-free',
     matches: (path) => path.startsWith('world/'),
-    violation: (_path, imported) =>
-      imported === 'pixi.js' ||
-      imported.startsWith('@/chapters') ||
-      imported.startsWith('@/runtime') ||
-      imported.startsWith('@/rendering') ||
-      imported.startsWith('../chapters') ||
-      imported.startsWith('../runtime') ||
-      imported.startsWith('../rendering'),
+    violation: (path, imported) => {
+      const target = resolveSourceImport(path, imported);
+      return (
+        imported === 'pixi.js' ||
+        target.startsWith('rendering/') ||
+        target.startsWith('gameplay/')
+      );
+    },
   },
   {
-    label: 'src/rendering must not depend on world, chapters or runtime',
+    label: 'src/gameplay must stay presentation-free',
+    matches: (path) => path.startsWith('gameplay/'),
+    violation: (path, imported) => {
+      const target = resolveSourceImport(path, imported);
+      return (
+        imported === 'pixi.js' ||
+        target.startsWith('rendering/')
+      );
+    },
+  },
+  {
+    label: 'src/rendering must not depend on world or gameplay state',
     matches: (path) => path.startsWith('rendering/'),
-    violation: (_path, imported) =>
-      imported.startsWith('@/world') ||
-      imported.startsWith('@/chapters') ||
-      imported.startsWith('@/runtime'),
+    violation: (path, imported) => {
+      const target = resolveSourceImport(path, imported);
+      return (
+        target.startsWith('world/') ||
+        target.startsWith('gameplay/')
+      );
+    },
   },
   {
     label: 'no universal event bus anywhere in src (AGENTS.md)',
     matches: () => true,
     violation: (_path, imported) => imported.includes('event-bus'),
-  },
-  {
-    label: 'src/runtime must not depend on rendering',
-    matches: (path) => path.startsWith('runtime/'),
-    violation: (_path, imported) =>
-      imported.startsWith('@/rendering') ||
-      imported.startsWith('@/runtime'),
-  },
-  {
-    label: 'chapters and runtime import world modules directly, never the barrel',
-    matches: (path) =>
-      path.startsWith('chapters/') || path.startsWith('runtime/'),
-    violation: (_path, imported) => imported === '@/world',
-  },
-  {
-    label: 'only the presentation chapter (chapter-6) may import pixi.js from chapters',
-    matches: (path) =>
-      path.startsWith('chapters/') && !path.startsWith('chapters/chapter-6/'),
-    violation: (_path, imported) => imported === 'pixi.js',
-  },
-  {
-    label: 'a chapter must not import a future chapter',
-    matches: (path) => isChapterNumber(path) !== null,
-    violation: (path, imported) => {
-      const current = isChapterNumber(path);
-      const match =
-        /chapters\/chapter-(\d+)/.exec(imported);
-      const target = match ? Number(match[1]) : null;
-
-      return (
-        current !== null &&
-        target !== null &&
-        target > current
-      );
-    },
   },
 ];
 

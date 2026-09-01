@@ -62,7 +62,7 @@ function createRoom(
   };
 }
 
-describe('Chapter 5 room transition', () => {
+describe('room transition', () => {
   it('rebuilds A to B to A from definitions and entry parameters', () => {
     const roomA = createRoom('a', 'closure-a');
     const roomB = createRoom('b', 'closure-b');
