@@ -1,28 +1,19 @@
 import './style.css';
+import { Graphics } from 'pixi.js';
 import {
-  generatedCellAt,
   generateGeneratedWorld,
-  resolveGeneratedEdge,
   type GeneratedWorld,
 } from '@/world/generated-world';
-import { canTraverse } from '@/world/traversal';
+import { applyScopedOperation } from '@/world/operation';
+import type { ObjectState, Position } from '@/world/types';
 import {
   createGeneratedPlayground,
-  generatedGoalReached,
+  GENERATED_PLAYER_ID,
   moveGeneratedPlayer,
   playerPosition,
   type GeneratedDirection,
   type GeneratedPlayground,
 } from '@/gameplay/generated-playground';
-import {
-  createIsometricScene,
-  projectIsoCell,
-  type IsometricSceneRenderer,
-  type IsoRoomView,
-  type IsoSceneView,
-  loadMarkTextures,
-  type MarkTextureSet,
-} from '@/rendering/isometric-scene';
 import {
   createOrthogonalScene,
   ORTHO_TILE_SIZE,
@@ -33,43 +24,42 @@ import {
   loadOrthogonalTextures,
   type OrthogonalTextureSet,
 } from '@/rendering/orthogonal-textures';
-import { createPixiHost } from '@/rendering/pixi-host';
+import { createPixiHost, type PixiHostHandle } from '@/rendering/pixi-host';
 import {
-  createDemoInventoryView,
-  createInventoryUi,
-} from '@/rendering/inventory-ui';
-import { projectGeneratedMinimap } from '@/generated-minimap';
-import {
-  formatBlockedMovement,
-  formatGeneratedInspection,
-  formatGeneratedWorldDescription,
-  isGeneratedDebugMode,
-  parseGeneratedView,
-  type GeneratedViewMode,
-} from '@/generated-playground-ui';
+  canEnterCell,
+  collapseAfterMove,
+  createEchoLayout,
+  createInitialEchoState,
+  gateIsOpen,
+  isCollapsed,
+  isStranded,
+  placeEcho,
+  pullLever,
+  recallEcho,
+  samePosition,
+  type EchoLayout,
+  type EchoState,
+} from '@/experiments/echo-anchor/mechanic';
+
+/**
+ * NIGHT PROTOTYPE B — 回声锚点 (Echo Anchor)
+ * Player-state verb: anchor an echo (Q), snap back to it (Q again).
+ * A fragile bridge collapses behind you; the lever past the bridge opens the
+ * gate before the goal. The echo is the repair for the destroyed way back.
+ */
 
 const root = document.querySelector<HTMLDivElement>('#app');
-
 if (!root) {
   throw new Error('Missing #app');
 }
 
 const DEFAULT_SEED = 2026;
-const PLAYTEST_FEEDBACK_STORAGE_KEY = 'generated-playtest-feedback-v1';
-const PLAYTEST_TAGS = ['interesting', 'boring', 'discovered', 'saved'] as const;
-type PlaytestTag = (typeof PLAYTEST_TAGS)[number];
-const DEBUG_MODE = isGeneratedDebugMode(window.location.search);
-const VIEW_MODE: GeneratedViewMode = parseGeneratedView(window.location.search);
 
 function readSeed(): number {
   const value = new URLSearchParams(window.location.search).get('seed');
   const parsed = value === null ? DEFAULT_SEED : Number(value);
-  return Number.isInteger(parsed) && Number.isFinite(parsed)
-    ? parsed
-    : DEFAULT_SEED;
+  return Number.isInteger(parsed) && Number.isFinite(parsed) ? parsed : DEFAULT_SEED;
 }
-
-
 
 const shell = document.createElement('main');
 shell.className = 'adventure-shell';
@@ -80,11 +70,11 @@ header.innerHTML = `
   <div class="brand-lockup">
     <span class="brand-mark">✦</span>
     <div>
-      <p class="eyebrow">SEED → GEOGRAPHY → PLAY</p>
-      <h1>地形实验场 <span>· Generated Playground</span></h1>
+      <p class="eyebrow">NIGHT PROTOTYPE B · PLAYER STATE / BACKTRACKING</p>
+      <h1>回声锚点 <span>· Echo Anchor</span></h1>
     </div>
   </div>
-  <span class="world-mode-label">${DEBUG_MODE ? 'DEBUG · ' : ''}${VIEW_MODE === 'ortho' ? 'ORTHO 3/4' : 'ISO VIEW'}</span>
+  <span class="world-mode-label">ORTHO 3/4 · SPIKE</span>
 `;
 
 const stage = document.createElement('section');
@@ -94,195 +84,66 @@ canvasRoot.className = 'canvas-root';
 
 const sidePanel = document.createElement('aside');
 sidePanel.className = 'side-panel';
-const debugMapMarkup = DEBUG_MODE
-  ? `
-  <div class="panel-section map-section">
-    <div class="section-row"><p class="section-label">40 × 40 FIELD</p><span id="seed-tag" class="grid-tag">SEED ${readSeed()}</span></div>
-    <div id="minimap" class="minimap" aria-label="generated terrain overview"></div>
-  </div>
-  <div class="panel-section legend-section">
-    <p class="section-label">FIELD NOTES</p>
-    <div class="legend-line"><span class="legend-dot start-dot"></span><span>start</span></div>
-    <div class="legend-line"><span class="legend-dot goal-dot"></span><span>goal</span></div>
-    <div class="legend-line"><span class="legend-dot high-dot"></span><span>raised terrain</span></div>
-  </div>`
-  : '';
 sidePanel.innerHTML = `
   <div class="panel-section location-section">
-    <p class="section-label">GENERATED WORLD</p>
-    <h2 id="room-title">Generated Field</h2>
+    <p class="section-label">ECHO TRIAL</p>
+    <h2 id="room-title">回声锚点</h2>
     <p id="room-description" class="room-description"></p>
     <p id="room-status" class="room-status"></p>
   </div>
-  ${debugMapMarkup}
+  <div class="panel-section legend-section">
+    <p class="section-label">FIELD NOTES</p>
+    <div class="legend-line"><span class="legend-dot" style="background:#9be8ff"></span><span>回声：Q 放下，再按 Q 回到它身边</span></div>
+    <div class="legend-line"><span class="legend-dot" style="background:#b07a45"></span><span>木板桥：走过就会塌</span></div>
+    <div class="legend-line"><span class="legend-dot" style="background:#f0975c"></span><span>扳杆：E 扳动，打开远处的石门</span></div>
+    <div class="legend-line"><span class="legend-dot" style="background:#8d99a8"></span><span>石门：挡在你和目标之间</span></div>
+  </div>
 `;
 
 const controls = document.createElement('footer');
 controls.className = 'controls-bar';
 controls.innerHTML = `
   <span><kbd>W A S D</kbd> / <kbd>← ↑ ↓ →</kbd> move</span>
-  <span><kbd>E</kbd> inspect terrain</span>
+  <span><kbd>Q</kbd> echo 放置/返回</span>
+  <span><kbd>E</kbd> pull lever</span>
   <span><kbd>R</kbd> reset</span>
   <span><kbd>N</kbd> new seed</span>
   <span><kbd>[ ]</kbd> zoom</span>
-  <span><kbd>I</kbd> inventory</span>
-  <div class="playtest-feedback" aria-label="Playtest feedback">
-    <button class="feedback-button" data-feedback="interesting" type="button">👍 interesting</button>
-    <button class="feedback-button" data-feedback="boring" type="button">👎 boring</button>
-    <button class="feedback-button" data-feedback="discovered" type="button">💡 discovered something</button>
-    <button class="feedback-button" data-feedback="saved" type="button">⭐ save seed</button>
-  </div>
 `;
 
 stage.append(canvasRoot, sidePanel);
 shell.append(header, stage, controls);
 root.replaceChildren(shell);
 
-const title = header.querySelector<HTMLHeadingElement>('h1')!;
-const roomTitle = sidePanel.querySelector<HTMLHeadingElement>('#room-title')!;
 const roomDescription = sidePanel.querySelector<HTMLParagraphElement>('#room-description')!;
 const roomStatus = sidePanel.querySelector<HTMLParagraphElement>('#room-status')!;
-const seedTag = sidePanel.querySelector<HTMLSpanElement>('#seed-tag');
-const minimap = sidePanel.querySelector<HTMLDivElement>('#minimap');
-const feedbackButtons = Array.from(
-  controls.querySelectorAll<HTMLButtonElement>('[data-feedback]'),
-);
-
-if (!title || !roomTitle || !roomDescription || !roomStatus) {
-  throw new Error('Generated playground UI failed to initialize');
-}
+const statusText = document.createElement('p');
+statusText.id = 'game-status';
+shell.append(statusText);
 
 let seed = readSeed();
 let world: GeneratedWorld = generateGeneratedWorld(seed);
 let playground: GeneratedPlayground = createGeneratedPlayground(world);
 let state = playground.initialState;
-let renderer: IsometricSceneRenderer | OrthogonalSceneRenderer;
-let zoom = VIEW_MODE === 'ortho' ? 0.72 : 0.34;
-let camera = VIEW_MODE === 'ortho'
-  ? projectOrthogonalCell(world.start.x, world.start.y, 0)
-  : projectIsoCell(world.start.x, world.start.y, 0);
-const statusText = document.createElement('p');
-statusText.id = 'game-status';
-shell.append(statusText);
-let feedback: string | null = null;
-let playtestTags = new Set<PlaytestTag>();
+let layout: EchoLayout = createEchoLayout(world.finalPath);
+let echo: EchoState = createInitialEchoState();
+let renderer: OrthogonalSceneRenderer;
+let overlay: Graphics;
+let zoom = 0.72;
+let camera = projectOrthogonalCell(world.start.x, world.start.y, 0);
+let feedback: string | null = '石门挡住了目标。桥那头有一根扳杆——但桥，看起来不太结实。';
 
-function isPlaytestTag(value: unknown): value is PlaytestTag {
-  return typeof value === 'string' && PLAYTEST_TAGS.includes(value as PlaytestTag);
-}
-
-function loadPlaytestAnnotations(): Record<string, PlaytestTag[]> {
-  try {
-    const serialized = localStorage.getItem(PLAYTEST_FEEDBACK_STORAGE_KEY);
-    if (!serialized) {
-      return {};
-    }
-    const parsed: unknown = JSON.parse(serialized);
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-      return {};
-    }
-    const annotations: Record<string, PlaytestTag[]> = {};
-    for (const [storedSeed, storedTags] of Object.entries(parsed)) {
-      if (!Array.isArray(storedTags)) {
-        continue;
-      }
-      const tags = storedTags.filter(isPlaytestTag);
-      if (tags.length > 0) {
-        annotations[storedSeed] = tags;
-      }
-    }
-    return annotations;
-  } catch {
-    return {};
-  }
-}
-
-function loadPlaytestTags(seedToLoad: number): Set<PlaytestTag> {
-  return new Set(loadPlaytestAnnotations()[String(seedToLoad)] ?? []);
-}
-
-function savePlaytestTags(seedToSave: number, tags: ReadonlySet<PlaytestTag>): void {
-  try {
-    const annotations = loadPlaytestAnnotations();
-    if (tags.size === 0) {
-      delete annotations[String(seedToSave)];
-    } else {
-      annotations[String(seedToSave)] = [...tags];
-    }
-    localStorage.setItem(
-      PLAYTEST_FEEDBACK_STORAGE_KEY,
-      JSON.stringify(annotations),
-    );
-  } catch {
-    // Local storage is optional; tagging should never interrupt play.
-  }
-}
-
-function renderPlaytestFeedback(): void {
-  for (const button of feedbackButtons) {
-    const tag = button.dataset.feedback;
-    if (!isPlaytestTag(tag)) {
-      continue;
-    }
-    const active = playtestTags.has(tag);
-    button.classList.toggle('active', active);
-    button.setAttribute('aria-pressed', String(active));
-    if (tag === 'saved') {
-      button.textContent = active ? '⭐ saved' : '⭐ save seed';
-    }
-  }
-}
-
-function togglePlaytestTag(tag: PlaytestTag): void {
-  if (tag === 'saved') {
-    playtestTags.add(tag);
-  } else if (playtestTags.has(tag)) {
-    playtestTags.delete(tag);
-  } else {
-    if (tag === 'interesting' || tag === 'boring') {
-      playtestTags.delete(tag === 'interesting' ? 'boring' : 'interesting');
-    }
-    playtestTags.add(tag);
-  }
-  savePlaytestTags(seed, playtestTags);
-  feedback = tag === 'saved'
-    ? `SEED ${seed} SAVED`
-    : `${tag.toUpperCase()} · SEED ${seed}`;
-  render();
-}
-
-playtestTags = loadPlaytestTags(seed);
-for (const button of feedbackButtons) {
-  button.addEventListener('click', () => {
-    const tag = button.dataset.feedback;
-    if (isPlaytestTag(tag)) {
-      togglePlaytestTag(tag);
-    }
-  });
-}
-renderPlaytestFeedback();
-
-function createWorldView(): IsoRoomView {
-  const regions = new Map(world.regions.map((region) => [region.id, region]));
-  const connectorEdges = world.edges.filter((edge) => {
-    if (edge.kind !== 'stairs' && edge.kind !== 'ramp') {
-      return false;
-    }
-    return (
-      edge.from.x < edge.to.x ||
-      (edge.from.x === edge.to.x && edge.from.y < edge.to.y)
-    );
-  });
-
-  const view: IsoRoomView = {
-    id: `generated-${world.seed}`,
-    title: 'Generated Field',
-    description: 'A seed-built field of distinct terrain regions.',
-    width: world.width,
-    height: world.height,
-    cells: world.cells.map((row) => row.map((cell) => {
-      const region = regions.get(cell.regionId);
-      return {
+function buildView() {
+  const position = playerPosition(state);
+  const cell = world.cells[position.y]?.[position.x];
+  return {
+    room: {
+      id: `echo-${world.seed}`,
+      title: 'Echo Anchor',
+      description: 'Night prototype B',
+      width: world.width,
+      height: world.height,
+      cells: world.cells.map((row) => row.map((cell) => ({
         x: cell.x,
         y: cell.y,
         elevation: cell.elevation,
@@ -290,241 +151,220 @@ function createWorldView(): IsoRoomView {
         surface: cell.surface,
         terrainTileId: cell.terrainTileId,
         obstacle: cell.obstacle,
-        biome: region?.biome ?? 'meadow',
-        environment: region?.environment ?? world.environment,
+        biome: 'meadow' as const,
+        environment: world.environment,
         walkable: cell.walkable,
-      };
-    })),
-    props: world.props,
-    npcs: [],
-    node: {
-      id: 'generated-goal-node',
-      x: world.goal.x,
-      y: world.goal.y,
-      label: 'reach the goal',
+      }))),
+      props: world.props,
+      npcs: [],
+      node: { id: 'goal', x: layout.goal.x, y: layout.goal.y, label: 'goal' },
+      exits: [],
+      connectors: [],
+      start: { x: world.start.x, y: world.start.y, label: 'start' },
+      goal: { x: layout.goal.x, y: layout.goal.y, label: 'goal' },
+      environment: world.environment,
+      palette: world.palette,
     },
-    exits: [],
-    connectors: connectorEdges.map((edge) => ({
-      id: `connector-${edge.from.x}-${edge.from.y}-${edge.to.x}-${edge.to.y}`,
-      kind: edge.kind === 'ramp' ? 'ramp' : 'stairs',
-      from: { ...edge.from },
-      to: { ...edge.to },
-    })),
-
-    start: { x: world.start.x, y: world.start.y, label: 'start' },
-    goal: { x: world.goal.x, y: world.goal.y, label: 'goal' },
-    environment: world.environment,
-    palette: world.palette,
-  };
-
-  if (DEBUG_MODE) {
-    return {
-      ...view,
-      debugOverlay: {
-        showBlocked: true,
-        baselinePath: world.baselinePath,
-        finalPath: world.finalPath,
-        disruptionFootprint: world.perturbation.disruption.footprint,
-        diagnostics: {
-          family: world.topologyFamily,
-          attempts: world.generationAttempts,
-          baselineLength: world.perturbation.baselineShortestPathLength,
-          finalLength: world.perturbation.finalShortestPathLength,
-          wallCount: world.finalTopology.wallCount,
-          cycleRank: world.finalTopology.cycleRank,
-        },
-      },
-    };
-  }
-  return view;
-}
-
-function buildView(): IsoSceneView {
-  const position = playerPosition(state);
-  const cell = world.cells[position.y]?.[position.x];
-  return {
-    room: createWorldView(),
-    player: {
-      x: position.x,
-      y: position.y,
-      elevation: cell?.elevation ?? 0,
-    },
+    player: { x: position.x, y: position.y, elevation: cell?.elevation ?? 0 },
     windMarks: {},
-    goalReached: generatedGoalReached(playground, state),
+    goalReached: false,
   };
 }
 
-function renderMinimap(): void {
-  if (!DEBUG_MODE || !minimap) {
-    return;
+function cellCenter(position: Position): { x: number; y: number } {
+  const cell = world.cells[position.y]?.[position.x];
+  const point = projectOrthogonalCell(position.x, position.y, cell?.elevation ?? 0);
+  return { x: point.x + ORTHO_TILE_SIZE / 2, y: point.y + ORTHO_TILE_SIZE / 2 };
+}
+
+function drawOverlay(): void {
+  overlay.clear();
+
+  // Bridge planks (or dark holes where they collapsed).
+  for (const plank of layout.bridge) {
+    const center = cellCenter(plank);
+    if (isCollapsed(echo, plank)) {
+      overlay.rect(center.x - 15, center.y - 15, 30, 30).fill({ color: 0x0b111c, alpha: 0.92 });
+      overlay.rect(center.x - 15, center.y - 15, 30, 30).stroke({ color: 0x31404f, width: 1, alpha: 0.6 });
+    } else {
+      overlay.rect(center.x - 15, center.y - 13, 30, 26).fill({ color: 0xb07a45, alpha: 0.9 });
+      overlay.moveTo(center.x - 15, center.y - 4).lineTo(center.x + 15, center.y - 4)
+        .stroke({ color: 0x7a4f2a, width: 2 });
+      overlay.moveTo(center.x - 15, center.y + 5).lineTo(center.x + 15, center.y + 5)
+        .stroke({ color: 0x7a4f2a, width: 2 });
+    }
   }
-  minimap.replaceChildren();
-  const map = projectGeneratedMinimap({
-    cells: world.cells,
-    sourceWidth: world.width,
-    sourceHeight: world.height,
-    start: world.start,
-    goal: world.goal,
-    disruption: DEBUG_MODE ? world.perturbation.disruption.footprint : [],
-    columns: 20,
-    rows: 20,
-  });
-  const position = playerPosition(state);
-  const activeX = Math.max(0, Math.min(19, Math.floor(position.x * 20 / world.width)));
-  const activeY = Math.max(0, Math.min(19, Math.floor(position.y * 20 / world.height)));
-  for (const mapTile of map.tiles) {
-    const tile = document.createElement('span');
-    tile.className = `map-cell ${mapTile.walkable ? 'open' : 'blocked'}`;
-    if (mapTile.elevated) {
-      tile.classList.add('high');
+
+  // Lever.
+  const lever = cellCenter(layout.lever);
+  overlay.circle(lever.x, lever.y + 6, 7).fill({ color: 0x4d5a6a });
+  const leverTilt = echo.leverPulled ? 10 : -6;
+  overlay.moveTo(lever.x, lever.y + 4).lineTo(lever.x + leverTilt, lever.y - 12)
+    .stroke({ color: 0xf0975c, width: 4 });
+  overlay.circle(lever.x + leverTilt, lever.y - 12, 5).fill({ color: 0xf0975c });
+
+  // Gate.
+  const gate = cellCenter(layout.gate);
+  if (!gateIsOpen(echo)) {
+    overlay.rect(gate.x - 15, gate.y - 14, 30, 26).fill({ color: 0x4d5a6a, alpha: 0.95 });
+    for (let bar = -9; bar <= 9; bar += 6) {
+      overlay.moveTo(gate.x + bar, gate.y - 14).lineTo(gate.x + bar, gate.y + 12)
+        .stroke({ color: 0x232d38, width: 3 });
     }
-    if (mapTile.start) {
-      tile.classList.add('start');
-    }
-    if (mapTile.goal) {
-      tile.classList.add('goal');
-    }
-    if (mapTile.disrupted) {
-      tile.classList.add('disrupted');
-    }
-    if (mapTile.x === activeX && mapTile.y === activeY) {
-      tile.classList.add('active');
-    }
-    minimap.append(tile);
+  } else {
+    overlay.rect(gate.x - 15, gate.y - 14, 30, 26).stroke({ color: 0x8d99a8, width: 2, alpha: 0.35 });
   }
+
+  // Echo ghost.
+  if (echo.echo) {
+    const ghost = cellCenter(echo.echo);
+    overlay.circle(ghost.x, ghost.y - 4, 11).fill({ color: 0x9be8ff, alpha: 0.28 });
+    overlay.circle(ghost.x, ghost.y - 4, 11).stroke({ color: 0x9be8ff, width: 2, alpha: 0.9 });
+    overlay.circle(ghost.x, ghost.y - 8, 3).fill({ color: 0x9be8ff, alpha: 0.9 });
+    overlay.moveTo(ghost.x - 16, ghost.y + 10).lineTo(ghost.x + 16, ghost.y + 10)
+      .stroke({ color: 0x9be8ff, width: 1.5, alpha: 0.5 });
+  }
+}
+
+function trialComplete(): boolean {
+  return samePosition(playerPosition(state), layout.goal);
 }
 
 function render(): void {
-  renderPlaytestFeedback();
   const position = playerPosition(state);
-  const reached = generatedGoalReached(playground, state);
-  title.innerHTML = `地形实验场 <span>· Seed ${world.seed}</span>`;
-  const currentCell = world.cells[position.y]?.[position.x];
-  const currentRegion = world.regions.find((region) => region.id === currentCell?.regionId);
-  roomTitle.textContent = 'Generated Field';
-  roomDescription.textContent = formatGeneratedWorldDescription({
-    width: world.width,
-    height: world.height,
-    biome: currentRegion?.biome ?? 'meadow',
-    weather: currentRegion?.environment?.weather ?? world.environment.weather,
-    lighting: currentRegion?.environment?.lighting ?? world.environment.lighting,
-    topologyFamily: world.topologyFamily,
-    disruptionCellCount: world.perturbation.disruption.footprint.length,
-  });
-  roomStatus.textContent = reached
-    ? 'GOAL REACHED'
-    : `POSITION ${position.x},${position.y}`;
-  if (seedTag) {
-    seedTag.textContent = `SEED ${world.seed}`;
-  }
-  statusText.textContent = feedback ?? (reached ? 'GOAL REACHED' : `POSITION ${position.x},${position.y}`);
+  roomDescription.textContent = echo.echo
+    ? `回声锚定在 (${echo.echo.x}, ${echo.echo.y}) · 扳杆 ${echo.leverPulled ? '已扳动' : '未扳动'} · 塌板 ${echo.collapsedKeys.length}`
+    : `尚未锚定回声 · 扳杆 ${echo.leverPulled ? '已扳动' : '未扳动'} · 塌板 ${echo.collapsedKeys.length}`;
+  roomStatus.textContent = trialComplete()
+    ? 'ECHO TRIAL COMPLETE'
+    : `POSITION ${position.x},${position.y} · SEED ${world.seed}`;
+  statusText.textContent = feedback ?? (trialComplete()
+    ? '你回到了门这边，目标就在眼前。回声消散了。'
+    : isStranded(layout, echo, position)
+      ? '桥塌了，回头路没了……没有回声可以返回。按 R 重来，或试试绕远路。'
+      : '……');
   renderer.render(buildView());
-  renderMinimap();
+  drawOverlay();
 }
 
 function currentCameraTarget(): { x: number; y: number } {
   const position = playerPosition(state);
   const cell = world.cells[position.y]?.[position.x];
-  if (VIEW_MODE === 'ortho') {
-    const point = projectOrthogonalCell(position.x, position.y, cell?.elevation ?? 0);
-    return {
-      x: point.x + ORTHO_TILE_SIZE / 2,
-      y: point.y + ORTHO_TILE_SIZE / 2,
-    };
-  }
-  return projectIsoCell(position.x, position.y, cell?.elevation ?? 0);
+  const point = projectOrthogonalCell(position.x, position.y, cell?.elevation ?? 0);
+  return { x: point.x + ORTHO_TILE_SIZE / 2, y: point.y + ORTHO_TILE_SIZE / 2 };
 }
 
 function tryMove(direction: GeneratedDirection): void {
-  const result = moveGeneratedPlayer(playground, state, direction);
-  state = result.state;
-  feedback = result.accepted ? null : formatBlockedMovement();
-  render();
-}
-
-function inspectTerrain(): void {
   const position = playerPosition(state);
-  const cell = generatedCellAt(world, position);
-  if (!cell) {
+  const delta = {
+    up: { x: 0, y: -1 },
+    down: { x: 0, y: 1 },
+    left: { x: -1, y: 0 },
+    right: { x: 1, y: 0 },
+  }[direction];
+  const target = { x: position.x + delta.x, y: position.y + delta.y };
+  if (!canEnterCell(layout, echo, target)) {
+    feedback = isCollapsed(echo, target)
+      ? '那块木板已经塌了，下面是黑的。'
+      : '石门紧闭。门那边透出目标的光。';
+    render();
     return;
   }
-  const region = world.regions.find((candidate) => candidate.id === cell.regionId);
-  const directions: Array<[GeneratedDirection, { x: number; y: number }]> = [
-    ['up', { x: 0, y: -1 }],
-    ['down', { x: 0, y: 1 }],
-    ['left', { x: -1, y: 0 }],
-    ['right', { x: 1, y: 0 }],
-  ];
-  const facts = {
-    x: position.x,
-    y: position.y,
-    terrainType: cell.terrainType,
-    biome: region?.biome ?? 'unknown',
-    weather: region?.environment?.weather ?? world.environment.weather,
-    lighting: region?.environment?.lighting ?? world.environment.lighting,
-    elevation: cell.elevation,
-  };
-  if (DEBUG_MODE) {
-    const traversableDirections = directions
-      .filter(([, delta]) => {
-        const target = { x: position.x + delta.x, y: position.y + delta.y };
-        const targetCell = generatedCellAt(world, target);
-        const edge = resolveGeneratedEdge(world, position, target);
-        return Boolean(targetCell && edge && canTraverse(cell, targetCell, edge, {}));
-      })
-      .map(([direction]) => direction);
-    feedback = formatGeneratedInspection({
-      ...facts,
-      regionId: cell.regionId,
-      traversableDirections,
-    }, true);
+  const before = playerPosition(state);
+  const result = moveGeneratedPlayer(playground, state, direction);
+  state = result.state;
+  if (result.accepted) {
+    const after = playerPosition(state);
+    const nextEcho = collapseAfterMove(layout, echo, before, after);
+    if (nextEcho !== echo) {
+      feedback = '身后的木板咔嚓一声塌了下去。';
+    } else {
+      feedback = null;
+    }
+    echo = nextEcho;
   } else {
-    feedback = formatGeneratedInspection(facts, false);
+    feedback = '走不过去。';
   }
   render();
 }
 
-function resetWorld(): void {
-  state = playground.initialState;
-  camera = currentCameraTarget();
-  feedback = 'RUN RESET';
+function toggleEcho(): void {
+  if (echo.echo) {
+    const result = recallEcho(echo);
+    if (!result.ok) {
+      return;
+    }
+    echo = result.state;
+    const operation = applyScopedOperation(state, playground.scope, (context) => {
+      const player = context.state.objects[GENERATED_PLAYER_ID];
+      if (!player || player.kind !== 'main-character') {
+        throw new Error('Echo prototype player is missing');
+      }
+      const nextPlayer: ObjectState = {
+        ...player,
+        position: { ...result.destination },
+      };
+      return {
+        changes: [{ objectId: GENERATED_PLAYER_ID, state: nextPlayer }],
+        events: [{ tag: 'moved', objectId: GENERATED_PLAYER_ID }],
+      };
+    });
+    if (operation.accepted) {
+      state = operation.state;
+      feedback = '世界一闪——你回到了回声身边，它轻轻散开。';
+    }
+  } else {
+    echo = placeEcho(echo, playerPosition(state));
+    feedback = '回声留下了。它安静地站在你原来的位置。';
+  }
   render();
 }
 
-function createNewSeed(): void {
+function interact(): void {
+  const position = playerPosition(state);
+  if (samePosition(position, layout.lever) && !echo.leverPulled) {
+    echo = pullLever(layout, echo, position);
+    feedback = '扳杆沉重地倒下。远处传来石门开启的轰隆声。';
+  } else if (samePosition(position, layout.lever)) {
+    feedback = '扳杆已经倒下了。';
+  } else {
+    feedback = '这里没有可以互动的东西。';
+  }
+  render();
+}
+
+function resetRun(): void {
+  state = playground.initialState;
+  echo = createInitialEchoState();
+  camera = currentCameraTarget();
+  feedback = '试炼重置。';
+  render();
+}
+
+function newSeed(): void {
   seed += 1;
   world = generateGeneratedWorld(seed);
   playground = createGeneratedPlayground(world);
   state = playground.initialState;
-  playtestTags = loadPlaytestTags(seed);
+  layout = createEchoLayout(world.finalPath);
+  echo = createInitialEchoState();
   camera = currentCameraTarget();
-  feedback = 'NEW FIELD GENERATED';
-  renderMinimap();
+  feedback = `新的世界 · SEED ${seed}`;
   render();
-}
-
-function setZoom(nextZoom: number): void {
-  zoom = Math.min(VIEW_MODE === 'ortho' ? 1 : 0.52, Math.max(0.24, nextZoom));
-  renderer.setCamera(camera.x, camera.y, zoom);
 }
 
 void (async () => {
   try {
-    const host = await createPixiHost(canvasRoot, {
+    const host: PixiHostHandle = await createPixiHost(canvasRoot, {
       width: 960,
       height: 600,
       backgroundColor: world.palette.sky,
     });
-    const textures: MarkTextureSet = await loadMarkTextures();
-    const orthogonalTextures: OrthogonalTextureSet = VIEW_MODE === 'ortho'
-      ? await loadOrthogonalTextures()
-      : {};
-    renderer = VIEW_MODE === 'ortho'
-      ? createOrthogonalScene(host.scene, textures, orthogonalTextures)
-      : createIsometricScene(host.scene, textures);
-    const inventoryUi = createInventoryUi(host.ui);
-    inventoryUi.render(createDemoInventoryView(textures));
-    renderMinimap();
+    const orthogonalTextures: OrthogonalTextureSet = await loadOrthogonalTextures();
+    renderer = createOrthogonalScene(host.scene, {}, orthogonalTextures);
+    overlay = new Graphics();
+    overlay.label = 'EchoAnchorOverlay';
+    host.scene.layers.effects.addChild(overlay);
     render();
     renderer.setCamera(camera.x, camera.y, zoom);
 
@@ -540,53 +380,43 @@ void (async () => {
 
     const handleKeyDown = (event: KeyboardEvent): void => {
       const key = event.key.toLowerCase();
-      if (key === 'i' || key === 'b') {
+      if (key === 'q') {
         event.preventDefault();
-        inventoryUi.toggle();
-        return;
-      }
-      if (inventoryUi.isOpen()) {
-        if (key === 'escape') {
-          event.preventDefault();
-          inventoryUi.setOpen(false);
-        }
+        toggleEcho();
         return;
       }
       if (key === 'e' || key === ' ') {
         event.preventDefault();
-        inspectTerrain();
+        interact();
         return;
       }
       if (key === 'r') {
         event.preventDefault();
-        resetWorld();
+        resetRun();
         return;
       }
       if (key === 'n') {
         event.preventDefault();
-        createNewSeed();
+        newSeed();
         return;
       }
       if (key === '[') {
         event.preventDefault();
-        setZoom(zoom - 0.04);
+        zoom = Math.min(1, Math.max(0.24, zoom - 0.04));
+        renderer.setCamera(camera.x, camera.y, zoom);
         return;
       }
       if (key === ']') {
         event.preventDefault();
-        setZoom(zoom + 0.04);
+        zoom = Math.min(1, Math.max(0.24, zoom + 0.04));
+        renderer.setCamera(camera.x, camera.y, zoom);
         return;
       }
-
       const direction: GeneratedDirection | null =
-        key === 'w' || key === 'arrowup'
-          ? 'up'
-          : key === 's' || key === 'arrowdown'
-            ? 'down'
-            : key === 'a' || key === 'arrowleft'
-              ? 'left'
-              : key === 'd' || key === 'arrowright'
-                ? 'right'
+        key === 'w' || key === 'arrowup' ? 'up'
+          : key === 's' || key === 'arrowdown' ? 'down'
+            : key === 'a' || key === 'arrowleft' ? 'left'
+              : key === 'd' || key === 'arrowright' ? 'right'
                 : null;
       if (direction) {
         event.preventDefault();
@@ -601,7 +431,7 @@ void (async () => {
     });
   } catch (error) {
     console.error(error);
-    root.textContent = 'Failed to create generated playground';
+    root.textContent = 'Failed to create echo anchor prototype';
   }
 })();
 
