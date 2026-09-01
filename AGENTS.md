@@ -101,6 +101,13 @@ framework merely because multiple future mechanics might exist. Concrete
 prototypes come first; extract shared architecture only after repeated
 implementations demonstrate the same semantic contract.
 
+## Commit and push gate
+
+- **Always run `/ponytail-review` before committing or pushing anything.** This
+  is a mandatory pre-commit and pre-push hook: do not create a commit or push
+  changes until the review has completed and its findings have been resolved,
+  accepted explicitly, or documented for follow-up.
+
 ## Commands
 
 ```sh
