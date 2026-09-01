@@ -35,6 +35,12 @@ const BUILDING: AuthoredCell = {
   obstacle: 'building',
   walkable: false,
 };
+const WATER: AuthoredCell = {
+  surface: 'water',
+  elevation: 0,
+  obstacle: null,
+  walkable: false,
+};
 
 const LEGEND: Readonly<Record<string, AuthoredCell>> = {
   '.': GRASS,
@@ -42,6 +48,7 @@ const LEGEND: Readonly<Record<string, AuthoredCell>> = {
   '#': ROCK,
   T: TREE,
   B: BUILDING,
+  '~': WATER,
   '<': GRASS,
   '>': GRASS,
   '^': GRASS,
@@ -138,24 +145,29 @@ export const MAIN_WORLD: AuthoredWorld = createAuthoredWorld({
     {
       id: ruinsEntrance,
       title: 'Ruins Entrance',
-      description: 'Broken stonework marks the quiet entrance to the old ruins.',
+      description: 'Broken stonework surrounds a flooded courtyard where a relic glints beyond the water.',
       width: 13,
       height: 11,
       grid: [
         'BBBBBBBBBBBBB',
-        'BTT.......TTB',
-        'B...####...TB',
-        '<...#..#....B',
-        'B...#..#....B',
+        'B...######..B',
         'B...#....#..B',
-        'B...#....#..B',
+        '<...######..B',
+        'B...~~~~~#..B',
+        'B...~~~~~#..B',
+        'B...~~~~~#..B',
         'B...######..B',
         'BTT.......TTB',
         'B...........B',
         'BBBBBBBBBBBBB',
       ],
       legend: LEGEND,
-      spawn: { x: 3, y: 9 },
+      spawn: { x: 3, y: 5 },
+      features: [
+        { id: 'ruins-frost-vessel', kind: 'frost-vessel', position: { x: 3, y: 4 } },
+        { id: 'ruins-relic', kind: 'relic', position: { x: 7, y: 5 } },
+        { id: 'ruins-frost-reset', kind: 'frost-reset', position: { x: 3, y: 5 } },
+      ],
       exits: [
         {
           id: 'ruins-entrance-west',
@@ -183,7 +195,7 @@ export const MAIN_WORLD: AuthoredWorld = createAuthoredWorld({
         'B#.........#B',
         'B#..====...#B',
         'B#.........#B',
-        'B###########B',
+        'B#####.#####B',
         'BBBBBBvBBBBBB',
       ],
       legend: LEGEND,

@@ -38,6 +38,13 @@ export interface AuthoredExit {
   readonly reciprocalExitId?: string;
 }
 
+/** Semantic authored objects such as readable props or interactable relics. */
+export interface AuthoredFeature {
+  readonly id: string;
+  readonly kind: string;
+  readonly position: Position;
+}
+
 export interface AuthoredRoom {
   readonly id: RoomId;
   readonly title: string;
@@ -49,6 +56,7 @@ export interface AuthoredRoom {
   readonly legend: Readonly<Record<string, AuthoredCell>>;
   readonly spawn: Position;
   readonly exits: readonly AuthoredExit[];
+  readonly features?: readonly AuthoredFeature[];
 }
 
 export interface AuthoredWorld {
@@ -236,6 +244,25 @@ export function validateAuthoredWorld(
       errors.push(`spawn outside bounds: ${roomId}`);
     } else if (cellAtUnchecked(room, room.spawn)?.walkable !== true) {
       errors.push(`spawn on non-walkable cell: ${roomId}`);
+    }
+
+    if (room.features !== undefined && !Array.isArray(room.features)) {
+      errors.push(`features must be an array: ${roomId}`);
+    }
+    for (const [featureIndex, feature] of (Array.isArray(room.features) ? room.features : []).entries()) {
+      if (!feature || typeof feature !== 'object') {
+        errors.push(`invalid feature: ${roomId}:${featureIndex}`);
+        continue;
+      }
+      if (typeof feature.id !== 'string' || feature.id.length === 0) {
+        errors.push(`invalid feature id: ${roomId}:${featureIndex}`);
+      }
+      if (typeof feature.kind !== 'string' || feature.kind.length === 0) {
+        errors.push(`invalid feature kind: ${roomId}:${featureIndex}`);
+      }
+      if (!isPosition(feature.position) || !isInside(room, feature.position)) {
+        errors.push(`feature outside bounds: ${roomId}:${feature.id || featureIndex}`);
+      }
     }
 
     if (!Array.isArray(room.exits)) {

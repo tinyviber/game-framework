@@ -9,6 +9,8 @@ import type {
   IsoRoomView,
   IsoSceneView,
   IsoMarkerView,
+  IsoFrostCellView,
+  IsoObjectView,
   IsoPropView,
 } from './isometric-scene';
 import type { WorldScene } from './world-scene';
@@ -376,6 +378,67 @@ function drawMarker(
   graphics.circle(centerX, centerY - 4, active ? 12 : 9).stroke({ width: 2, color, alpha: 0.9 });
 }
 
+function drawFrostCell(
+  graphics: Graphics,
+  room: IsoRoomView,
+  cell: IsoFrostCellView,
+): void {
+  const point = room.cells[cell.y]?.[cell.x]
+    ? cellTopLeft(room.cells[cell.y]![cell.x]!)
+    : projectOrthogonalCell(cell.x, cell.y);
+  const ratio = Math.max(0, Math.min(1, cell.lifeRatio));
+  graphics
+    .roundRect(point.x + 2, point.y + 2, ORTHO_TILE_SIZE - 4, ORTHO_TILE_SIZE - 4, 7)
+    .fill({ color: 0xbdeeff, alpha: 0.32 + ratio * 0.28 })
+    .stroke({ width: ratio < 0.45 ? 2 : 1, color: 0xf4ffff, alpha: 0.9 });
+  if (ratio < 0.45) {
+    graphics
+      .moveTo(point.x + 7, point.y + 12)
+      .lineTo(point.x + 14, point.y + 18)
+      .lineTo(point.x + 20, point.y + 11)
+      .moveTo(point.x + 20, point.y + 23)
+      .lineTo(point.x + 26, point.y + 16);
+  }
+}
+
+function drawAuthoredObject(
+  graphics: Graphics,
+  room: IsoRoomView,
+  object: IsoObjectView,
+): void {
+  if (object.kind === 'relic' && object.active === false) {
+    return;
+  }
+  const point = room.cells[object.y]?.[object.x]
+    ? cellTopLeft(room.cells[object.y]![object.x]!)
+    : projectOrthogonalCell(object.x, object.y);
+  const centerX = point.x + ORTHO_TILE_SIZE / 2;
+  graphics.ellipse(centerX, point.y + 30, 13, 5).fill({ color: 0x05080d, alpha: 0.25 });
+  if (object.kind === 'frost-vessel') {
+    graphics
+      .roundRect(point.x + 7, point.y + 14, 18, 13, 5)
+      .fill(0x35515d)
+      .stroke({ width: 2, color: 0xbdeeff, alpha: 0.9 });
+    graphics.ellipse(centerX, point.y + 14, 10, 5).fill({ color: 0x416a7b, alpha: 0.96 });
+    graphics.circle(centerX, point.y + 10, object.active ? 7 : 4).fill({
+      color: 0xbdeeff,
+      alpha: object.active ? 0.86 : 0.56,
+    });
+    return;
+  }
+  if (object.kind === 'relic') {
+    graphics
+      .moveTo(centerX, point.y + 3)
+      .lineTo(centerX + 8, point.y + 15)
+      .lineTo(centerX, point.y + 24)
+      .lineTo(centerX - 8, point.y + 15)
+      .closePath()
+      .fill(0xf2c66d)
+      .stroke({ width: 2, color: 0xfff0b0, alpha: 0.95 });
+    graphics.circle(centerX, point.y + 15, 13).stroke({ width: 2, color: 0xf2c66d, alpha: 0.42 });
+  }
+}
+
 function drawConnectorMarkers(graphics: Graphics, room: IsoRoomView): void {
   for (const connector of room.connectors ?? []) {
     const fromCell = room.cells[connector.from.y]?.[connector.from.x];
@@ -525,11 +588,13 @@ export function createOrthogonalScene(
   const entities = new Container();
   const foreground = new Container();
   const terrainGraphics = new Graphics();
+  const surfaceEffects = new Graphics();
   const propGraphics = new Graphics();
   const entityGraphics = new Graphics();
 
   terrain.label = 'OrthogonalTerrain';
   terrainSprites.label = 'OrthogonalTerrainSprites';
+  surfaceEffects.label = 'OrthogonalSurfaceEffects';
   props.label = 'OrthogonalProps';
   entities.label = 'OrthogonalEntities';
   foreground.label = 'OrthogonalForeground';
@@ -538,7 +603,7 @@ export function createOrthogonalScene(
   foreground.sortableChildren = true;
   terrainSprites.sortableChildren = true;
   scene.layers.ground.addChild(terrainGraphics, terrain);
-  scene.layers.terrain.addChild(terrainSprites);
+  scene.layers.terrain.addChild(terrainSprites, surfaceEffects);
   scene.layers.objects.addChild(props, propGraphics);
   scene.layers.entities.addChild(entities, entityGraphics);
   scene.layers.foreground.addChild(foreground);
@@ -551,6 +616,7 @@ export function createOrthogonalScene(
       clearContainer(entities);
       clearContainer(foreground);
       terrainGraphics.clear();
+      surfaceEffects.clear();
       propGraphics.clear();
       entityGraphics.clear();
 
@@ -730,6 +796,12 @@ export function createOrthogonalScene(
         }
       }
 
+      // Surface effects (ice, etc.) render above the Kenney terrain/water
+      // sprites but below objects and entities.
+      for (const cell of view.frost ?? []) {
+        drawFrostCell(surfaceEffects, room, cell);
+      }
+
       drawExitMarkers(propGraphics, room);
       drawConnectorMarkers(propGraphics, room);
       if (room.start) {
@@ -740,6 +812,10 @@ export function createOrthogonalScene(
       }
       drawDebugOverlay(propGraphics, room);
       drawNode(propGraphics, room, view.windMarks[room.id] === true);
+
+      for (const object of room.objects ?? []) {
+        drawAuthoredObject(propGraphics, room, object);
+      }
 
       for (const prop of room.props) {
         drawProp(propGraphics, props, foreground, prop, orthogonalTextures, room.palette);

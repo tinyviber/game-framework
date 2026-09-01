@@ -22,13 +22,16 @@ import {
 import {
   authoredCurrentRoom,
   authoredPlayerPosition,
+  castAuthoredFrost,
   createAuthoredGame,
   createAuthoredPlayState,
+  interactAuthoredPlayer,
   moveAuthoredPlayer,
   resetAuthoredPlayState,
   type AuthoredGame,
   type AuthoredPlayState,
 } from '@/gameplay/authored-world';
+import { FROST_LIFETIME } from '@/gameplay/frost-vessel';
 import { MAIN_WORLD } from '@/content/main-world';
 import type { LocalWorldState } from '@/world/types';
 import {
@@ -149,7 +152,8 @@ const controls = document.createElement('footer');
 controls.className = 'controls-bar';
 controls.innerHTML = `
   <span><kbd>W A S D</kbd> / <kbd>← ↑ ↓ →</kbd> move</span>
-  <span><kbd>E</kbd> inspect ${IS_GENERATED_MODE ? 'terrain' : 'room'}</span>
+  <span><kbd>E</kbd> ${IS_GENERATED_MODE ? 'inspect terrain' : 'interact'}</span>
+  ${IS_GENERATED_MODE ? '' : '<span id="frost-control" hidden><kbd>F</kbd> cast frost</span>'}
   <span><kbd>R</kbd> reset</span>
   ${IS_GENERATED_MODE ? '<span><kbd>N</kbd> new seed</span>' : ''}
   <span><kbd>[ ]</kbd> zoom</span>
@@ -170,6 +174,7 @@ const title = header.querySelector<HTMLHeadingElement>('h1')!;
 const roomTitle = sidePanel.querySelector<HTMLHeadingElement>('#room-title')!;
 const roomDescription = sidePanel.querySelector<HTMLParagraphElement>('#room-description')!;
 const roomStatus = sidePanel.querySelector<HTMLParagraphElement>('#room-status')!;
+const frostControl = controls.querySelector<HTMLSpanElement>('#frost-control');
 const seedTag = sidePanel.querySelector<HTMLSpanElement>('#seed-tag');
 const minimap = sidePanel.querySelector<HTMLDivElement>('#minimap');
 const feedbackButtons = Array.from(
@@ -315,6 +320,17 @@ function createAuthoredWorldView(playState: AuthoredPlayState): IsoRoomView {
       walkable: cell.walkable,
     }))),
     props: [],
+    objects: (room.features ?? []).map((feature) => ({
+      id: feature.id,
+      kind: feature.kind,
+      x: feature.position.x,
+      y: feature.position.y,
+      active: feature.kind === 'relic'
+        ? !playState.frostVessel.relicTaken
+        : feature.kind === 'frost-vessel'
+          ? playState.frostVessel.acquired
+          : true,
+    })),
     npcs: [],
     exits: room.exits.map((exit) => ({
       id: exit.id,
@@ -423,6 +439,16 @@ function buildView(): IsoSceneView {
     : authoredPlayerPosition(authoredState!);
   const room = createWorldView();
   const cell = room.cells[position.y]?.[position.x];
+  const frost = IS_GENERATED_MODE
+    ? undefined
+    : Object.entries(authoredState!.frostVessel.frozen).map(([key, life]) => {
+        const [x, y] = key.split(',').map(Number);
+        return {
+          x,
+          y,
+          lifeRatio: life / FROST_LIFETIME,
+        };
+      });
   return {
     room,
     player: {
@@ -431,6 +457,7 @@ function buildView(): IsoSceneView {
       elevation: cell?.elevation ?? 0,
     },
     windMarks: {},
+    frost,
     goalReached: IS_GENERATED_MODE
       ? generatedGoalReached(playground!, state)
       : undefined,
@@ -511,7 +538,18 @@ function render(): void {
     title.textContent = `The Main World · ${room.title}`;
     roomTitle.textContent = room.title;
     roomDescription.textContent = room.description;
-    roomStatus.textContent = `POSITION ${position.x},${position.y}`;
+    const roomHasVessel = room.features?.some((feature) => feature.kind === 'frost-vessel') === true;
+    const status = authoredState!.frostVessel.relicTaken
+      ? 'RELIC RECOVERED'
+      : authoredState!.frostVessel.acquired
+        ? 'VESSEL AWAKE · RELIC IN THE FLOOD'
+        : roomHasVessel
+          ? 'A FROST VESSEL WAITS NEARBY'
+          : '';
+    roomStatus.textContent = `POSITION ${position.x},${position.y}${status ? ` · ${status}` : ''}`;
+    if (frostControl) {
+      frostControl.hidden = !authoredState!.frostVessel.acquired;
+    }
     statusText.textContent = feedback ?? `POSITION ${position.x},${position.y}`;
   }
   renderer.render(buildView());
@@ -548,7 +586,11 @@ function tryMove(direction: GeneratedDirection): void {
   if (result.accepted) {
     authoredState = result.state;
     state = result.state.localState;
-    feedback = null;
+    feedback = result.event === 'drowned'
+      ? 'THE ICE GAVE WAY · SWEPT BACK TO SHORE'
+      : result.event === 'relic-taken'
+        ? 'RELIC RECOVERED'
+        : null;
   } else {
     feedback = formatBlockedMovement();
   }
@@ -557,13 +599,13 @@ function tryMove(direction: GeneratedDirection): void {
 
 function inspectTerrain(): void {
   if (!IS_GENERATED_MODE) {
-    const position = authoredPlayerPosition(authoredState!);
-    const room = authoredCurrentRoom(authoredState!);
-    const cell = authoredCellAt(room, position);
-    if (cell) {
-      feedback = `CELL ${position.x},${position.y} · SURFACE ${cell.surface} · ELEVATION ${cell.elevation}`;
-      render();
-    }
+    const result = interactAuthoredPlayer(authoredState!);
+    authoredState = result.state;
+    state = result.state.localState;
+    feedback = result.kind === 'vessel-acquired'
+      ? 'FROST VESSEL AWAKENED · PRESS F TO CAST'
+      : `CELL ${authoredPlayerPosition(result.state).x},${authoredPlayerPosition(result.state).y}`;
+    render();
     return;
   }
 
@@ -605,6 +647,26 @@ function inspectTerrain(): void {
     }, true);
   } else {
     feedback = formatGeneratedInspection(facts, false);
+  }
+  render();
+}
+
+function castFrostAbility(): void {
+  if (IS_GENERATED_MODE) {
+    return;
+  }
+  const result = castAuthoredFrost(authoredState!);
+  if (result.accepted) {
+    authoredState = result.state;
+    state = result.state.localState;
+    const hasActiveFrost = Object.keys(result.state.frostVessel.frozen).length > 0;
+    feedback = result.newlyFrozen > 0
+      ? 'FROST SPREADS ACROSS THE WATER'
+      : hasActiveFrost
+        ? 'THE ICE IS REFRESHED'
+        : 'NO WATER ANSWERS HERE';
+  } else {
+    feedback = 'THE VESSEL IS STILL QUIET';
   }
   render();
 }
@@ -689,6 +751,11 @@ void (async () => {
       if (key === 'e' || key === ' ') {
         event.preventDefault();
         inspectTerrain();
+        return;
+      }
+      if (key === 'f') {
+        event.preventDefault();
+        castFrostAbility();
         return;
       }
       if (key === 'r') {

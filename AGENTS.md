@@ -55,6 +55,7 @@ raw brainstorm
 
 ```text
 src/world/*        pure world primitives; no gameplay or presentation imports
+src/content/*      semantic authored product data; no gameplay or presentation imports
 src/gameplay/*     current product-specific gameplay adapters; may import src/world, never rendering/Pixi
 src/rendering/*    presentation infrastructure; may import pixi.js, never src/world or src/gameplay
 src/main.ts        browser wiring; the only module that connects DOM, gameplay and rendering
