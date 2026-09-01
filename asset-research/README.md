@@ -37,8 +37,12 @@ Put manually downloaded files in the two `local/downloads/` directories. The
 scripts never download from the network and never write restricted or generated
 imagery to a tracked path.
 
-The generated playground's orthogonal renderer uses the tracked CC0 Puny World
-atlas as its selected 2D source. Its reviewable region annotations live in
+The current generated playground orthogonal renderer uses the tracked
+**Kenney Map Pack** assets under `public/assets/kenney-map-pack/`. Puny World
+and the other CC0 atlases in this directory are retained as research and
+benchmark candidates only; they are not the current runtime terrain source.
+
+The historical Puny World annotation metadata remains reviewable in
 [`src/assets/orthogonal/atlas-metadata.json`](../src/assets/orthogonal/atlas-metadata.json);
 native source rectangles are intentionally kept separate from logical
 footprints, visual bounds, and anchors. Run
