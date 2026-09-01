@@ -10,7 +10,7 @@ export interface SpatialIndex {
    * Ids of definition-positioned objects (static objects and mutable
    * objects at their definition position) occupying the given cell.
    * Objects whose runtime position can diverge (for example NPCs)
-   * must be checked against live state by the chapter, not here.
+   * must be checked against live state by gameplay code, not here.
    */
   readonly objectsAt: (position: Position) => readonly ObjectId[];
 }

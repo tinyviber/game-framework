@@ -95,7 +95,7 @@ const topology = createRoomTopology({
   ],
 });
 
-describe('Chapter 8 room topology', () => {
+describe('room topology', () => {
   it('snapshots topology entries and freezes the definition', () => {
     const entry = { spawnX: 1 };
     const snapshot = createRoomTopology({

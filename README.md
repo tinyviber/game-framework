@@ -1,7 +1,7 @@
 # game-framework
 
-A small, puzzle-first browser game framework in TypeScript. The runtime
-keeps only the **Local World** (the room the player is currently in) as
+A small, puzzle-first browser game framework in TypeScript. The game keeps
+only the **Local World** (the room the player is currently in) as
 immutable definitions plus deep-frozen mutable state; every world change
 goes through an all-or-nothing operation before it is projected into a
 view model and rendered with PixiJS.
@@ -10,8 +10,8 @@ view model and rendered with PixiJS.
 - Only the active room holds mutable state; rooms rebuild on transition
   from definitions, entry parameters and persistent metadata.
 - Feedback travels as typed events, never as string labels.
-- Room JSON is a strict authoring boundary: broken maps fail at
-  parse/boot/test time, not during play.
+- Movement follows explicit world definitions and traversal edges rather than
+  hardcoded cell coordinates.
 
 ## Architecture at a glance
 
@@ -21,7 +21,7 @@ built from the selected Kenney previews in `textures_mark`:
 ```text
 seed
   → generated-world (src/world/generated-world)  # deterministic 40×40 geometry
-  → chapter-13 adapter                            # LocalWorld + scoped operation
+  → gameplay/generated-playground                  # LocalWorld + scoped operation
   → IsoSceneView (src/rendering/isometric-scene)  # one-way presentation DTO
   → Pixi 2.5D dimetric scene
 ```
@@ -36,50 +36,13 @@ normal field study. The renderer uses the committed 64×64 PNG previews as
 terrain props and characters, then adds elevation, shadows, foot-point sorting
 and a foreground occlusion layer for the 3D reading.
 
-The 20-room **Windweave** catalog remains in `src/data/adventure` as a
-showcase/renderer fixture. It is not the canonical generated-world source and
-is not wired into the current playable entry point.
+The generated playground is the current product path. Its product-specific
+adapter lives in `src/gameplay/generated-playground.ts` and deliberately
+reuses `tryInitializeLocalWorld` and `applyScopedOperation` without introducing
+a session manager, global event bus, or background room simulation.
 
-The original **chapter pipeline** still exists and its tests still run:
-
-```text
-PlayerAction (src/main.ts)
-  → chapter operation (src/chapters/chapter-N)
-  → applyScopedOperation (src/world/operation)   # scope + atomic commit
-  → LocalWorldState (deep-frozen)
-  → view projection (chapter view adapters)
-  → Chapter6Renderer (chapters/chapter-6) → Pixi
-```
-
-The chapter pipeline is currently reference/test material for
-closures/topology/checkpoints. Chapter 13 is the generated-playground level
-adapter and deliberately reuses `tryInitializeLocalWorld` and
-`applyScopedOperation`; the legacy tile runtime is retained only for
-compatibility coverage.
-
-See `docs/Current Design Synthesis and Reconstruction Plan.md` for the
-full design constitution and per-chapter rebuild plan, and `AGENTS.md`
-for the mechanically enforced dependency and invariant rules.
-
-## Legacy tile runtime boundary
-
-The legacy tile runtime still documents the framework's earlier state model:
-
-```text
-TileRoom                    → RoomDefinition / spatial definition
-tile player action          → tile-specific WorldOperation
-                            → applyScopedOperation
-                            → LocalWorldState
-                            → GameSession
-                            → Closure / persistent effect / topology
-                            → TileSceneView → Pixi
-```
-
-The generated-world path is now the production wiring. The older tile runtime,
-chapter pipeline examples and 20-room adventure remain isolated
-framework/showcase material; the generated world uses frozen definitions and
-the existing Local World/scoped-operation primitives, and does not introduce a
-global event bus or background room simulation.
+See `docs/design/` for the durable product constitution and `AGENTS.md` for
+the mechanically enforced dependency and invariant rules.
 
 ## Getting started
 
@@ -90,25 +53,22 @@ npm test         # vitest (node environment)
 npm run build    # tsc + vite build
 ```
 
-Single-suite verification, e.g.:
+Focused verification, e.g.:
 
 ```sh
-npm test -- src/world/hub-playthrough.test.ts
+npm test -- src/world/generated-world.test.ts
 ```
 
 ## Repository layout
 
 ```text
-src/data/         showcase adventure catalog plus legacy room JSON
 src/world/        pure state primitives: types, local-world, operation,
-                  closure, topology, transition, checkpoint, spatial,
-                  traversal, generated-world, and the legacy tile runtime
-src/runtime/      game session orchestration
-src/chapters/     level-specific rules and view projections, including the
-                  generated playground adapter
-src/rendering/    Pixi host, world scene layers, legacy tile renderer,
-                  and the generated-world isometric renderer
+                  closure, topology, transition, spatial, traversal, and the
+                  generated-world implementation
+src/gameplay/     current product-specific gameplay adapters
+src/rendering/    Pixi host, world scene layers, and the generated-world
+                  isometric/orthogonal renderers
 src/main.ts       browser wiring: the only module connecting DOM,
                   world operations and the Pixi host
-docs/             design plan and project analysis
+docs/             canonical design notes and focused reclamation records
 ```

@@ -58,7 +58,7 @@ function createRoom(
   };
 }
 
-describe('Chapter 2 world foundation', () => {
+describe('Local World foundation', () => {
   it('keeps a frozen snapshot of definition data', () => {
     const definition = createRoom(
       'snapshot',
