@@ -588,11 +588,13 @@ export function createOrthogonalScene(
   const entities = new Container();
   const foreground = new Container();
   const terrainGraphics = new Graphics();
+  const surfaceEffects = new Graphics();
   const propGraphics = new Graphics();
   const entityGraphics = new Graphics();
 
   terrain.label = 'OrthogonalTerrain';
   terrainSprites.label = 'OrthogonalTerrainSprites';
+  surfaceEffects.label = 'OrthogonalSurfaceEffects';
   props.label = 'OrthogonalProps';
   entities.label = 'OrthogonalEntities';
   foreground.label = 'OrthogonalForeground';
@@ -601,7 +603,7 @@ export function createOrthogonalScene(
   foreground.sortableChildren = true;
   terrainSprites.sortableChildren = true;
   scene.layers.ground.addChild(terrainGraphics, terrain);
-  scene.layers.terrain.addChild(terrainSprites);
+  scene.layers.terrain.addChild(terrainSprites, surfaceEffects);
   scene.layers.objects.addChild(props, propGraphics);
   scene.layers.entities.addChild(entities, entityGraphics);
   scene.layers.foreground.addChild(foreground);
@@ -614,6 +616,7 @@ export function createOrthogonalScene(
       clearContainer(entities);
       clearContainer(foreground);
       terrainGraphics.clear();
+      surfaceEffects.clear();
       propGraphics.clear();
       entityGraphics.clear();
 
@@ -793,8 +796,10 @@ export function createOrthogonalScene(
         }
       }
 
+      // Surface effects (ice, etc.) render above the Kenney terrain/water
+      // sprites but below objects and entities.
       for (const cell of view.frost ?? []) {
-        drawFrostCell(terrainGraphics, room, cell);
+        drawFrostCell(surfaceEffects, room, cell);
       }
 
       drawExitMarkers(propGraphics, room);

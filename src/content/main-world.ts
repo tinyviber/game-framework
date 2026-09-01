@@ -166,6 +166,7 @@ export const MAIN_WORLD: AuthoredWorld = createAuthoredWorld({
       features: [
         { id: 'ruins-frost-vessel', kind: 'frost-vessel', position: { x: 3, y: 4 } },
         { id: 'ruins-relic', kind: 'relic', position: { x: 7, y: 5 } },
+        { id: 'ruins-frost-reset', kind: 'frost-reset', position: { x: 3, y: 5 } },
       ],
       exits: [
         {

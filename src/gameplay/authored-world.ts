@@ -29,7 +29,8 @@ import {
   castFrost,
   clearActiveFrost,
   createInitialFrostState,
-  frostTrialForRoom,
+  featurePosition,
+  frostResetForRoom,
   type FrostVesselState,
 } from './frost-vessel';
 import {
@@ -300,23 +301,25 @@ export function moveAuthoredPlayer(
     return { accepted: false, state, reason: 'operation-failed' };
   }
 
-  const trial = frostTrialForRoom(room);
   let frostVessel = state.frostVessel;
   let localState = moved;
   let event: AuthoredMoveEvent = 'moved';
-  if (trial && frostVessel.acquired) {
+  if (frostVessel.acquired) {
     const advanced = advanceFrost(frostVessel, room, target);
     frostVessel = advanced.state;
     if (advanced.drowned) {
-      const reset = movePlayerState(localState, scope, trial.reset, direction);
+      const reset = movePlayerState(localState, scope, frostResetForRoom(room), direction);
       if (!reset) {
         return { accepted: false, state, reason: 'operation-failed' };
       }
       localState = reset;
       event = 'drowned';
-    } else if (!frostVessel.relicTaken && target.x === trial.relic.x && target.y === trial.relic.y) {
-      frostVessel = Object.freeze({ ...frostVessel, relicTaken: true });
-      event = 'relic-taken';
+    } else {
+      const relic = featurePosition(room, 'relic');
+      if (!frostVessel.relicTaken && relic && target.x === relic.x && target.y === relic.y) {
+        frostVessel = Object.freeze({ ...frostVessel, relicTaken: true });
+        event = 'relic-taken';
+      }
     }
   }
 
@@ -347,8 +350,8 @@ function near(a: Position, b: Position): boolean {
 export function interactAuthoredPlayer(
   state: AuthoredPlayState,
 ): AuthoredInteractionResult {
-  const trial = frostTrialForRoom(authoredCurrentRoom(state));
-  if (trial && !state.frostVessel.acquired && near(authoredPlayerPosition(state), trial.vessel)) {
+  const vessel = featurePosition(authoredCurrentRoom(state), 'frost-vessel');
+  if (vessel && !state.frostVessel.acquired && near(authoredPlayerPosition(state), vessel)) {
     return {
       state: {
         ...state,
@@ -360,7 +363,7 @@ export function interactAuthoredPlayer(
   return { state, kind: 'inspected' };
 }
 
-export type AuthoredCastFailure = 'not-in-frost-trial' | 'vessel-not-acquired';
+export type AuthoredCastFailure = 'vessel-not-acquired';
 
 export type AuthoredCastResult =
   | {
@@ -377,13 +380,10 @@ export type AuthoredCastResult =
 export function castAuthoredFrost(
   state: AuthoredPlayState,
 ): AuthoredCastResult {
-  const room = authoredCurrentRoom(state);
-  if (!frostTrialForRoom(room)) {
-    return { accepted: false, state, reason: 'not-in-frost-trial' };
-  }
   if (!state.frostVessel.acquired) {
     return { accepted: false, state, reason: 'vessel-not-acquired' };
   }
+  const room = authoredCurrentRoom(state);
   const cast = castFrost(state.frostVessel, room, authoredPlayerPosition(state));
   return {
     accepted: true,

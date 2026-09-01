@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { MAIN_WORLD } from '@/content/main-world';
+import { createAuthoredWorld, type AuthoredCell } from '@/world/authored-world';
+import { createRoomId } from '@/world/types';
 import {
   authoredCurrentRoom,
   authoredPlayerPosition,
@@ -13,6 +15,25 @@ import {
 
 const game = createAuthoredGame(MAIN_WORLD);
 
+const GRASS: AuthoredCell = {
+  surface: 'grass',
+  elevation: 0,
+  obstacle: null,
+  walkable: true,
+};
+const WATER: AuthoredCell = {
+  surface: 'water',
+  elevation: 0,
+  obstacle: null,
+  walkable: false,
+};
+const ROCK: AuthoredCell = {
+  surface: 'stone',
+  elevation: 0,
+  obstacle: 'rock',
+  walkable: false,
+};
+
 function move(
   state: ReturnType<typeof createAuthoredPlayState>,
   direction: 'up' | 'down' | 'left' | 'right',
@@ -24,6 +45,62 @@ function move(
   }
   return result.state;
 }
+
+const WATER_ONLY_WORLD = createAuthoredWorld({
+  startRoomId: createRoomId('water-room'),
+  startPosition: { x: 0, y: 0 },
+  rooms: [
+    {
+      id: createRoomId('water-room'),
+      title: 'Water Room',
+      description: 'A room with water and no frost features.',
+      width: 5,
+      height: 3,
+      grid: [
+        '.....',
+        '.~~~.',
+        '.....',
+      ],
+      legend: {
+        '.': GRASS,
+        '~': WATER,
+      },
+      spawn: { x: 0, y: 0 },
+      exits: [],
+    },
+  ],
+});
+
+const FROST_RESET_TEST_WORLD = createAuthoredWorld({
+  startRoomId: createRoomId('frost-reset-test'),
+  startPosition: { x: 1, y: 1 },
+  rooms: [
+    {
+      id: createRoomId('frost-reset-test'),
+      title: 'Frost Reset Test',
+      description: 'A room where the drowning reset differs from spawn.',
+      width: 5,
+      height: 5,
+      grid: [
+        '.....',
+        '..#~.',
+        '.~#~.',
+        '..#..',
+        '.....',
+      ],
+      legend: {
+        '.': GRASS,
+        '~': WATER,
+        '#': ROCK,
+      },
+      spawn: { x: 1, y: 1 },
+      features: [
+        { id: 'test-frost-reset', kind: 'frost-reset', position: { x: 3, y: 3 } },
+      ],
+      exits: [],
+    },
+  ],
+});
 
 describe('authored connected world gameplay', () => {
   it('accepts the four authored rooms and preserves their graph', () => {
@@ -172,5 +249,45 @@ describe('authored connected world gameplay', () => {
   it('uses the requested room spawn when no explicit position is given', () => {
     const state = createAuthoredPlayState(game, MAIN_WORLD.rooms.find((room) => room.id === 'ruins-entrance')!.id);
     expect(authoredPlayerPosition(state)).toEqual({ x: 3, y: 5 });
+  });
+
+  it('casts frost in any authored water room once the vessel is acquired', () => {
+    const customGame = createAuthoredGame(WATER_ONLY_WORLD);
+    let state = createAuthoredPlayState(customGame, createRoomId('water-room'));
+    state = {
+      ...state,
+      frostVessel: Object.freeze({ ...state.frostVessel, acquired: true }),
+    };
+
+    const result = castAuthoredFrost(state);
+
+    expect(result.accepted).toBe(true);
+    if (!result.accepted) {
+      throw new Error('expected frost cast to be accepted');
+    }
+    expect(result.newlyFrozen).toBeGreaterThan(0);
+  });
+
+  it('soft-resets to an explicit frost-reset feature instead of room spawn', () => {
+    const customGame = createAuthoredGame(FROST_RESET_TEST_WORLD);
+    let state = createAuthoredPlayState(customGame, createRoomId('frost-reset-test'));
+    state = {
+      ...state,
+      frostVessel: Object.freeze({
+        ...state.frostVessel,
+        acquired: true,
+        frozen: Object.freeze({ '1,2': 1 }),
+      }),
+    };
+
+    const result = moveAuthoredPlayer(state, 'down');
+
+    expect(result.accepted).toBe(true);
+    if (result.accepted) {
+      expect(result.event).toBe('drowned');
+      expect(authoredPlayerPosition(result.state)).toEqual({ x: 3, y: 3 });
+      expect(result.state.frostVessel.drownCount).toBe(1);
+      expect(result.state.frostVessel.frozen).toEqual({});
+    }
   });
 });

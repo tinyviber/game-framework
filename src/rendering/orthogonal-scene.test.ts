@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
+import { Container, Graphics } from 'pixi.js';
 import { generateGeneratedWorld } from '@/world/generated-world';
 import { KENNEY_MAP_PACK_METADATA } from '@/assets/kenney-map-pack/metadata';
 import { ORTHO_DECORATION_TILE_IDS } from './orthogonal-textures';
+import { createWorldScene } from './world-scene';
 import {
+  createOrthogonalScene,
   ORTHO_ELEVATION_STEP,
   ORTHO_TILE_SIZE,
   barrierSideEdgeTileId,
@@ -11,6 +14,7 @@ import {
   sideEdgeTileId,
   stoneSouthEdgeTileId,
 } from './orthogonal-scene';
+import type { IsoSceneView } from './isometric-scene';
 
 describe('orthogonal projection', () => {
   it('keeps world axes aligned with screen axes', () => {
@@ -74,5 +78,66 @@ describe('orthogonal edge tile selection', () => {
     for (const id of ORTHO_DECORATION_TILE_IDS) {
       expect(KENNEY_MAP_PACK_METADATA.tiles.some((tile) => tile.id === id)).toBe(true);
     }
+  });
+});
+
+describe('orthogonal frost overlay layering', () => {
+  it('renders frost surface effects above Kenney terrain but below objects', () => {
+    const root = new Container();
+    const scene = createWorldScene(root);
+    const renderer = createOrthogonalScene(scene, {});
+
+    const view: IsoSceneView = {
+      room: {
+        id: 'layer-room',
+        title: 'Layer Room',
+        description: '',
+        width: 3,
+        height: 3,
+        cells: Array.from({ length: 3 }, (_, y) =>
+          Array.from({ length: 3 }, (_, x) => ({
+            x,
+            y,
+            elevation: 0,
+            terrainType: 'water',
+            surface: 'water',
+            biome: 'lake',
+            environment: { weather: 'clear', lighting: 'day' },
+            walkable: false,
+          })),
+        ),
+        props: [],
+        npcs: [],
+        exits: [],
+        environment: { weather: 'clear', lighting: 'day' },
+        palette: {
+          sky: 0x9ecbff,
+          ground: 0x8ec9e8,
+          groundAlt: 0x79b9dd,
+          edge: 0x5a9bc4,
+          glow: 0xffe9a8,
+        },
+      },
+      player: { x: 0, y: 0, elevation: 0 },
+      windMarks: {},
+      frost: [{ x: 1, y: 1, lifeRatio: 1 }],
+    };
+
+    renderer.render(view);
+
+    const terrainChildren = scene.layers.terrain.children.map((child) => child.label);
+    expect(terrainChildren).toEqual([
+      'OrthogonalTerrainSprites',
+      'OrthogonalSurfaceEffects',
+    ]);
+
+    const surfaceEffects = scene.layers.terrain.children[1];
+    expect(surfaceEffects).toBeInstanceOf(Graphics);
+    expect((surfaceEffects as Graphics).context.instructions.length).toBeGreaterThan(0);
+
+    renderer.destroy();
+    scene.destroy();
+    expect(root.children).toHaveLength(0);
+    root.destroy();
   });
 });

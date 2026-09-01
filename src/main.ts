@@ -538,19 +538,17 @@ function render(): void {
     title.textContent = `The Main World · ${room.title}`;
     roomTitle.textContent = room.title;
     roomDescription.textContent = room.description;
-    const roomHasFrost = room.features?.some((feature) => feature.kind === 'frost-vessel') === true;
-    const status = roomHasFrost
-      ? authoredState!.frostVessel.relicTaken
-        ? 'RELIC RECOVERED'
-        : authoredState!.frostVessel.acquired
-          ? 'VESSEL AWAKE · RELIC IN THE FLOOD'
-          : 'A FROST VESSEL WAITS NEARBY'
-      : authoredState!.frostVessel.relicTaken
-        ? 'RELIC RECOVERED'
-        : '';
+    const roomHasVessel = room.features?.some((feature) => feature.kind === 'frost-vessel') === true;
+    const status = authoredState!.frostVessel.relicTaken
+      ? 'RELIC RECOVERED'
+      : authoredState!.frostVessel.acquired
+        ? 'VESSEL AWAKE · RELIC IN THE FLOOD'
+        : roomHasVessel
+          ? 'A FROST VESSEL WAITS NEARBY'
+          : '';
     roomStatus.textContent = `POSITION ${position.x},${position.y}${status ? ` · ${status}` : ''}`;
     if (frostControl) {
-      frostControl.hidden = !authoredState!.frostVessel.acquired || !roomHasFrost;
+      frostControl.hidden = !authoredState!.frostVessel.acquired;
     }
     statusText.textContent = feedback ?? `POSITION ${position.x},${position.y}`;
   }
@@ -661,11 +659,14 @@ function castFrostAbility(): void {
   if (result.accepted) {
     authoredState = result.state;
     state = result.state.localState;
-    feedback = result.newlyFrozen > 0 ? 'FROST SPREADS ACROSS THE WATER' : 'THE ICE IS REFRESHED';
+    const hasActiveFrost = Object.keys(result.state.frostVessel.frozen).length > 0;
+    feedback = result.newlyFrozen > 0
+      ? 'FROST SPREADS ACROSS THE WATER'
+      : hasActiveFrost
+        ? 'THE ICE IS REFRESHED'
+        : 'NO WATER ANSWERS HERE';
   } else {
-    feedback = result.reason === 'vessel-not-acquired'
-      ? 'THE VESSEL IS STILL QUIET'
-      : 'NO WATER ANSWERS HERE';
+    feedback = 'THE VESSEL IS STILL QUIET';
   }
   render();
 }

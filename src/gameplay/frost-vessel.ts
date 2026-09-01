@@ -19,13 +19,6 @@ export interface FrostVesselState {
   readonly drownCount: number;
 }
 
-export interface FrostTrial {
-  readonly vessel: Position;
-  readonly relic: Position;
-  /** Explicit authored shore used after a soft drowning failure. */
-  readonly reset: Position;
-}
-
 export interface FrostCastResult {
   readonly state: FrostVesselState;
   readonly newlyFrozen: number;
@@ -61,17 +54,21 @@ export function createInitialFrostState(): FrostVesselState {
   });
 }
 
-export function frostTrialForRoom(room: AuthoredRoom): FrostTrial | undefined {
-  const vessel = room.features?.find((feature) => feature.kind === 'frost-vessel');
-  const relic = room.features?.find((feature) => feature.kind === 'relic');
-  if (!vessel || !relic) {
-    return undefined;
-  }
-  return {
-    vessel: { ...vessel.position },
-    relic: { ...relic.position },
-    reset: { ...room.spawn },
-  };
+export function featurePosition(
+  room: AuthoredRoom,
+  kind: string,
+): Position | undefined {
+  return room.features?.find((feature) => feature.kind === kind)?.position;
+}
+
+/**
+ * Returns the authored position the player is reset to after a soft drowning
+ * failure. An explicit `frost-reset` feature is preferred so room spawn and
+ * puzzle failure reset remain distinct concepts; if absent, the room spawn is
+ * used as a backwards-compatible default.
+ */
+export function frostResetForRoom(room: AuthoredRoom): Position {
+  return featurePosition(room, 'frost-reset') ?? room.spawn;
 }
 
 export function isFrozen(
