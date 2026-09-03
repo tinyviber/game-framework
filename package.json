@@ -14,7 +14,8 @@
     "assets:analyze-local": "bash asset-research/scripts/research-assets.sh analyze --write-local",
     "assets:benchmark-local": "bash asset-research/scripts/research-assets.sh benchmark --write-local",
     "assets:benchmark-cc0": "node asset-research/scripts/render-cc0-smoke.mjs --verify",
-    "assets:annotate-orthogonal": "node asset-research/scripts/make-orthogonal-annotation-sheet.mjs --write-local"
+    "assets:annotate-orthogonal": "node asset-research/scripts/make-orthogonal-annotation-sheet.mjs --write-local",
+    "test:world-fuzz": "WORLD_FUZZ=1 vitest run src/world/gen-room.fuzz.test.ts"
   },
   "devDependencies": {
     "@types/node": "^26.4.0",

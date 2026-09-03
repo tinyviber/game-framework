@@ -8,7 +8,7 @@ Older synthesis/recommendation documents under `docs/` may provide historical co
 
 ## Product constitution
 
-This project is an exploratory top-down RPG puzzle framework.
+This project is an exploratory pure-2D top-down RPG puzzle framework.
 
 Core product rules:
 
@@ -82,8 +82,9 @@ Enforced by `src/architecture.test.ts`:
 - Room initialization validates through `tryInitializeLocalWorld` only;
   transition layers must not call `validateEntry` themselves.
 - Movement rules validate against world definitions, never hardcoded cell
-  coordinates: object-based gameplay uses `createSpatialIndex` /
-  `movementIsLegal`, while generated terrain uses explicit traversal edges.
+  coordinates. Pure 2D generated rooms derive traversal from cell ground and
+  obstacle state; do not store duplicated `walkable` flags or answer-shaped
+  path data in the runtime world.
 - The Pixi host owns the `WorldScene` lifecycle (`createWorldScene` in
   `createPixiHost`, destroyed by `handle.destroy()`). There is no global
   scene registry.
