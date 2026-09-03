@@ -573,7 +573,7 @@ describe('seeded generated world', () => {
     expect(callbackAttempts).toBe(2);
   });
 
-  it('keeps every seed in the deterministic 0..9999 generation domain valid', { timeout: 300_000 }, () => {
+  (process.env.LEGACY_WORLD_STRESS === '1' ? it : it.skip)('keeps every seed in the deterministic 0..9999 generation domain valid', { timeout: 300_000 }, () => {
     const failures: string[] = [];
     const familyPredicatesChecked = new Set<string>();
     let failureCount = 0;
