@@ -98,6 +98,9 @@ if (!roomTitle || !roomStatus) {
   throw new Error('Room UI failed to initialize');
 }
 
+const roomTitleElement = roomTitle;
+const roomStatusElement = roomStatus;
+
 let seed = readSeed();
 let room: Room = genRoom(seed);
 let state: GameState = createGameState(room);
@@ -121,10 +124,10 @@ function toView(
 function render(): void {
   renderer.render(toView(room, state));
   renderer.focus(state.player);
-  roomTitle.textContent = `Seed ${seed}`;
+  roomTitleElement.textContent = `Seed ${seed}`;
 
   const reachable = reachablePositions(room).length;
-  roomStatus.textContent = state.goalReached
+  roomStatusElement.textContent = state.goalReached
     ? `GOAL REACHED · ${state.player.x},${state.player.y} · ${reachable} reachable cells`
     : `${state.player.x},${state.player.y} · ${reachable} reachable cells`;
 }
